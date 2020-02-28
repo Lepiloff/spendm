@@ -11,11 +11,11 @@ from service.countries import COUNTRIES
 
 
 class AnalystNotes(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    e = models.ForeignKey('Elements', models.DO_NOTHING)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
+    e = models.ForeignKey('Elements', on_delete=models.CASCADE)
     analyst_notes = models.CharField(max_length=300, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     analyst_response = models.IntegerField(blank=True, null=True)
 
@@ -65,27 +65,28 @@ class AssignedVendorsAnalysts(models.Model):
 
 
 class Attachments(models.Model):
-    attachment_id = models.AutoField(primary_key=True)
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    attachmentid = models.AutoField(primary_key=True)
+    vendor = models.ForeignKey('Vendors', on_delete=models.CASCADE)
     filename = models.CharField(max_length=200, blank=True, null=True)
     extension = models.CharField(max_length=10, blank=True, null=True)
     path = models.CharField(max_length=500, blank=True, null=True)
     notes = models.CharField(max_length=300, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
 
     class Meta:
         db_table = 'attachments'
-        unique_together = (('attachment_id', 'rfi', 'timestamp'),)
+        unique_together = (('attachmentid', 'rfi', 'timestamp'),)
 
 
 class CIAnswers(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    c_i_question = models.ForeignKey('CIQuestions', models.DO_NOTHING)
+    c_i_answersid = models.AutoField(primary_key=True)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE)
+    c_i_question = models.ForeignKey('CIQuestions', on_delete=models.CASCADE)
     answer = models.CharField(max_length=1000, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, blank=True, null=True)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
+    rfi = models.ForeignKey('Rfis',  on_delete=models.CASCADE, blank=True, null=True)
     timestamp = models.DateTimeField(blank=True, null=True)
 
     class Meta:
@@ -150,7 +151,7 @@ class CalendarVendors(models.Model):
 
 class Categories(models.Model):
     cid = models.AutoField(primary_key=True)
-    pc = models.ForeignKey('ParentCategories', models.DO_NOTHING)
+    pc = models.ForeignKey('ParentCategories', on_delete=models.CASCADE)
     category_name = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     timestamp = models.DateTimeField()
@@ -161,15 +162,17 @@ class Categories(models.Model):
 
 
 class ChartsParticipation(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    PARTICIPATING = (("0", "0"), ("1", "1"), ("2", "2"))
+
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
     m = models.ForeignKey('Modules', models.DO_NOTHING)
     vendor_display_name = models.CharField(max_length=45)
-    participation_mode = models.IntegerField()
+    participation_mode = models.CharField(max_length=2, choices=PARTICIPATING)
     customer_count = models.IntegerField(blank=True, null=True)
-    display_in_chart = models.IntegerField()
-    include_in_averages = models.IntegerField()
+    display_in_chart = models.BooleanField(default=True)
+    include_in_averages = models.BooleanField(default=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -220,12 +223,12 @@ class CheckNormWeights100(models.Model):
 
 class Elements(models.Model):
     eid = models.AutoField(primary_key=True)
-    s = models.ForeignKey('Subcategories', models.DO_NOTHING)
+    s = models.ForeignKey('Subcategories', on_delete=models.CASCADE)
     element_name = models.CharField(max_length=200)
     description = models.CharField(max_length=5000, blank=True, null=True)
     scoring_scale = models.CharField(max_length=2000, blank=True, null=True)
     e_order = models.DecimalField(max_digits=9, decimal_places=4)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    # user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -234,11 +237,11 @@ class Elements(models.Model):
 
 
 class ElementsAttachments(models.Model):
-    e = models.ForeignKey('Elements', models.DO_NOTHING)
-    attachment = models.ForeignKey('Attachments', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    e = models.OneToOneField(Elements, on_delete=models.CASCADE, primary_key=True)
+    attachment = models.ForeignKey(Attachments, on_delete=models.CASCADE)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
-    active = models.IntegerField()
+    active = models.BooleanField(default=True)
     vendor_response = models.IntegerField(blank=True, null=True)
 
     class Meta:
@@ -250,7 +253,7 @@ class LogTrail(models.Model):
     log_row_id = models.AutoField(primary_key=True)
     email = models.CharField(max_length=45, blank=True, null=True)
     succesful = models.IntegerField()
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.CASCADE)
     ip = models.CharField(max_length=15, blank=True, null=True)
     timestamp = models.DateTimeField()
 
@@ -259,11 +262,11 @@ class LogTrail(models.Model):
 
 
 class ModuleElements(models.Model):
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
-    e = models.ForeignKey(Elements, models.DO_NOTHING)
+    m = models.OneToOneField('Modules', on_delete=models.CASCADE, primary_key=True)
+    e = models.ForeignKey(Elements, on_delete=models.CASCADE)
     active = models.IntegerField(blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    # user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -298,7 +301,7 @@ class Modules(models.Model):
     mid = models.AutoField(primary_key=True)
     module_name = models.CharField(max_length=50, choices=MODULES_NAME)
     active = models.BooleanField(default=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    # user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -335,8 +338,8 @@ class NormEWeights(models.Model):
 
 class ParentCategories(models.Model):
     pcid = models.AutoField(primary_key=True)
-    parent_category_name = models.CharField(max_length=45, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    parent_category_name = models.CharField(max_length=45)
+    # user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -360,8 +363,8 @@ class Personas(models.Model):
 class PriceScores(models.Model):
     """Not needed for phase 1a"""
     vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
-    persona = models.ForeignKey('Personas', models.DO_NOTHING)
+    m = models.ForeignKey(Modules, models.DO_NOTHING)
+    persona = models.ForeignKey(Personas, models.DO_NOTHING)
     price_score = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
@@ -407,11 +410,11 @@ class References(models.Model):
 
 
 class RfiParticipation(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
+    m = models.ForeignKey(Modules, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     user_id = models.IntegerField()
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -420,9 +423,9 @@ class RfiParticipation(models.Model):
 
 
 class RfiParticipationStatus(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
-    pc = models.ForeignKey(ParentCategories, models.DO_NOTHING)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
+    rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
+    pc = models.ForeignKey(ParentCategories, on_delete=models.CASCADE)
     user_id = models.IntegerField()
     timestamp = models.DateTimeField()
     last_vendor_response = models.IntegerField(blank=True, null=True)
@@ -439,7 +442,7 @@ class Rfis(models.Model):
     issue_datetime = models.DateTimeField(blank=True, null=True)
     open_datetime = models.DateTimeField(blank=True, null=True)
     close_datetime = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -448,11 +451,11 @@ class Rfis(models.Model):
 
 
 class SelfDescriptions(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
     e = models.ForeignKey(Elements, models.DO_NOTHING)
     self_description = models.CharField(max_length=2500, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
+    rfi = models.ForeignKey(Rfis, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     vendor_response = models.IntegerField(blank=True, null=True)
 
@@ -462,11 +465,11 @@ class SelfDescriptions(models.Model):
 
 
 class SelfScores(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    vendor = models.OneToOneField('Vendors', on_delete=models.CASCADE, primary_key=True)
     e = models.ForeignKey(Elements, models.DO_NOTHING)
     self_score = models.DecimalField(max_digits=2, decimal_places=1, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
+    rfi = models.ForeignKey(Rfis, on_delete=models.SET_NULL, blank=True, null=True)
     timestamp = models.DateTimeField()
     vendor_response = models.IntegerField(blank=True, null=True)
 
@@ -476,7 +479,8 @@ class SelfScores(models.Model):
 
 
 class Shifts(models.Model):
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
+    """Not needed for phase 1a"""
+    m = models.OneToOneField(Modules, models.DO_NOTHING, primary_key=True)
     persona = models.ForeignKey(Personas, models.DO_NOTHING)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     sm_score_partic_2 = models.DecimalField(max_digits=3, decimal_places=2)
@@ -490,8 +494,11 @@ class Shifts(models.Model):
 
 
 class SmScores(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    e = models.ForeignKey('Elements', models.DO_NOTHING)
+    """View
+       Not needed for phase 1a
+    """
+    vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
+    e = models.ForeignKey(Elements, models.DO_NOTHING)
     sm_score = models.DecimalField(max_digits=2, decimal_places=1, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
@@ -518,9 +525,9 @@ class SmScoresPartic1(models.Model):
 
 class Subcategories(models.Model):
     sid = models.AutoField(primary_key=True)
-    c = models.ForeignKey('Categories', models.DO_NOTHING)
+    c = models.ForeignKey(Categories, on_delete=models.CASCADE)
     subcategory_name = models.CharField(max_length=100, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -544,7 +551,7 @@ class SumVpScores(models.Model):
 class SurveyAnswers(models.Model):
     """Not needed for phase 1a"""
     vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
-    reference = models.ForeignKey('References', models.DO_NOTHING, blank=True, null=True)
+    reference = models.ForeignKey(References, models.DO_NOTHING, blank=True, null=True)
     question = models.ForeignKey('SurveyQuestions', models.DO_NOTHING)
     answer = models.CharField(max_length=1000, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
@@ -560,7 +567,7 @@ class SurveyQuestions(models.Model):
     questionid = models.AutoField(primary_key=True)
     statement = models.CharField(max_length=500)
     active = models.IntegerField()
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
     rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
     timestamp = models.DateTimeField()
 
@@ -574,7 +581,7 @@ class UserAssignedSubcategories(models.Model):
     user_to_assign = models.OneToOneField('c_users.CustomUser', models.DO_NOTHING, related_name='user_to_assign')
     s = models.ForeignKey(Subcategories, models.DO_NOTHING)
     active = models.IntegerField()
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.SET_NULL, blank=True, null=True)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -593,21 +600,20 @@ class UserRoles(models.Model):
 
 class VendorContacts(models.Model):
     contact_id = models.AutoField(primary_key=True)
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    contact_name = models.CharField(max_length=45, blank=True, null=True)
-    email = models.CharField(max_length=80, blank=True, null=True)
+    vendor = models.ForeignKey('Vendors', on_delete=models.CASCADE)
+    contact_name = models.CharField(max_length=45, blank=True)
     phone = models.CharField(max_length=45, blank=True)
+    email = models.CharField(max_length=80, blank=True, null=True, unique=True)
 
     class Meta:
         db_table = 'vendor_contacts'
 
 
 class VendorModuleNames(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    module = models.ForeignKey('Modules', models.DO_NOTHING)
-    vendor_name = models.CharField(max_length=45)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    timestamp = models.DateTimeField()
+    vendor = models.ForeignKey('Vendors', on_delete=models.CASCADE)
+    module = models.ForeignKey(Modules, models.CASCADE)
+    # user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'vendor_module_names'
@@ -623,8 +629,9 @@ class Vendors(models.Model):
     nda = models.DateField(blank=True, null=True)
     consent = models.DateField(blank=True, null=True)
     active = models.BooleanField(default=False)
-    user_id = models.IntegerField(blank=True, null=True)
-    timestamp = models.DateTimeField()
+    user_id = models.ForeignKey('c_users.CustomUser', on_delete=models.PROTECT)
+    parent_vendor = models.ForeignKey('self', on_delete=models.DO_NOTHING, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'vendors'
@@ -655,9 +662,10 @@ class VpScores(models.Model):
 
 
 class WeightsCategories(models.Model):
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
-    persona = models.ForeignKey('Personas', models.DO_NOTHING)
-    c = models.ForeignKey('Categories', models.DO_NOTHING)
+    """Not needed for phase 1a"""
+    m = models.OneToOneField(Modules, models.DO_NOTHING, primary_key=True)
+    persona = models.ForeignKey(Personas, models.DO_NOTHING)
+    c = models.ForeignKey(Categories, models.DO_NOTHING)
     c_weight = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
@@ -675,7 +683,7 @@ class WeightsElements(models.Model):
     e = models.ForeignKey(Elements, models.DO_NOTHING)
     e_weight = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
     timestamp = models.DateTimeField()
 
     class Meta:
@@ -690,7 +698,7 @@ class WeightsSurveyQuestions(models.Model):
     question = models.ForeignKey(SurveyQuestions, models.DO_NOTHING)
     weight = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, blank=True, null=True)
+    rfi = models.ForeignKey(Rfis, models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(blank=True, null=True)
 
     class Meta:

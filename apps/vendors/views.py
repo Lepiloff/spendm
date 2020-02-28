@@ -1,18 +1,21 @@
-import json
 from collections import deque
 
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 
 from rest_framework.exceptions import ParseError
+from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.renderers import JSONRenderer
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer, BrowsableAPIRenderer
 from rest_framework import status
+
+from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
 from .models import Vendors, VendorContacts, VendorModuleNames
-from .serializers import VendorsSerializer, VendorContactSerializer
+from .serializers import VendorsSerializer, VendorContactSerializer, VendorModulSerializer, ModulesSerializer
+
 
 class FileUploadView(APIView):
     parser_classes = ( MultiPartParser, FormParser)
@@ -35,7 +38,7 @@ class FileUploadView(APIView):
 
 class _CsvToDatabase(APIView):
 
-
+    # --> To do make list of dict as a request json
     def post(self, request, format=None):
         data = request.data
         v_list = []
@@ -68,6 +71,7 @@ class _CsvToDatabase(APIView):
 
 # Using serializer
 
+# --> To do make list of dict as a request json
 class CsvToDatabase(APIView):
     renderer_classes = [JSONRenderer]
 
@@ -85,4 +89,52 @@ class CsvToDatabase(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class VendorsCreateView(APIView):
+    """Create new vendor instances from form"""
+    serializer_class = (VendorsSerializer)
 
+    def post(self, request, *args, **kwargs):
+        vendor_serializer = VendorsSerializer(data=request.data)
+        vendor_contact_serializer = VendorContactSerializer(data=request.data)
+        vendor_modules_serializer = VendorModulSerializer(data=request.data)
+        module_serializer = ModulesSerializer(data=request.data)
+        try:
+            vendor_serializer.is_valid(raise_exception=True) \
+                and vendor_contact_serializer.is_valid(raise_exception=True) \
+                and vendor_modules_serializer.is_valid(raise_exception=True) \
+                # and module_serializer.is_valid(raise_exception=True)
+            vendor = vendor_serializer.save(user_id=CustomUser.objects.get(id=2))
+            # module = module_serializer.save()
+            vendor_module = vendor_modules_serializer.save(vendor=vendor)
+            vendor_contact = vendor_contact_serializer.save(vendor=vendor)
+        except ValidationError:
+            return Response({"errors": (vendor_serializer.errors,
+                                        vendor_contact_serializer.errors,
+                                        vendor_modules_serializer.errors
+                                        )},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
+
+
+# class VendorsCreateView(APIView):
+#     """Create new vendor instances from form"""
+#
+#     def post(self, request, *args, **kwargs):
+#         vendor_serializer = VendorsSerializer(data=request.data)
+#         vendor_contact_serializer = VendorContactSerializer(data=request.data)
+#         try:
+#             vendor_serializer.is_valid(raise_exception=True) \
+#                 and vendor_contact_serializer.is_valid(raise_exception=True) \
+#
+#             vendor_serializer.save(user_id=request.user)
+#             # ....
+#             # Some new logic here
+#             # ...
+#         except ValidationError:
+#             return Response({"errors": (vendor_serializer.errors,
+#                                         vendor_contact_serializer.errors,
+#                                         )},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response(request.data, status=status.HTTP_200_OK)
