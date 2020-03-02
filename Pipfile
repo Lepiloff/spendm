@@ -13,6 +13,7 @@ djangorestframework = "*"
 django-rest-auth = "*"
 drf-yasg = "*"
 djangorestframework-simplejwt = "*"
+decouple = "*"
 
 [requires]
 python_version = "3.7"
