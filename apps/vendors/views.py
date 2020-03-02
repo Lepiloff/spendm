@@ -3,6 +3,7 @@ from collections import deque
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 
+from rest_framework import permissions
 from rest_framework.exceptions import ParseError
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -15,6 +16,13 @@ from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
 from .models import Vendors, VendorContacts, VendorModuleNames
 from .serializers import VendorsSerializer, VendorContactSerializer, VendorModulSerializer, ModulesSerializer
+
+
+class AdministratorDashboard(APIView):
+
+    def get(self, request, format=None):
+        vendors = [vendor.vendor_name for vendor in Vendors.objects.all()]
+        return Response(vendors)
 
 
 class FileUploadView(APIView):
@@ -91,50 +99,16 @@ class CsvToDatabase(APIView):
 
 class VendorsCreateView(APIView):
     """Create new vendor instances from form"""
-    serializer_class = (VendorsSerializer)
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = VendorsSerializer
 
     def post(self, request, *args, **kwargs):
-        vendor_serializer = VendorsSerializer(data=request.data)
-        vendor_contact_serializer = VendorContactSerializer(data=request.data)
-        vendor_modules_serializer = VendorModulSerializer(data=request.data)
-        module_serializer = ModulesSerializer(data=request.data)
+        serializer = VendorsSerializer(data=request.data)
         try:
-            vendor_serializer.is_valid(raise_exception=True) \
-                and vendor_contact_serializer.is_valid(raise_exception=True) \
-                and vendor_modules_serializer.is_valid(raise_exception=True) \
-                # and module_serializer.is_valid(raise_exception=True)
-            vendor = vendor_serializer.save(user_id=CustomUser.objects.get(id=2))
-            # module = module_serializer.save()
-            vendor_module = vendor_modules_serializer.save(vendor=vendor)
-            vendor_contact = vendor_contact_serializer.save(vendor=vendor)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
         except ValidationError:
-            return Response({"errors": (vendor_serializer.errors,
-                                        vendor_contact_serializer.errors,
-                                        vendor_modules_serializer.errors
-                                        )},
+            return Response({"errors": (serializer.errors,)},
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
-
-
-# class VendorsCreateView(APIView):
-#     """Create new vendor instances from form"""
-#
-#     def post(self, request, *args, **kwargs):
-#         vendor_serializer = VendorsSerializer(data=request.data)
-#         vendor_contact_serializer = VendorContactSerializer(data=request.data)
-#         try:
-#             vendor_serializer.is_valid(raise_exception=True) \
-#                 and vendor_contact_serializer.is_valid(raise_exception=True) \
-#
-#             vendor_serializer.save(user_id=request.user)
-#             # ....
-#             # Some new logic here
-#             # ...
-#         except ValidationError:
-#             return Response({"errors": (vendor_serializer.errors,
-#                                         vendor_contact_serializer.errors,
-#                                         )},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             return Response(request.data, status=status.HTTP_200_OK)

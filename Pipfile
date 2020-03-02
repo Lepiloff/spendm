@@ -12,6 +12,7 @@ django-cors-headers = "*"
 djangorestframework = "*"
 django-rest-auth = "*"
 drf-yasg = "*"
+djangorestframework-simplejwt = "*"
 
 [requires]
 python_version = "3.7"

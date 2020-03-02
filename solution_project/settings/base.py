@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_auth',
     'drf_yasg',
+
+    'rest_framework_simplejwt.token_blacklist',
     
     # Local
     'apps.c_users',
@@ -142,18 +144,18 @@ STATIC_URL = '/static/'
 
 
 AUTH_USER_MODEL = 'c_users.CustomUser'
-
+LOGIN_REDIRECT_URL = 'administartor_dashboard'
 
 # REST FRAMEWORK SETTINGS
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.IsAuthenticated',
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # API
         'rest_framework.authentication.SessionAuthentication',  # For browsable API
-        'rest_framework.authentication.TokenAuthentication',  # API
     ],
     'DEFAULT_PARSER_CLASSES': (
             'rest_framework.parsers.JSONParser',

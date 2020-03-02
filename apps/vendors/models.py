@@ -593,10 +593,10 @@ class UserRoles(models.Model):
 
 class VendorContacts(models.Model):
     contact_id = models.AutoField(primary_key=True)
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    vendor = models.ForeignKey('Vendors', related_name='contacts', on_delete=models.CASCADE)
     contact_name = models.CharField(max_length=45, blank=True, null=True)
     email = models.CharField(max_length=80, blank=True, null=True)
-    phone = models.CharField(max_length=45, blank=True)
+    phone = models.CharField(max_length=45, blank=True, null=True)
 
     class Meta:
         db_table = 'vendor_contacts'
@@ -607,7 +607,7 @@ class VendorModuleNames(models.Model):
     module = models.ForeignKey('Modules', models.DO_NOTHING)
     vendor_name = models.CharField(max_length=45)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'vendor_module_names'
@@ -624,7 +624,7 @@ class Vendors(models.Model):
     consent = models.DateField(blank=True, null=True)
     active = models.BooleanField(default=False)
     user_id = models.IntegerField(blank=True, null=True)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'vendors'
