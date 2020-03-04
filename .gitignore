@@ -2,8 +2,8 @@
 *~
 __pycache__
 db.sqlite3
-/static/
-/media/
+solution_project/static/
+uwsgi.log
 .idea
 .env
 *.csv
