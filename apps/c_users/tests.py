@@ -36,6 +36,18 @@ class TestLoginCase(APITestCase):
                 HTTP_AUTHORIZATION='Bearer %s' % body['access'])
         return r.status_code, body
 
+    def test_login1(self):
+        response = self.client.post(self.login_url, {'email': self.email, 'password': self.password}, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_wrong_login_email(self):
+        response = self.client.post(self.login_url, {'email': 'wrong@email.com', 'password': self.password}, follow=True)
+        self.assertEqual(response.status_code, 401)
+
+    def test_wrong_login_pass(self):
+        response = self.client.post(self.login_url, {'email': self.email, 'password': 'wrongpass'}, follow=True)
+        self.assertEqual(response.status_code, 401)
+
     def test_logout_response_200(self):
         _, body = self._login()
         data = {'refresh': body['refresh']}
