@@ -23,8 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['spend-matters.demo.sumatosoft.work', '127.0.0.1']
 
 # Application definition
 
@@ -139,8 +138,8 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
 
 AUTH_USER_MODEL = 'c_users.CustomUser'
