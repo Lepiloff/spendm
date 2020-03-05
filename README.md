@@ -16,3 +16,8 @@ Note: you need to have exist mysql database at your machine
 <code>python manage.py runserver</code>
 
 If no errors status - project are running
+
+
+Link to Swagger
+
+<code>http://localhost/api/doc/swagger/</code>
