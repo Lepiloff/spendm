@@ -1,18 +1,18 @@
 Installation instruction
 
 1. Install prerequisites.
-sudo apt-get install python3 python3-pip virtualenvwrapper
+<code>sudo apt-get install python3 python3-pip virtualenvwrapper</code>
 2. Make virtualenv 
-mkvirtualenv -p /usr/bin/python3 <venv-name>
+<code>mkvirtualenv -p /usr/bin/python3 <venv-name></code>
 3. Set into the virtual environment.
-workon <venv-name>
+<code>workon <venv-name></code>
 4. Clone gitlab repo
-git clone git@gitlab-ssh.sumatosoft.com:spend-matters/spend-matters.git
+<code>git clone git@gitlab-ssh.sumatosoft.com:spend-matters/spend-matters.git</code>
 5. Install other requirements using pip package manager
- pip install -r requirements.txt
-6. Create .env file and add information accordingly .env.dist file
+ <code>pip install -r requirements.txt</code>
+6. Create <code>.env</code> file and add information accordingly <code>.env.dist</code> file
 Note: you need to have exist mysql database at your machine
-7. From root dirrectory of cloning project (where file manage.py is stored) run command
-python manage.py runserver
+7. From root directory of cloning project (where file manage.py is stored) run command
+<code>python manage.py runserver</code>
 
-If no errors status - project are runing
+If no errors status - project are running
