@@ -26,7 +26,7 @@ class AnalystNotes(models.Model):
 
 class AnalystsFlaggedElements(models.Model):
     """Not needed for phase 1a"""
-    vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     e = models.ForeignKey('Elements', models.DO_NOTHING)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     active = models.IntegerField(blank=True, null=True)
@@ -40,7 +40,7 @@ class AnalystsFlaggedElements(models.Model):
 
 class AssignedPcAnalysts(models.Model):
     """Not needed for phase 1a"""
-    analyst = models.OneToOneField('c_users.CustomUser', models.DO_NOTHING, primary_key=True)
+    analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     pc = models.ForeignKey('ParentCategories', models.DO_NOTHING)
     active = models.IntegerField()
     user_id = models.IntegerField()
@@ -53,7 +53,7 @@ class AssignedPcAnalysts(models.Model):
 
 class AssignedVendorsAnalysts(models.Model):
     """Not needed for phase 1a"""
-    analyst = models.OneToOneField('c_users.CustomUser', models.DO_NOTHING, primary_key=True)
+    analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     active = models.IntegerField()
     user_id = models.IntegerField()
@@ -97,7 +97,7 @@ class CIQuestions(models.Model):
     c_i_questionid = models.AutoField(primary_key=True)
     question = models.CharField(max_length=500, blank=True, null=True)
     active = models.BooleanField(default=True)
-    user = models.ForeignKey('c_users.CustomUser', on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey('c_users.CustomUser', on_delete=models.CASCADE)
     rfi = models.ForeignKey('Rfis', on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
 
@@ -123,7 +123,7 @@ class Calendar(models.Model):
 
 class CalendarModules(models.Model):
     """Not needed for phase 1a"""
-    event = models.OneToOneField(Calendar, models.DO_NOTHING, primary_key=True)
+    event = models.ForeignKey(Calendar, models.DO_NOTHING)
     m = models.ForeignKey('Modules', models.DO_NOTHING)
     active = models.IntegerField()
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
@@ -136,7 +136,7 @@ class CalendarModules(models.Model):
 
 class CalendarVendors(models.Model):
     """Not needed for phase 1a"""
-    event = models.OneToOneField(Calendar, models.DO_NOTHING, primary_key=True)
+    event = models.ForeignKey(Calendar, models.DO_NOTHING)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     active = models.IntegerField()
     calendar_vendors_ccol = models.CharField(max_length=45)
@@ -249,7 +249,7 @@ class ElementsAttachments(models.Model):
 class LogTrail(models.Model):
     log_row_id = models.AutoField(primary_key=True)
     email = models.CharField(max_length=45, blank=True, null=True)
-    succesful = models.IntegerField()
+    successful = models.BooleanField(default=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     ip = models.CharField(max_length=15, blank=True, null=True)
     timestamp = models.DateTimeField()
@@ -273,7 +273,7 @@ class ModuleElements(models.Model):
 
 class ModulePersonas(models.Model):
     """Not needed for phase 1a"""
-    m = models.OneToOneField('Modules', models.DO_NOTHING, primary_key=True)
+    m = models.ForeignKey('Modules', models.DO_NOTHING)
     persona = models.ForeignKey('Personas', models.DO_NOTHING)
     price_score_weight = models.DecimalField(max_digits=5, decimal_places=3)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
@@ -359,7 +359,7 @@ class Personas(models.Model):
 
 class PriceScores(models.Model):
     """Not needed for phase 1a"""
-    vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     m = models.ForeignKey('Modules', models.DO_NOTHING)
     persona = models.ForeignKey('Personas', models.DO_NOTHING)
     price_score = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
@@ -374,7 +374,7 @@ class PriceScores(models.Model):
 
 class ReferenceModules(models.Model):
     """Not needed for phase 1a"""
-    reference = models.OneToOneField('References', models.DO_NOTHING, primary_key=True)
+    reference = models.ForeignKey('References', models.DO_NOTHING)
     m = models.ForeignKey(Modules, models.DO_NOTHING)
     active = models.IntegerField()
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
@@ -543,7 +543,7 @@ class SumVpScores(models.Model):
 
 class SurveyAnswers(models.Model):
     """Not needed for phase 1a"""
-    vendor = models.OneToOneField('Vendors', models.DO_NOTHING, primary_key=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     reference = models.ForeignKey('References', models.DO_NOTHING, blank=True, null=True)
     question = models.ForeignKey('SurveyQuestions', models.DO_NOTHING)
     answer = models.CharField(max_length=1000, blank=True, null=True)
@@ -571,7 +571,7 @@ class SurveyQuestions(models.Model):
 
 class UserAssignedSubcategories(models.Model):
     """Not needed for phase 1a"""
-    user_to_assign = models.OneToOneField('c_users.CustomUser', models.DO_NOTHING, related_name='user_to_assign')
+    user_to_assign = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, related_name='user_to_assign')
     s = models.ForeignKey(Subcategories, models.DO_NOTHING)
     active = models.IntegerField()
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
@@ -670,7 +670,7 @@ class WeightsCategories(models.Model):
 
 class WeightsElements(models.Model):
     """Not needed for phase 1a"""
-    m = models.OneToOneField(Modules, models.DO_NOTHING, primary_key=True)
+    m = models.ForeignKey(Modules, models.DO_NOTHING)
     persona = models.ForeignKey(Personas, models.DO_NOTHING)
     e = models.ForeignKey(Elements, models.DO_NOTHING)
     e_weight = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
@@ -685,7 +685,7 @@ class WeightsElements(models.Model):
 
 class WeightsSurveyQuestions(models.Model):
     """Not needed for phase 1a"""
-    persona = models.OneToOneField(Personas, models.DO_NOTHING, primary_key=True)
+    persona = models.ForeignKey(Personas, models.DO_NOTHING)
     m = models.ForeignKey(Modules, models.DO_NOTHING)
     question = models.ForeignKey(SurveyQuestions, models.DO_NOTHING)
     weight = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
