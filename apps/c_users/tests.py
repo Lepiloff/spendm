@@ -1,4 +1,5 @@
-import mock
+# import mock
+from unittest import mock
 from functools import partial
 import datetime
 
