@@ -7,8 +7,8 @@ test:
   script:
   # this configures Django application to use attached postgres database that is run on `postgres` host
   #- export DATABASE_URL=postgres://postgres:@postgres:5432/python-test-app
-  - sudo apt update
-  - ssudo apt-get install python3 python3-pip virtualenvwrapper
+  - apt update
+  - apt install python3 python3-pip virtualenvwrapper
   - virtualenv --python=python3 venv/
   - source venv/bin/activate
   - pip install -r requirements.txt
