@@ -13,4 +13,4 @@ test:
   - source venv/bin/activate
   - pwd
   - pip install -r requirement.txt
-  - python manage.py test
+  - python manage.py test apss
