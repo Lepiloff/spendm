@@ -595,7 +595,7 @@ class VendorContacts(models.Model):
     contact_id = models.AutoField(primary_key=True)
     vendor = models.ForeignKey('Vendors', related_name='contacts', on_delete=models.CASCADE)
     contact_name = models.CharField(max_length=45, blank=True, null=True)
-    email = models.CharField(max_length=80, blank=True, null=True)
+    email = models.CharField(max_length=80, blank=True, null=True, unique=True)
     phone = models.CharField(max_length=45, blank=True, null=True)
 
     class Meta:
@@ -622,6 +622,7 @@ class Vendors(models.Model):
     country = models.CharField(max_length=45, choices=COUNTRY_CHOICES)
     nda = models.DateField(blank=True, null=True)
     consent = models.DateField(blank=True, null=True)
+    parent = models.OneToOneField('Vendors', models.DO_NOTHING, blank=True, null=True)
     active = models.BooleanField(default=False)
     user_id = models.IntegerField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -631,9 +632,7 @@ class Vendors(models.Model):
         unique_together = (('vendorid', 'timestamp'),)
 
     def clean(self):
-        if self.country not in [c for (_, c) in self.COUNTRY_CHOICES]:
-            raise ValidationError(detail="Country name ({}) does not match to the country list ".format(self.country))
-        if self.nda == '':
+        if self.nda == "":
             self.nda = None
 
     def __str__(self):

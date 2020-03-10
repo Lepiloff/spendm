@@ -1,7 +1,9 @@
 from rest_framework import serializers
-from .models import Vendors, VendorContacts, VendorModuleNames, Modules
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
+
 from apps.c_users.models import CustomUser
+from .models import Vendors, VendorContacts, VendorModuleNames, Modules
+
 
 class VendorContactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,24 +28,29 @@ class VendorContactSerializer(serializers.ModelSerializer):
 
 class VendorsSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
+    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all())
 
     class Meta:
         model = Vendors
         fields = ('vendor_name',
                   'country',
                   'nda',
-                  'contacts',)
+                  'contacts',
+                  'parent',)
 
     def create(self, validated_data):
         contact_data = validated_data.pop('contacts')
-        vendor = Vendors.objects.create(**validated_data)
+        # Only for first phase for workin with admin instancess only. Rewrite after !!!
+        superuser = CustomUser.objects.filter(is_superuser=True)
+        if superuser:
+            superuser_id = superuser[0].id
+            vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
+        else:
+            raise ObjectDoesNotExist
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, **data)
-        # Only for first phase. Rewrite after !!!
-        # superusers = CustomUser.objects.filter(is_superuser=True)[0]
-        # superusers.update(assigned_vendor=vendor)
-        return vendor
 
+        return vendor
 
 
 class VendorModulSerializer(serializers.ModelSerializer):

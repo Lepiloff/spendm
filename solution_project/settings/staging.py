@@ -1,5 +1,7 @@
 from .base import *
 
+ALLOWED_HOSTS += 'api.spend-matters.demo.sumatosoft.work'
+
 DEBUG = False
 
 # DATABASES = {
