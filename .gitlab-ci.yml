@@ -1,16 +1,53 @@
-stages:
-  - test
-  - deploy
+#services:
+#  - mysql:5.7
+#
+#variables:
+#      MYSQL_DATABASE: "smap_production"
+#      MYSQL_ROOT_PASSWORD: "dbpass"
+#      MYSQL_USER: "spendmetr"
+#      MYSQL_PASSWORD: "spend_db_local"
+#      MYSQL_HOST: "mysql"
+#      SECRET_KEY: ${SECRET_KEY}
+#      DB_NAME: ${DB_NAME}
+#      DB_USER: ${DB_USER}
+#      DB_PASSWORD: ${DB_PASSWORD}
+#      DB_HOST: ${DB_HOST}
+#
+#
+#stages:
+#  - test
+#
+#test:
+#  stage: test
+#  before_script:
+#  - apt update -qy && apt-get install -qqy --no-install-recommends default-mysql-client
+#  - mysql --user=$MYSQL_USER --password=$MYSQL_PASSWORD --database=$MYSQL_DATABASE --host=$MYSQL_HOST --execute="SHOW DATABASES; ALTER USER '$MYSQL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_PASSWORD'"
+#  script:
+#  - apt update -qy
+#  - apt install python3 python3-pip virtualenvwrapper -qy
+#  - virtualenv --python=python3 venv/
+#  - source venv/bin/activate
+#  - pwd
+#  - pip install -r requirement.txt
+#  - python manage.py test apps
 
-test:
-  stage: test
-  script:
-  # this configures Django application to use attached postgres database that is run on `postgres` host
-  #- export DATABASE_URL=postgres://postgres:@postgres:5432/python-test-app
-  - apt update -qy
-  - apt install python3 python3-pip virtualenvwrapper -qy
-  - virtualenv --python=python3 venv/
-  - source venv/bin/activate
-  - pwd
-  - pip install -r requirement.txt
-  - python manage.py test apps
+image: registry.sumatosoft.work/spend-matters
+tests:
+    services:
+        - name: registry.sumatosoft.work/mysql:5.7
+          alias: mysql
+    variables:
+        MYSQL_DATABASE: ${MYSQL_DATABASE}
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        MYSQL_USER: ${MYSQL_USER}
+        MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    before_script:
+        - mysql --version
+        - echo "SELECT 'OK';" | mysql --user=root --password=$MYSQL_ROOT_PASSWORD --host=mysql "$MYSQL_DATABASE"
+        - mysql --host=mysql --user=root --password=$MYSQL_ROOT_PASSWORD --database=$MYSQL_DATABASE --execute="SHOW DATABASES; ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_PASSWORD'"
+    script:
+        - virtualenv --python=python3 venv/
+        - source venv/bin/activate
+        - pwd
+        - pip install -r requirement.txt
+        - python manage.py test apps
