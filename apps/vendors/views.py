@@ -15,7 +15,8 @@ from rest_framework import status
 from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
 from .models import Vendors, VendorContacts, VendorModuleNames
-from .serializers import VendorsSerializer, VendorContactSerializer, VendorModulSerializer, ModulesSerializer
+from .serializers import VendorsSerializer, VendorContactSerializer, VendorModulSerializer, ModulesSerializer, \
+    VendorToFrontSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -103,6 +104,12 @@ class VendorsCreateView(APIView):
     serializer_class = VendorsSerializer
 
     def post(self, request, *args, **kwargs):
+        data = request.data
+        if data['nda'] == '':
+            data['nda'] = None
+        for contact in data['contacts']:
+            if contact['email']:
+                contact['email'] = contact['email'].lower()
         serializer = VendorsSerializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -112,3 +119,11 @@ class VendorsCreateView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
+
+
+class VendorsToFrontView(generics.ListAPIView):
+    """ Get Vendors list for frontend validation"""
+
+    queryset = Vendors.objects.all()
+    serializer_class = VendorToFrontSerializer
+    permission_classes = [permissions.AllowAny, ]
