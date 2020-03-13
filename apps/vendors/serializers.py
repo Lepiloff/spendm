@@ -5,6 +5,12 @@ from apps.c_users.models import CustomUser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
 
 
+class VendorToFrontSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vendors
+        fields = ('pk', 'vendor_name')
+
+
 class VendorContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorContacts
@@ -28,7 +34,7 @@ class VendorContactSerializer(serializers.ModelSerializer):
 
 class VendorsSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
-    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all())
+    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Vendors
@@ -46,10 +52,9 @@ class VendorsSerializer(serializers.ModelSerializer):
             superuser_id = superuser[0].id
             vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         else:
-            raise ObjectDoesNotExist
+            vendor = Vendors.objects.create(**validated_data)
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, **data)
-
         return vendor
 
 
