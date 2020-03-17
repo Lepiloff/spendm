@@ -42,7 +42,7 @@ class VendorManualTestCase(APITestCase):
             "nda": "2020-12-12",
             "parent": "",
             "contacts": [{"contact_name": "Mrk", "phone": "2373823", "email": "dRqT@rgmail.com"},
-                         {"contact_name": "Uio", "phone": "34567", "email": "rdq@gmail.com" }
+                         {"contact_name": "Uio", "phone": "34567", "email": "rdq@gmail.com"}
                          ]
         }
         url = reverse('vendor_create')

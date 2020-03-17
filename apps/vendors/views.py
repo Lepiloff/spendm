@@ -1,7 +1,8 @@
-from collections import deque
+import json
 
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError
@@ -14,9 +15,8 @@ from rest_framework import status
 
 from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
-from .models import Vendors, VendorContacts, VendorModuleNames
-from .serializers import VendorsSerializer, VendorContactSerializer, VendorModulSerializer, ModulesSerializer, \
-    VendorToFrontSerializer
+from .models import Vendors, VendorContacts, VendorModuleNames, Modules
+from .serializers import VendorsSerializer, VendorToFrontSerializer, VendorsCsvSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -27,8 +27,10 @@ class AdministratorDashboard(APIView):
 
 
 class FileUploadView(APIView):
-    parser_classes = ( MultiPartParser, FormParser)
-    renderer_classes = [JSONRenderer]
+    parser_classes = (MultiPartParser, FormParser)
+    # renderer_classes = [JSONRenderer]
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = VendorsCsvSerializer
 
     def put(self, request, format=None):
         if 'file' not in request.data:
@@ -39,15 +41,39 @@ class FileUploadView(APIView):
             file = default_storage.save(filename, f)
             r = csv_file_parser(file)
             status = 204
+            response = Response(r)
+            self.post(request=response)
         else:
             status = 406
             r = "File format error"
         return Response(r, status=status)
 
+    def post(self, request, format=None):
+        r_data = request.data
+        for data in r_data:
+            if data['nda'] == '':
+                data['nda'] = None
+            for contact in data['contacts']:
+                if contact['email']:
+                    contact['email'] = contact['email'].lower()
+            for module in data['modules']:
+                if module['module']:
+                    module['module'] = get_object_or_404(Modules, module_name=module['module']).mid
+                else:
+                    data.pop('modules')
+            serializer = VendorsCsvSerializer(data=data)
+            try:
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            except ValidationError:
+                return Response({"errors": (serializer.errors,)},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
+
 
 class _CsvToDatabase(APIView):
 
-    # --> To do make list of dict as a request json
     def post(self, request, format=None):
         data = request.data
         v_list = []
@@ -79,27 +105,113 @@ class _CsvToDatabase(APIView):
 
 
 # Using serializer
-
-# --> To do make list of dict as a request json
 class CsvToDatabase(APIView):
-    renderer_classes = [JSONRenderer]
+    """
+[
+    {
+        "vendor_name": "Firstvedsndortestname",
+        "country": "Belarus",
+        "nda": "2019-12-24",
+        "modules": [
+            {
+                "module": "Sourcing"
+            },
+            {
+                "module": "SA"
+            }
+        ],
+        "contacts": [
+            {
+                "email": "jackds@gmail.com",
+                "contact_name": "Jack Jhonson"
+            },
+            {
+                "email": "jafdck2@gmail.com",
+                "contact_name": ""
+            }
+        ]
+    },
+    {
+        "vendor_name": "Secosdndvendortestname",
+        "country": "Canada",
+        "nda": "",
+        "modules": [
+            {
+                "module": ""
+            }
+        ],
+        "contacts": [
+            {
+                "email": "sanfsdra@gmail.com",
+                "contact_name": "Sandra Bullock"
+            },
+            {
+                "email": "sanasddra@gmail.com",
+                "contact_name": "Sandra Bullock"
+            }
+        ]
+    }
+]
+    """
+
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = VendorsCsvSerializer
 
     def post(self, request, format=None):
-        res_serializer = deque()
-        for key, data_item in request.data.items():
-            serializer = VendorsSerializer(data=data_item)
-            if serializer.is_valid():
-                res_serializer.append(serializer)
-            else:
-                raise ParseError('Wrong data received')
-        for serializer in res_serializer:
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        r_data = request.data
+        for data in r_data:
+            if data['nda'] == '':
+                data['nda'] = None
+            for contact in data['contacts']:
+                if contact['email']:
+                    contact['email'] = contact['email'].lower()
+            for module in data['modules']:
+                if module['module']:
+                    module['module'] = get_object_or_404(Modules, module_name=module['module']).mid
+                else:
+                    data.pop('modules')
+            serializer = VendorsCsvSerializer(data=data)
+            try:
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            except ValidationError:
+                return Response({"errors": (serializer.errors,)},
+                                status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
 
 
 class VendorsCreateView(APIView):
-    """Create new vendor instances from form"""
+    """
+    parameters {
+            "vendor_name": "Uf2r63",
+            "country": "Belarus",
+            "nda": "2020-12-12",
+            "parent": "",
+            "contacts": [{"contact_name": "Mrk", "phone": "2373823", "email": "dtrfd@rgmail.com"},
+                         {"contact_name": "Uio", "phone": "3q4567", "email": "ddttcyf@gmail.com" }
+                         ]
+                }
+
+    responses = {
+                "vendor_name": "Uf2r63",
+                "country": "Belarus",
+                "nda": "2020-12-12",
+                "parent": "",
+                "contacts": [
+                    {
+                        "contact_name": "Mrk",
+                        "phone": "2373823",
+                        "email": "dtrfd@rgmail.com"
+                    },
+                    {
+                        "contact_name": "Uio",
+                        "phone": "3q4567",
+                        "email": "ddttcyf@gmail.com"
+                        }
+                    ]
+                }
+    """
     permission_classes = (permissions.AllowAny,)
     serializer_class = VendorsSerializer
 
@@ -110,7 +222,7 @@ class VendorsCreateView(APIView):
         for contact in data['contacts']:
             if contact['email']:
                 contact['email'] = contact['email'].lower()
-        serializer = VendorsSerializer(data=request.data)
+        serializer = VendorsSerializer(data=data)
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
