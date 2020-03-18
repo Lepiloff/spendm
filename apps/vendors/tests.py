@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from apps.vendors.models import Vendors, VendorContacts
+from apps.vendors.models import Vendors, VendorContacts, Modules
 from service.csv_file_download import csv_file_parser
 from apps.c_users.models import CustomUser
 from apps.vendors.serializers import VendorsSerializer
@@ -20,8 +20,10 @@ class VendorManualCreateTest(APITestCase):
     """ Test module for Vendors model manual create """
 
     def setUp(self):
+        password = 'mypassword'
         vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", )
         VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com", vendor=vendor)
+        CustomUser.objects.create_superuser('myemail@test.com', password)
 
     def test_vendors_created_success(self):
         vendors_count = Vendors.objects.all().count()
@@ -68,7 +70,11 @@ class VendorCsvValidateTest(TestCase):
 
 class VendorCsvCreateTest(APITestCase):
     def setUp(self):
-        pass
+        password = 'mypassword'
+        CustomUser.objects.create_superuser('myemail@test.com', password)
+        Modules.objects.create(module_name='Sourcing')
+        Modules.objects.create(module_name='SA')
+
 
     #API
     def test_vendor_from_csv_create(self):
@@ -119,6 +125,7 @@ class VendorCsvCreateTest(APITestCase):
     ]
 
         url = reverse('csv_vendor_create')
-        response = self.client.post(url, data=[], format='json')
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Vendors.objects.count(), 2)
 
