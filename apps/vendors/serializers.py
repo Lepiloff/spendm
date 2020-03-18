@@ -92,7 +92,7 @@ class VendorsSerializer(serializers.ModelSerializer):
         else:
             vendor = Vendors.objects.create(**validated_data)
         for data in contact_data:
-            VendorContacts.objects.create(vendor=vendor, **data)
+            VendorContacts.objects.create(vendor=vendor, primary=True, **data)
         return vendor
 
 

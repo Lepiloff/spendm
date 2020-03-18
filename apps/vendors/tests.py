@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.db import IntegrityError
@@ -6,14 +7,16 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 
 from apps.vendors.models import Vendors, VendorContacts
+from service.csv_file_download import csv_file_parser
 from apps.c_users.models import CustomUser
 from apps.vendors.serializers import VendorsSerializer
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
-client = Client()
+file = 'sample_vendors_test.csv'
 
 
-class VendorManualTestCase(APITestCase):
+class VendorManualCreateTest(APITestCase):
     """ Test module for Vendors model manual create """
 
     def setUp(self):
@@ -41,8 +44,7 @@ class VendorManualTestCase(APITestCase):
             "country": "Belarus",
             "nda": "2020-12-12",
             "parent": "",
-            "contacts": [{"contact_name": "Mrk", "phone": "2373823", "email": "dRqT@rgmail.com"},
-                         {"contact_name": "Uio", "phone": "34567", "email": "rdq@gmail.com"}
+            "contacts": [{"contact_name": "Mrk", "phone": "2373823", "email": "dRqT@rgmail.com"}
                          ]
         }
         url = reverse('vendor_create')
@@ -51,38 +53,72 @@ class VendorManualTestCase(APITestCase):
         self.assertEqual(Vendors.objects.count(), 2)
 
 
+class VendorCsvValidateTest(TestCase):
+
+    def test_csv_parser(self):
+        response = csv_file_parser(file)
+        field1 = response[0]
+        field2 = response[1]
+        self.assertEqual((field1['vendor_name']), 'Testtest')
+        self.assertEqual((field2['vendor_name']), 'Test2test')
+        self.assertEqual((field1['modules'][0]['module']), 'Sourcing')
+        self.assertEqual((field2['modules'][0]['module']), '')
+        self.assertTrue((type(field2['nda']), 'str'))
 
 
-    # def setUp(self):
-    #     data = {
-    #         "vendor_name": "U2",
-    #         "country": "Belarus",
-    #         "nda": "2020-12-12",
-    #         "parent": "",
-    #         "contacts": [{"contact_name": "Mrk", "phone": "2373823", "email": "dRqT@rgmail.com"},
-    #                      {
-    #                          "contact_name": "Uio",
-    #                          "phone": "3q4567",
-    #                          "email": "rdq@gmail.com"
-    #                      }
-    #                      ]
-    #     }
-    #     # contact = data['contacts']
-    #     # for c in contact:
-    #     #     VendorContacts.objects.create(data=c)
-    #     vendor_data = data.pop('contacts')
-    #     Vendors.objects.create(data=vendor_data)
-    #     # Vendors.objects.create(data=data, parent=1)
-    #
-    # def test_vendors_created_count(self):
-    #     vendors_count = Vendors.objects.all().count()
-    #     self.assertEqual(vendors_count, 1)
-    #
-    # def test_get_all_vendors(self):
-    #     # get API response
-    #     response = client.get(reverse('vendors_list'))
-    #     # get data from db
-    #     vendors = Vendors.objects.all()
-    #     serializer = VendorsSerializer(vendors, many=True)
-    #     self.assertEqual(response.data, serializer.data)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+class VendorCsvCreateTest(APITestCase):
+    def setUp(self):
+        pass
+
+    #API
+    def test_vendor_from_csv_create(self):
+        data = [
+    {
+        "vendor_name": "Testcsv",
+        "country": "Belarus",
+        "nda": "2019-12-24",
+        "modules": [
+            {
+                "module": "Sourcing"
+            },
+            {
+                "module": "SA"
+            }
+        ],
+        "contacts": [
+            {
+                "email": "Testcsv@gmail.com",
+                "contact_name": "Jack Jhonson"
+            },
+            {
+                "email": "Testcsv2@gmail.com",
+                "contact_name": ""
+            }
+        ]
+    },
+    {
+        "vendor_name": "TestcsvSecond",
+        "country": "Canada",
+        "nda": "",
+        "modules": [
+            {
+                "module": ""
+            }
+        ],
+        "contacts": [
+            {
+                "email": "TestcsvSecond@gmail.com",
+                "contact_name": "Sandra Bullock"
+            },
+            {
+                "email": "TestcsvSecond2@gmail.com",
+                "contact_name": "Sandra Bullock"
+            }
+        ]
+    }
+    ]
+
+        url = reverse('csv_vendor_create')
+        response = self.client.post(url, data=[], format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+

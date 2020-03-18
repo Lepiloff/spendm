@@ -41,8 +41,8 @@ class FileUploadView(APIView):
             file = default_storage.save(filename, f)
             r = csv_file_parser(file)
             status = 204
-            response = Response(r)
-            self.post(request=response)
+            # response = Response(r)
+            # self.post(request=response)
         else:
             status = 406
             r = "File format error"
@@ -70,38 +70,6 @@ class FileUploadView(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
-
-
-class _CsvToDatabase(APIView):
-
-    def post(self, request, format=None):
-        data = request.data
-        v_list = []
-        for _, vendor in data.items():
-            v = Vendors(
-                vendor_name=vendor['Vendor'],
-                country=vendor['Country'],
-                nda=vendor['NDA date'],
-
-            )
-            # Call the full_clean() method for manual triggered models clean() method
-            try:
-                v.full_clean()
-            except ValidationError as e:
-                data = ({'status': str(e)})
-                return Response(data, content_type='application/json')
-            v.save()
-            v_list.append(vendor['Vendor'])
-            vc = VendorContacts(
-                vendor=v,
-                contact_name=vendor['Primary Contact Name'],
-                email=vendor['Primary Contact Email'],
-                sec_contact_name=vendor['Secondary Contact Name'],
-                sec_email=vendor['Secondary Contact Email'],
-            ).save()
-        return Response({'message':
-                        'Vendors from vendors list {} were successfully added to the database'.format(v_list)
-                         })
 
 
 # Using serializer

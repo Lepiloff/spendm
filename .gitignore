@@ -7,3 +7,4 @@ uwsgi.log
 .idea
 .env
 *.csv
+!sample_vendors_test.csv
