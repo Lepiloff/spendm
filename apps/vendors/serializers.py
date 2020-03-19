@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.validators import RegexValidator
 
 from apps.c_users.models import CustomUser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
@@ -12,24 +13,15 @@ class VendorToFrontSerializer(serializers.ModelSerializer):
 
 
 class VendorContactSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
+                                                             message='Enter valid email address')])
+
     class Meta:
         model = VendorContacts
         fields = (
                   'contact_name',
                   'phone',
                   'email',)
-
-    # def validate_email(self, value):
-    #     if get_object_or_404(VendorContacts, email=value) and value != "":
-    #         raise serializers.ValidationError("email must be unique")
-    #     else:
-    #         print("False")
-    #
-    # def create(self, validated_data):
-    #     email = validated_data.pop('email')
-    #     # if VendorContacts.objects.get(email = email):
-    #     #     raise
-    #     return self
 
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
@@ -61,7 +53,8 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             current_user = superuser[0]
             superuser_id = current_user.id
             vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
-
+        else:
+            raise ValueError('Create superuser first')
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, **data)
         if modules:
@@ -90,7 +83,7 @@ class VendorsSerializer(serializers.ModelSerializer):
             superuser_id = superuser[0].id
             vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         else:
-            vendor = Vendors.objects.create(**validated_data)
+            raise ValueError('Create superuser first')
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, primary=True, **data)
         return vendor
@@ -108,3 +101,5 @@ class ModulesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modules
         fields = ('module_name', )
+
+

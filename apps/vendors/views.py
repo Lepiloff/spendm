@@ -16,7 +16,7 @@ from rest_framework import status
 from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
-from .serializers import VendorsSerializer, VendorToFrontSerializer, VendorsCsvSerializer
+from .serializers import VendorsSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -203,7 +203,17 @@ class VendorsCreateView(APIView):
 
 class VendorsToFrontView(generics.ListAPIView):
     """ Get Vendors list for frontend validation"""
-
     queryset = Vendors.objects.all()
     serializer_class = VendorToFrontSerializer
     permission_classes = [permissions.AllowAny, ]
+
+
+class ModulesListView(generics.ListAPIView):
+    """
+    Get list of all exist modules
+    """
+    queryset = Modules.objects.all()
+    serializer_class = ModulesSerializer
+    permission_classes = [permissions.AllowAny, ]
+
+
