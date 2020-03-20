@@ -14,7 +14,7 @@ from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer, Browsab
 from rest_framework import status
 
 from apps.c_users.models import CustomUser
-from service.csv_file_download import csv_file_parser, add_vendors_to_database_from_csv
+from service.csv_file_download import csv_file_parser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
 from .serializers import VendorsSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer
 
@@ -41,35 +41,10 @@ class FileUploadView(APIView):
             file = default_storage.save(filename, f)
             r = csv_file_parser(file)
             status = 204
-            # response = Response(r)
-            # self.post(request=response)
         else:
             status = 406
             r = "File format error"
         return Response(r, status=status)
-
-    def post(self, request, format=None):
-        r_data = request.data
-        for data in r_data:
-            if data['nda'] == '':
-                data['nda'] = None
-            for contact in data['contacts']:
-                if contact['email']:
-                    contact['email'] = contact['email'].lower()
-            for module in data['modules']:
-                if module['module']:
-                    module['module'] = get_object_or_404(Modules, module_name=module['module']).mid
-                else:
-                    data.pop('modules')
-            serializer = VendorsCsvSerializer(data=data)
-            try:
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-            except ValidationError:
-                return Response({"errors": (serializer.errors,)},
-                                status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(request.data, status=status.HTTP_200_OK)
 
 
 # Using serializer
@@ -77,7 +52,7 @@ class CsvToDatabase(APIView):
     """
 [
     {
-        "vendor_name": "Firstvedsndortestname",
+        "vendor_name": "Tefstfdstest43",
         "country": "Belarus",
         "nda": "2019-12-24",
         "modules": [
@@ -90,17 +65,19 @@ class CsvToDatabase(APIView):
         ],
         "contacts": [
             {
-                "email": "jackds@gmail.com",
-                "contact_name": "Jack Jhonson"
+                "email": "jack15621@gmail.com",
+                "contact_name": "Jack Jhonson",
+                "primary": true
             },
             {
-                "email": "jafdck2@gmail.com",
-                "contact_name": ""
+                "email": "j45ack213@gmail.com",
+                "contact_name": "",
+                "primary": false
             }
         ]
     },
     {
-        "vendor_name": "Secosdndvendortestname",
+        "vendor_name": "Tesddt7t2test",
         "country": "Canada",
         "nda": "",
         "modules": [
@@ -110,12 +87,14 @@ class CsvToDatabase(APIView):
         ],
         "contacts": [
             {
-                "email": "sanfsdra@gmail.com",
-                "contact_name": "Sandra Bullock"
+                "email": "sand45r2a1@gmail.com",
+                "contact_name": "Sandra Bullock",
+                "primary": true
             },
             {
-                "email": "sanasddra@gmail.com",
-                "contact_name": "Sandra Bullock"
+                "email": "sa1nd54r13a@gmail.com",
+                "contact_name": "Sandra Bullock",
+                "primary": false
             }
         ]
     }
