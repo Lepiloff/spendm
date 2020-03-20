@@ -21,7 +21,8 @@ class VendorContactSerializer(serializers.ModelSerializer):
         fields = (
                   'contact_name',
                   'phone',
-                  'email',)
+                  'email',
+                  'primary')
 
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
@@ -59,7 +60,8 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             VendorContacts.objects.create(vendor=vendor, **data)
         if modules:
             for data in modules:
-                VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name, user=current_user, **data)
+                VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
+                                                 user=current_user, **data)
         return vendor
 
 

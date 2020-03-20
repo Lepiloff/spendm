@@ -80,7 +80,7 @@ class VendorCsvCreateTest(APITestCase):
     def test_vendor_from_csv_create(self):
         data = [
     {
-        "vendor_name": "Testcsv",
+        "vendor_name": "Tefstfdstest43",
         "country": "Belarus",
         "nda": "2019-12-24",
         "modules": [
@@ -93,17 +93,19 @@ class VendorCsvCreateTest(APITestCase):
         ],
         "contacts": [
             {
-                "email": "Testcsv@gmail.com",
-                "contact_name": "Jack Jhonson"
+                "email": "jack15621@gmail.com",
+                "contact_name": "Jack Jhonson",
+                "primary": True
             },
             {
-                "email": "Testcsv2@gmail.com",
-                "contact_name": ""
+                "email": "j45ack213@gmail.com",
+                "contact_name": "",
+                "primary": False
             }
         ]
     },
     {
-        "vendor_name": "TestcsvSecond",
+        "vendor_name": "Tesddt7t2test",
         "country": "Canada",
         "nda": "",
         "modules": [
@@ -113,16 +115,18 @@ class VendorCsvCreateTest(APITestCase):
         ],
         "contacts": [
             {
-                "email": "TestcsvSecond@gmail.com",
-                "contact_name": "Sandra Bullock"
+                "email": "sand45r2a1@gmail.com",
+                "contact_name": "Sandra Bullock",
+                "primary": True
             },
             {
-                "email": "TestcsvSecond2@gmail.com",
-                "contact_name": "Sandra Bullock"
+                "email": "sa1nd54r13a@gmail.com",
+                "contact_name": "Sandra Bullock",
+                "primary": False
             }
         ]
     }
-    ]
+]
 
         url = reverse('csv_vendor_create')
         response = self.client.post(url, data, format='json')
