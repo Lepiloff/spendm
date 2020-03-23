@@ -9,8 +9,6 @@ from rest_framework import status
 from apps.vendors.models import Vendors, VendorContacts, Modules
 from service.csv_file_download import csv_file_parser
 from apps.c_users.models import CustomUser
-from apps.vendors.serializers import VendorsSerializer
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 file = 'sample_vendors_test.csv'

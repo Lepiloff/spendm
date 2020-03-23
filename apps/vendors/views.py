@@ -16,7 +16,8 @@ from rest_framework import status
 from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
-from .serializers import VendorsSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer
+from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
+    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -40,7 +41,7 @@ class FileUploadView(APIView):
         if filename.endswith('.csv'):
             file = default_storage.save(filename, f)
             r = csv_file_parser(file)
-            status = 204
+            status = 200
         else:
             status = 406
             r = "File format error"
@@ -160,7 +161,7 @@ class VendorsCreateView(APIView):
                 }
     """
     permission_classes = (permissions.AllowAny,)
-    serializer_class = VendorsSerializer
+    serializer_class = VendorsCreateSerializer
 
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -169,7 +170,7 @@ class VendorsCreateView(APIView):
         for contact in data['contacts']:
             if contact['email']:
                 contact['email'] = contact['email'].lower()
-        serializer = VendorsSerializer(data=data)
+        serializer = VendorsCreateSerializer(data=data)
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -181,7 +182,9 @@ class VendorsCreateView(APIView):
 
 
 class VendorsToFrontView(generics.ListAPIView):
-    """ Get Vendors list for frontend validation"""
+    """
+    Get Vendors list for frontend validation
+    """
     queryset = Vendors.objects.all()
     serializer_class = VendorToFrontSerializer
     permission_classes = [permissions.AllowAny, ]
@@ -196,3 +199,51 @@ class ModulesListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny, ]
 
 
+class VendorManagementList(generics.ListAPIView):
+    """
+    Get Vendors Management page
+    """
+    serializer_class = VendorManagementListSerializer
+    queryset = Vendors.objects.all()
+
+
+class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = VendorManagementUpdateSerializer
+    lookup_field = 'vendorid'
+
+    def get_queryset(self):
+        vendorid = self.kwargs['vendorid']
+        return Vendors.objects.filter(vendorid=vendorid)
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+
+class VendorContactsCreateView(generics.CreateAPIView):
+    """
+    Create new vendor from Vendor Manager screen
+    """
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = VendorContactSerializer
+    lookup_field = 'vendorid'
+
+    def get_object(self):
+        obj = self.kwargs['vendorid']
+        return (obj)
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        v_id = self.get_object()
+        data.update({'contacts': v_id})
+        print(data)
+        serializer = VendorContactSerializer(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ValidationError:
+            return Response({"errors": (serializer.errors,)},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
