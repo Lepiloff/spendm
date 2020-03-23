@@ -15,6 +15,7 @@ class VendorToFrontSerializer(serializers.ModelSerializer):
 class VendorContactSerializer(serializers.ModelSerializer):
     email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
                                                              message='Enter valid email address')])
+    # contacts = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = VendorContacts
@@ -22,7 +23,30 @@ class VendorContactSerializer(serializers.ModelSerializer):
                   'contact_name',
                   'phone',
                   'email',
-                  'primary')
+                  'primary',)
+        # 'contacts')
+
+    # def create(self, validated_data):
+    #     print('Create')
+    #     print(validated_data)
+    #     pass
+    #     # contact_data = validated_data.pop('contacts', None)
+    #     # modules = validated_data.pop('modules', None)
+    #     # # Only for first phase for workin with admin instancess only. Rewrite after !!!
+    #     # superuser = CustomUser.objects.filter(is_superuser=True)
+    #     # if superuser:
+    #     #     current_user = superuser[0]
+    #     #     superuser_id = current_user.id
+    #     #     vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
+    #     # else:
+    #     #     raise ValueError('Create superuser first')
+    #     # for data in contact_data:
+    #     #     VendorContacts.objects.create(vendor=vendor, **data)
+    #     # if modules:
+    #     #     for data in modules:
+    #     #         VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
+    #     #                                          user=current_user, **data)
+    #     return self
 
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
@@ -65,7 +89,7 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
         return vendor
 
 
-class VendorsSerializer(serializers.ModelSerializer):
+class VendorsCreateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
 
@@ -102,6 +126,42 @@ class VendorModulSerializer(serializers.ModelSerializer):
 class ModulesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modules
-        fields = ('module_name', )
+        fields = ('mid', 'module_name', )
 
 
+class VendorManagementListSerializer(serializers.ModelSerializer):
+    vendor_modules = VendorModulSerializer(many=True)
+
+    class Meta:
+        model = Vendors
+        fields = ('vendor_name',
+                  'vendorid',
+                  'active',
+                  'vendor_modules',)
+
+
+class VendorManagementUpdateSerializer(serializers.ModelSerializer):
+    contacts = VendorContactSerializer(many=True)
+    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = Vendors
+        fields = ('vendor_name',
+                  'active',
+                  'country',
+                  'nda',
+                  'parent',
+                  'contacts',)
+
+    # def update(self, instance, validated_data):
+    #     instance = validated_data.get('vendor_name', instance.vendor_name)
+    #     instance.save()
+    #     return instance
+    def update(self, instance, validated_data):
+        # raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance

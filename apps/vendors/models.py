@@ -610,7 +610,7 @@ class VendorContacts(models.Model):
 
 
 class VendorModuleNames(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='vendor_modules')
     module = models.ForeignKey('Modules', models.DO_NOTHING)
     vendor_name = models.CharField(max_length=45)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
