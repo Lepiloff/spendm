@@ -423,6 +423,7 @@ class RfiParticipation(models.Model):
 
 
 class RfiParticipationStatus(models.Model):
+    #status =
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING)
