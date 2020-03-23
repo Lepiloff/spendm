@@ -14,4 +14,5 @@ urlpatterns = [
     path('vendor_management_list/', VendorManagementList.as_view()),
     path('<int:vendorid>/', VendorProfileUpdateView.as_view()),
     path('<int:vendorid>/contact_create/', VendorContactsCreateView.as_view()),
+    path('contact/<int:contact_id>/update/', VendorContactsCreateView.as_view()),
 ]

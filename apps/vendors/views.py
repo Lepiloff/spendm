@@ -17,7 +17,7 @@ from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
-    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer
+    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, VendorContactCreateSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -208,6 +208,14 @@ class VendorManagementList(generics.ListAPIView):
 
 
 class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
+    """ Update main vendor info (exclude contact)
+    Possible send partial data (just one field)
+    {
+    "parent": 109
+}
+
+    """
+
     permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorManagementUpdateSerializer
     lookup_field = 'vendorid'
@@ -223,9 +231,18 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
 class VendorContactsCreateView(generics.CreateAPIView):
     """
     Create new vendor from Vendor Manager screen
+
+      {
+            "contact_name": "Sandra B",
+            "phone": null,
+            "email": "sand3f45r2a1@gmail.com",
+            "primary": true
+
+      }
+
     """
     permission_classes = [permissions.AllowAny, ]
-    serializer_class = VendorContactSerializer
+    serializer_class = VendorContactCreateSerializer
     lookup_field = 'vendorid'
 
     def get_object(self):
@@ -235,9 +252,8 @@ class VendorContactsCreateView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         v_id = self.get_object()
-        data.update({'contacts': v_id})
-        print(data)
-        serializer = VendorContactSerializer(data=data)
+        data.update({'vendor': v_id})
+        serializer = VendorContactCreateSerializer(data=data)
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -247,3 +263,22 @@ class VendorContactsCreateView(generics.CreateAPIView):
 
         else:
             return Response(request.data, status=status.HTTP_200_OK)
+
+
+class VendorContactsCreateView(generics.RetrieveUpdateDestroyAPIView):
+    """
+           { "contact_id": 203,
+            "contact_name": "Jack J",
+            "phone": null,
+            "email": "jac12k1@gmail.com",
+            "primary": true }
+    """
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = VendorContactCreateSerializer
+    lookup_field = 'contact_id'
+    queryset = VendorContacts.objects.all()
+
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
