@@ -134,10 +134,6 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   'contacts',
                   )
 
-    # def update(self, instance, validated_data):
-    #     instance = validated_data.get('vendor_name', instance.vendor_name)
-    #     instance.save()
-    #     return instance
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
 
@@ -146,33 +142,6 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-# class VendorManagementContactUpdateDeleteSerializer(serializers.ModelSerializer):
-#     # contacts = VendorContactSerializer(many=True)
-#     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-#
-#     class Meta:
-#         model = Vendors
-#         fields = ('vendorid',
-#                   'vendor_name',
-#                   'active',
-#                   'country',
-#                   'nda',
-#                   'parent',
-#                   )
-#
-#     # def update(self, instance, validated_data):
-#     #     instance = validated_data.get('vendor_name', instance.vendor_name)
-#     #     instance.save()
-#     #     return instance
-#     def update(self, instance, validated_data):
-#         # raise_errors_on_nested_writes('update', self, validated_data)
-#
-#         for attr, value in validated_data.items():
-#             setattr(instance, attr, value)
-#         instance.save()
-#
-#         return instance
 
 
 class VendorContactCreateSerializer(serializers.ModelSerializer):
@@ -187,7 +156,12 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
                   'phone',
                   'email',
                   'primary',
-                    )
+                  )
+
+    def create(self, validated_data):
+        vendor = validated_data.pop('vendor', None)
+        VendorContacts.objects.create(vendor=vendor, **validated_data)
+        return self
 
     def validate_email(self, value):
         if VendorContacts.objects.filter(email=value):

@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -131,3 +133,65 @@ class VendorCsvCreateTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Vendors.objects.count(), 2)
 
+
+class VendorContactsCreateViewTest(APITestCase):
+
+    # def setUp(self):
+        # vendor = Vendors.objects.create(vendor_name="U1", country="Belarus", nda="2020-12-12", )
+        # VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com", vendor=vendor)
+
+    def test_create_new_contact_api(self):
+        vendor = Vendors.objects.create(vendor_name="U1", country="Belarus", nda="2020-12-12", )
+        _id = vendor.vendorid
+        data = {"vendor": _id,
+                "contact_name": "Sandra B",
+                "phone": 37529454675,
+                "email": "test2@rgmail.com",
+                "primary": False
+                }
+        url = reverse('contact_create')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(VendorContacts.objects.count(), 1)
+
+    def test_create_new_contact_duplicate_email_check_api(self):
+        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", )
+        VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="testtests@rgmail.com", vendor=vendor)
+        _id = vendor.vendorid
+        data = {"vendor": _id,
+                "contact_name": "Sandra B",
+                "phone": 37529454675,
+                "email": "testtests@rgmail.com",
+                "primary": False
+                }
+        url = reverse('contact_create')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(json.loads(response.content), {'email': ['Email testtests@rgmail.com already exists']})
+        self.assertEqual(VendorContacts.objects.count(), 1)
+
+
+class VendorProfileUpdateViewTest(APITestCase):
+
+    def test_check_partial_update_api(self):
+        data = {"nda": "2020-11-11"}
+        vendor = Vendors.objects.create(vendor_name="U4", country="Belarus", nda="2020-12-12", )
+        VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test@gmail.com", vendor=vendor)
+        _id = vendor.vendorid
+        url = reverse('vendor_update',  kwargs={'vendorid': _id})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # self.assertEqual(vendor.nda, '2020-11-11')
+
+
+class ContactsUpdateViewTest(APITestCase):
+
+    def test_contact_partial_update_api(self):
+        data = {"email": "jac12k1@gmail.com"}
+        vendor = Vendors.objects.create(vendor_name="U5", country="Belarus", nda="2020-12-12", )
+        contact = VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="testtest@gmail.com",
+                                                vendor=vendor)
+        _id = contact.contact_id
+        url = reverse('contact_update', kwargs={'contact_id': _id})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # self.assertEqual(contact.email, 'jac12k1@gmail.com')
