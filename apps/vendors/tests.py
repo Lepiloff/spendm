@@ -75,9 +75,7 @@ class VendorCsvCreateTest(APITestCase):
         Modules.objects.create(module_name='Sourcing')
         Modules.objects.create(module_name='SA')
 
-
-    #API
-    def test_vendor_from_csv_create(self):
+    def test_vendor_from_csv_create_api(self):
         data = [
     {
         "vendor_name": "Tefstfdstest43",
@@ -136,10 +134,6 @@ class VendorCsvCreateTest(APITestCase):
 
 class VendorContactsCreateViewTest(APITestCase):
 
-    # def setUp(self):
-        # vendor = Vendors.objects.create(vendor_name="U1", country="Belarus", nda="2020-12-12", )
-        # VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com", vendor=vendor)
-
     def test_create_new_contact_api(self):
         vendor = Vendors.objects.create(vendor_name="U1", country="Belarus", nda="2020-12-12", )
         _id = vendor.vendorid
@@ -173,14 +167,15 @@ class VendorContactsCreateViewTest(APITestCase):
 class VendorProfileUpdateViewTest(APITestCase):
 
     def test_check_partial_update_api(self):
-        data = {"nda": "2020-11-11"}
+        data = {"vendor_name": "UN"}
         vendor = Vendors.objects.create(vendor_name="U4", country="Belarus", nda="2020-12-12", )
         VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test@gmail.com", vendor=vendor)
         _id = vendor.vendorid
         url = reverse('vendor_update',  kwargs={'vendorid': _id})
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(vendor.nda, '2020-11-11')
+        vendor = Vendors.objects.get(vendorid=_id)
+        self.assertEqual(vendor.vendor_name, 'UN')
 
 
 class ContactsUpdateViewTest(APITestCase):
@@ -194,4 +189,5 @@ class ContactsUpdateViewTest(APITestCase):
         url = reverse('contact_update', kwargs={'contact_id': _id})
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # self.assertEqual(contact.email, 'jac12k1@gmail.com')
+        contact = VendorContacts.objects.get(contact_id=_id)
+        self.assertEqual(contact.email, 'jac12k1@gmail.com')
