@@ -228,31 +228,24 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-class VendorContactsCreateView(generics.CreateAPIView):
+class VendorContactsCreateView(APIView):
     """
     Create new vendor from Vendor Manager screen
 
-      {
+      {      "vendor": 138,
             "contact_name": "Sandra B",
-            "phone": null,
+            "phone": 375293333333,
             "email": "sand3f45r2a1@gmail.com",
-            "primary": true
+            "primary": false
 
       }
 
     """
     permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorContactCreateSerializer
-    lookup_field = 'vendorid'
-
-    def get_object(self):
-        obj = self.kwargs['vendorid']
-        return (obj)
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        v_id = self.get_object()
-        data.update({'vendor': v_id})
         serializer = VendorContactCreateSerializer(data=data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -265,20 +258,21 @@ class VendorContactsCreateView(generics.CreateAPIView):
             return Response(request.data, status=status.HTTP_200_OK)
 
 
-class VendorContactsCreateView(generics.RetrieveUpdateDestroyAPIView):
+class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
-           { "contact_id": 203,
-            "contact_name": "Jack J",
-            "phone": null,
-            "email": "jac12k1@gmail.com",
-            "primary": true }
+    Update exist contact at Vendor Management Screen
+
+        Possible send partial data (just one field)
+    {
+    "email": "jac12k1@gmail.com"
+    }
+
     """
 
     permission_classes = [permissions.AllowAny, ]
-    serializer_class = VendorContactCreateSerializer
+    serializer_class = VendorContactSerializer
     lookup_field = 'contact_id'
     queryset = VendorContacts.objects.all()
-
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
