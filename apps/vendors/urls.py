@@ -1,7 +1,8 @@
 from django.urls import path, include
 
 from .views import FileUploadView, CsvToDatabase, VendorsCreateView, AdministratorDashboard, VendorsToFrontView, \
-    ModulesListView, VendorManagementList, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView
+    ModulesListView, VendorManagementList, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
+    NewRfiRoundCreateView, RfiRoundClose, RfiRoundUpdateView
 
 
 urlpatterns = [
@@ -16,4 +17,7 @@ urlpatterns = [
     # path('<int:vendorid>/contact_create/', VendorContactsCreateView.as_view(), name='contact_create'),
     path('contact_create/', VendorContactsCreateView.as_view(), name='contact_create'),
     path('contact/<int:contact_id>/update/', ContactsUpdateView.as_view(), name='contact_update'),
+    path('rfi_create/', NewRfiRoundCreateView.as_view(), name='rfi_create'),
+    path('rfi/<str:rfiid>/close/', RfiRoundClose.as_view(), name='rfi_close'),
+    path('rfi/<str:rfiid>/update/', RfiRoundUpdateView.as_view(), name='rfi_update'),
 ]
