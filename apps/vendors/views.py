@@ -15,9 +15,10 @@ from rest_framework import status
 
 from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser
-from .models import Vendors, VendorContacts, VendorModuleNames, Modules
+from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
-    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, VendorContactCreateSerializer
+    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
+    VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -273,6 +274,51 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = VendorContactSerializer
     lookup_field = 'contact_id'
     queryset = VendorContacts.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+
+class NewRfiRoundCreateView(generics.ListCreateAPIView):
+
+    """New RFI round crete
+
+        data = {
+                "issue_datetime": "2020-03-25T10:52:49.677955Z",
+                "open_datetime": "2020-03-10T16:06:01+03:00",
+                "close_datetime": "2020-03-10T16:06:01+03:00"
+               }
+
+    """
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = RfiRoundSerializer
+    queryset = Rfis.objects.filter(active=True)
+
+
+class RfiRoundClose(generics.RetrieveUpdateAPIView):
+    """Close rfi round
+    data = {"active": False}
+
+    """
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = RfiRoundCloseSerializer
+    queryset = Rfis.objects.all()
+    lookup_field = 'rfiid'
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+
+class RfiRoundUpdateView(generics.RetrieveUpdateAPIView):
+    """ Rfi round update
+    """
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = RfiRoundSerializer
+    queryset = Rfis.objects.all()
+    lookup_field = 'rfiid'
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)

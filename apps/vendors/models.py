@@ -6,7 +6,6 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-from rest_framework.exceptions import ValidationError
 from service.countries import COUNTRIES
 
 
@@ -423,7 +422,13 @@ class RfiParticipation(models.Model):
 
 
 class RfiParticipationStatus(models.Model):
-    #status =
+    STATUS_NAME = (
+                    ("Invited", "Invited"), ("Accepted", "Accepted"),
+                    ("Declined", "Declined"), ("RFI Created", "RFI Created"),
+                    ("RFI Outstanding", "RFI Outstanding"), ("Received", "Received"),
+                    ("Scored", "Scored"), ("Closed", "Closed"),)
+
+    status = models.CharField(max_length=50, choices=STATUS_NAME)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING)
@@ -438,13 +443,19 @@ class RfiParticipationStatus(models.Model):
 
 
 class Rfis(models.Model):
-    rfiid = models.AutoField(primary_key=True)
+    RFI_STATUS = (
+                    ("Created", "Created"),
+                    ("Opened", "Opened"),
+                    ("Issued", "Issued")
+                 )
+    rfi_status = models.CharField(max_length=50, choices=RFI_STATUS, default="Created")
+    rfiid = models.CharField(max_length=4, primary_key=True)
     active = models.BooleanField(default=True)
     issue_datetime = models.DateTimeField(blank=True, null=True)
     open_datetime = models.DateTimeField(blank=True, null=True)
     close_datetime = models.DateTimeField(blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    timestamp = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'rfis'

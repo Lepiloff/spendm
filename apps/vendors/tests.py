@@ -1,4 +1,6 @@
 import json
+from datetime import date
+import datetime
 
 from django.conf import settings
 from django.test import TestCase, Client
@@ -8,7 +10,7 @@ from django.db import IntegrityError
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from apps.vendors.models import Vendors, VendorContacts, Modules
+from apps.vendors.models import Vendors, VendorContacts, Modules, Rfis
 from service.csv_file_download import csv_file_parser
 from apps.c_users.models import CustomUser
 
@@ -191,3 +193,93 @@ class ContactsUpdateViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contact = VendorContacts.objects.get(contact_id=_id)
         self.assertEqual(contact.email, 'jac12k1@gmail.com')
+
+
+class NewRfiRoundCreateViewTest(APITestCase):
+
+    def test_create_new_rfi(self):
+        data = {
+            "issue_datetime": "2020-04-25T10:52:49.677955Z",
+            "open_datetime": "2020-03-10T16:06:01+03:00",
+            "close_datetime": "2020-03-10T16:06:01+03:00"
+        }
+
+        self.assertEqual(Rfis.objects.count(), 0)
+        url = reverse('rfi_create')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(Rfis.objects.count(), 1)
+
+    def test_create_round_number_api(self):
+        data = {
+                "issue_datetime": "2020-04-25T10:52:49.677955Z",
+                "open_datetime": "2020-03-10T16:06:01+03:00",
+                "close_datetime": "2020-03-10T16:06:01+03:00"
+               }
+        url = reverse('rfi_create')
+        self.client.post(url, data, format='json')
+        round = Rfis.objects.all().first()
+        self.assertEqual(round.rfiid, "20R1")
+        self.client.post(url, data, format='json')
+        round = Rfis.objects.all().order_by('-timestamp').first()
+        self.assertEqual(round.rfiid, "20R2")
+
+
+class RfiRoundCloseTest(APITestCase):
+
+    def test_rfi_round_close_api(self):
+        data = {
+            "issue_datetime": "2020-04-25T10:52:49.677955Z",
+            "open_datetime": "2020-03-10T16:06:01+03:00",
+            "close_datetime": "2020-03-10T16:06:01+03:00"
+        }
+        url = reverse('rfi_create')
+        self.client.post(url, data, format='json')
+        self.assertEqual(Rfis.objects.all().count(), 1)
+        round = Rfis.objects.all().first()
+        rfiid = round.rfiid
+        data = {"active": False}
+        url = reverse('rfi_close', kwargs={"rfiid": rfiid})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        round = Rfis.objects.get(rfiid=rfiid)
+        self.assertEqual(round.active, False)
+
+    def test_rount_status_close_not_show(self):
+        data = {
+                "issue_datetime": "2020-04-25T10:52:49.677955Z",
+                "open_datetime": "2020-03-10T16:06:01+03:00",
+                "close_datetime": "2020-03-10T16:06:01+03:00",
+                "active": False
+               }
+        url = reverse('rfi_create')
+        self.client.post(url, data, format='json')
+        self.assertEqual(Rfis.objects.all().count(), 1)
+        response = self.client.get(url)
+        self.assertEqual(response.content, b'[]')
+
+
+class RfiRoundUpdateViewTest(APITestCase):
+
+    def test_update_round_and_check_status_change(self):
+        data = {
+            "issue_datetime": "2020-04-25T10:52:49.677955Z",
+            "open_datetime": "2020-03-10T16:06:01+03:00",
+            "close_datetime": "2020-03-10T16:06:01+03:00"
+        }
+        url = reverse('rfi_create')
+        self.client.post(url, data, format='json')
+        self.assertEqual(Rfis.objects.all().count(), 1)
+        data = {
+            "issue_datetime": "2020-02-10T16:06:01+03:00",
+            "open_datetime": "2020-01-10T16:06:01+03:00",
+            "close_datetime": "2020-03-10T16:06:01+03:00",
+        }
+        round = Rfis.objects.all().first()
+        self.assertNotEqual(round.rfi_status, 'Issued')
+        rfiid = round.rfiid
+        url = reverse('rfi_update', kwargs={"rfiid": rfiid})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        round = Rfis.objects.get(rfiid=rfiid)
+        self.assertEqual(round.rfi_status, 'Issued')
+

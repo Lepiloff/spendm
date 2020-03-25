@@ -1,3 +1,6 @@
+from datetime import date
+import datetime
+
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -5,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.c_users.models import CustomUser
-from .models import Vendors, VendorContacts, VendorModuleNames, Modules
+from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis
 
 
 class VendorToFrontSerializer(serializers.ModelSerializer):
@@ -167,3 +170,68 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
         if VendorContacts.objects.filter(email=value):
             raise serializers.ValidationError('Email {} already exists'.format(value))
         return value
+
+
+class RfiRoundSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rfis
+        fields = (
+             'rfi_status',
+             'rfiid',
+             'active',
+             'issue_datetime',
+             'open_datetime',
+             'close_datetime',
+             'timestamp'
+            )
+        read_only_fields = ('rfi_status', 'rfiid', 'timestamp')
+
+    def create(self, validated_data):
+        # Generate rfiid
+        year_ = str(date.today().year)[:2]
+        r = Rfis.objects.all().count()
+        if r == 0:
+            rfiid = year_ + 'R1'
+        else:
+            r = Rfis.objects.all().order_by('-timestamp').first()
+            last_rfiid = r.rfiid
+            round = (int(last_rfiid[-1]) + 1)
+            rfiid = year_ + 'R' + str(round)
+        # Check status
+        current_time = datetime.datetime.today()
+        rfi_status = 'Created'
+        if validated_data['open_datetime'] < current_time < validated_data['issue_datetime']:
+            rfi_status = "Opened"
+        elif current_time >= validated_data['issue_datetime']:
+            rfi_status = "Issued"
+        round = Rfis.objects.create(rfiid=rfiid, rfi_status=rfi_status, **validated_data)
+
+        return round
+
+    def update(self, instance, validated_data):
+        # Check status
+        rfi_status = 'Created'
+        current_time = datetime.datetime.today()
+        if validated_data['open_datetime'] < current_time < validated_data['issue_datetime']:
+            rfi_status = "Opened"
+        elif current_time >= validated_data['issue_datetime']:
+            rfi_status = "Issued"
+        instance.rfi_status = rfi_status
+        instance.save()
+        return instance
+
+
+class RfiRoundCloseSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rfis
+        fields = ('active',)
+
+    def update(self, instance, validated_data):
+        # raise_errors_on_nested_writes('update', self, validated_data)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
