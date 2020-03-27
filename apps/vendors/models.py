@@ -409,16 +409,19 @@ class References(models.Model):
 
 
 class RfiParticipation(models.Model):
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    m = models.ForeignKey('Modules', models.DO_NOTHING)
-    active = models.BooleanField(default=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor')
+    m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules')
+    active = models.BooleanField(default=False)
     user_id = models.IntegerField()
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
+    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfi')
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'rfi_participation'
         unique_together = (('vendor', 'm', 'rfi', 'timestamp'),)
+
+    def __str__(self):
+        return "Module {} is {} in {} round".format(self.m.module_name, self.active, self.rfi.rfiid)
 
 
 class RfiParticipationStatus(models.Model):
@@ -429,9 +432,10 @@ class RfiParticipationStatus(models.Model):
                     ("Scored", "Scored"), ("Closed", "Closed"),)
 
     status = models.CharField(max_length=50, choices=STATUS_NAME)
-    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
-    pc = models.ForeignKey(ParentCategories, models.DO_NOTHING)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor_status')
+    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfis_status')
+    pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
+    m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status', blank=True, null=True)
     user_id = models.IntegerField()
     timestamp = models.DateTimeField()
     last_vendor_response = models.IntegerField(blank=True, null=True)
@@ -440,6 +444,9 @@ class RfiParticipationStatus(models.Model):
     class Meta:
         db_table = 'rfi_participation_status'
         unique_together = (('vendor', 'rfi', 'timestamp', 'pc'),)
+
+    # def __str__(self):
+    #     return ("{} for module {} in {round }").format(self.status, self.
 
 
 class Rfis(models.Model):
@@ -460,6 +467,9 @@ class Rfis(models.Model):
     class Meta:
         db_table = 'rfis'
         unique_together = (('rfiid', 'timestamp'),)
+
+    def __str__(self):
+        return self.rfiid
 
 
 class SelfDescriptions(models.Model):
