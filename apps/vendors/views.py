@@ -1,5 +1,3 @@
-import json
-
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
@@ -10,15 +8,14 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer, BrowsableAPIRenderer
 from rest_framework import status
 
-from apps.c_users.models import CustomUser
 from service.csv_file_download import csv_file_parser
-from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis
+from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
-    VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer
+    VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
+    RfiParticipationSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -30,7 +27,6 @@ class AdministratorDashboard(APIView):
 
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    # renderer_classes = [JSONRenderer]
     permission_classes = (permissions.AllowAny,)
     serializer_class = VendorsCsvSerializer
 
@@ -40,9 +36,12 @@ class FileUploadView(APIView):
         f = request.data['file']
         filename = f.name
         if filename.endswith('.csv'):
-            file = default_storage.save(filename, f)
-            r = csv_file_parser(file)
-            status = 200
+            try:
+                file = default_storage.save(filename, f)
+                r = csv_file_parser(file)
+                status = 200
+            finally:
+                default_storage.delete(file)
         else:
             status = 406
             r = "File format error"
@@ -200,6 +199,8 @@ class ModulesListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny, ]
 
 
+# <--VENDOR PROFILE-->
+
 class VendorManagementList(generics.ListAPIView):
     """
     Get Vendors Management page
@@ -279,6 +280,42 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
+class VendorProfileModulesList(APIView):
+    """View Vendor profile modules activity status"""
+
+    permission_classes = [permissions.AllowAny, ]
+
+    def get(self, request, format=None, *args, **kwargs):
+        # TODO last submission
+        id = kwargs.get('vendorid', None)
+        assert id, 'Vendors not exist'
+        vendor = Vendors.objects.get(vendorid=id)
+        round = Rfis.objects.all().order_by('-timestamp').first()
+        modules = VendorModuleNames.objects.filter(vendor=vendor)
+        vendor_module_list = []
+        for module in modules:
+            m = module.module.module_name
+            rfi_participation_module = RfiParticipation.objects.filter(rfi=round).filter(vendor=vendor).\
+                                                                filter(m__module_name=m).first()
+            vendor_module_list.append({m: rfi_participation_module.active,
+                                       "participation_module_id": rfi_participation_module.pk})
+        response = {'vendor': vendor.vendor_name, "round": round.rfiid, "module": vendor_module_list}
+        return Response(response)
+
+
+class VendorProfileModulesListUpdate(generics.RetrieveUpdateAPIView):
+    """Change Vendor profile modules activity status"""
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = RfiParticipationSerializer
+    queryset = RfiParticipation.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+
+# <--RFI-->
+
 class NewRfiRoundCreateView(generics.ListCreateAPIView):
 
     """New RFI round crete
@@ -322,3 +359,13 @@ class RfiRoundUpdateView(generics.RetrieveUpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+
+# RFI MANAGEMENT
+
+class AssosiateModulesWithVendorView(generics.ListCreateAPIView):
+    """
+    RFI: Assign vendors to a module
+    """
+    serializer_class = VendorModulesListManagementSerializer
+    queryset = Vendors.objects.all()

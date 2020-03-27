@@ -10,7 +10,7 @@ from django.db import IntegrityError
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from apps.vendors.models import Vendors, VendorContacts, Modules, Rfis
+from apps.vendors.models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation
 from service.csv_file_download import csv_file_parser
 from apps.c_users.models import CustomUser
 
@@ -76,6 +76,8 @@ class VendorCsvCreateTest(APITestCase):
         CustomUser.objects.create_superuser('myemail@test.com', password)
         Modules.objects.create(module_name='Sourcing')
         Modules.objects.create(module_name='SA')
+        Rfis.objects.create(rfiid="20R1")
+
 
     def test_vendor_from_csv_create_api(self):
         data = [

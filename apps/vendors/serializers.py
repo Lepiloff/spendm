@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.c_users.models import CustomUser
-from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis
+from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, RfiParticipation, RfiParticipationStatus
 
 
 class VendorToFrontSerializer(serializers.ModelSerializer):
@@ -59,15 +59,22 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
         if superuser:
             current_user = superuser[0]
             superuser_id = current_user.id
-            vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         else:
             raise ValueError('Create superuser first')
+        round = Rfis.objects.all().order_by('-timestamp').first()
+        if round:
+            current_round = round
+        else:
+            raise ValueError('Create round first')
+        vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, **data)
         if modules:
             for data in modules:
-                VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
+                vmn = VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
                                                  user=current_user, **data)
+                modules = Modules.objects.get(module_name=vmn.module.module_name)
+                RfiParticipation.objects.create(vendor=vendor, user_id=superuser_id, rfi=current_round, m=modules)
         return vendor
 
 
@@ -98,7 +105,7 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
 
 
 class VendorModulSerializer(serializers.ModelSerializer):
-    serializers.RelatedField(source='module.id', read_only='True', many=True)
+    # serializers.RelatedField(source='module.id', read_only='True', many=True)
 
     class Meta:
         model = VendorModuleNames
@@ -110,6 +117,8 @@ class ModulesSerializer(serializers.ModelSerializer):
         model = Modules
         fields = ('mid', 'module_name', )
 
+
+# VENDOR PROFILE
 
 class VendorManagementListSerializer(serializers.ModelSerializer):
     vendor_modules = VendorModulSerializer(many=True)
@@ -171,6 +180,48 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Email {} already exists'.format(value))
         return value
 
+
+class RfiParticipationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RfiParticipation
+        fields = ('active', 'm', 'rfi', 'vendor')
+
+    def update(self, instance, validated_data):
+        print('update')
+        # raise_errors_on_nested_writes('update', self, validated_data)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
+
+
+
+
+# class VendorModulActiveSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = VendorModuleNames
+#         fields = ('module', )
+#
+#     def to_representation(self, instance):
+#         rep = super(VendorModulActiveSerializer, self).to_representation(instance)
+#         rep['module'] = instance.module.module_name
+#         return rep
+#
+#
+# class VendorProfileModulesUpdateSerializer(serializers.ModelSerializer):
+#     vendor_modules = VendorModulActiveSerializer(many=True)
+#     to_vendor = RfiParticipationSerializer(many=True)
+#
+#     class Meta:
+#         model = Vendors
+#         fields = ('vendorid', 'vendor_name', 'vendor_modules', 'to_vendor')
+
+
+# RFI
 
 class RfiRoundSerializer(serializers.ModelSerializer):
 
@@ -235,3 +286,14 @@ class RfiRoundCloseSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+# RFI MANAGEMENT
+
+
+class VendorModulesListManagementSerializer(serializers.ModelSerializer):
+    vendor_modules_partisipation = RfiParticipationSerializer(many=True)
+
+    class Meta:
+        model = Vendors
+        fields = ('vendorid', 'vendor_name', 'vendor_modules', 'vendor_modules_partisipation',)
