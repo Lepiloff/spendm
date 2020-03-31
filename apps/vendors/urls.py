@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 from .views import FileUploadView, CsvToDatabase, VendorsCreateView, AdministratorDashboard, VendorsToFrontView, \
-    ModulesListView, VendorManagementList, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
+    ModulesListView, VendorManagementListScreen, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
     VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView
 
@@ -13,7 +13,7 @@ urlpatterns = [
     path('administrator_dashboard/', AdministratorDashboard.as_view(), name='administartor_dashboard'),
     path('vendors_list/', VendorsToFrontView.as_view(), name='vendors_list'),
     path('modules_list/', ModulesListView.as_view()),
-    path('vendor_management_list/', VendorManagementList.as_view()),
+    path('vendor_management_screen/', VendorManagementListScreen.as_view(), name='vendor_management_screen'),
     # vendor profile
     path('<int:vendorid>/profile/', VendorProfilePageView.as_view(), name='vendor_profile'),
     path('<int:vendorid>/', VendorProfileUpdateView.as_view(), name='vendor_update'),

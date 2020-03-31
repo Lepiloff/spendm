@@ -13,7 +13,7 @@ from rest_framework import status
 from service.csv_file_download import csv_file_parser
 from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
-    VendorManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
+    VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer
 
@@ -212,11 +212,11 @@ class VendorProfilePageView(generics.RetrieveAPIView):
         return obj
 
 
-class VendorManagementList(generics.ListAPIView):
-    """
+class VendorManagementListScreen(generics.ListAPIView):
+    """n
     Get Vendors Management screen
     """
-    serializer_class = VendorManagementListSerializer
+    serializer_class = VendorsManagementListSerializer
     queryset = Vendors.objects.all()
     permission_classes = [permissions.AllowAny, ]
 

@@ -1,5 +1,7 @@
+import re
 from datetime import date
 import datetime
+from django.db.models import F
 
 from rest_framework import serializers
 from django.core.exceptions import ValidationError
@@ -29,13 +31,17 @@ class VendorContactSerializer(serializers.ModelSerializer):
                   'email',
                   'primary',
                     )
-    # def update(self, instance, validated_data):
-    #     # raise_errors_on_nested_writes('update', self, validated_data)
-    #     for attr, value in validated_data.items():
-    #         setattr(instance, attr, value)
-    #     instance.save()
-    #
-    #     return instance
+        read_only_fields = ('contact_id', )
+
+    def update(self, instance, validated_data):
+        phone = validated_data.pop('phone', instance.phone)
+        result = re.sub('[^0-9]','', phone)
+        instance.phone = result
+        instance.email = validated_data.get('email', instance.email)
+        instance.contact_name = validated_data.get('contact_name', instance.contact_name)
+        instance.save()
+        return instance
+
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
     module = serializers.PrimaryKeyRelatedField(queryset=Modules.objects.all(), required=False, allow_null=True)
@@ -233,7 +239,7 @@ class VendorModulesListManagementSerializer(serializers.ModelSerializer):
 
 # VENDOR PROFILE
 
-class VendorManagementListSerializer(serializers.ModelSerializer):
+class VendorsManagementListSerializer(serializers.ModelSerializer):
     company_information = serializers.SerializerMethodField()
     vendor_modules = serializers.SerializerMethodField()
 
@@ -252,7 +258,9 @@ class VendorManagementListSerializer(serializers.ModelSerializer):
 
     def get_vendor_modules(self, obj):
         # check round for all participate modules
-        r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').values('m', 'rfi')
+        # Using F for rename field relationship name
+        r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').\
+                                     values(module=F('m__module_name'), round=F('rfi'))
         return r
 
 
@@ -291,9 +299,11 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
                   )
 
     def create(self, validated_data):
+        phone = validated_data.pop('phone', None)
         vendor = validated_data.pop('vendor', None)
-        VendorContacts.objects.create(vendor=vendor, **validated_data)
-        return self
+        result = re.sub('[^0-9]', '', phone)
+        contact = VendorContacts.objects.create(vendor=vendor, phone=result, **validated_data)
+        return contact
 
     def validate_email(self, value):
         if VendorContacts.objects.filter(email=value):

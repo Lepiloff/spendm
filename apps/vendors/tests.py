@@ -76,8 +76,6 @@ class VendorCsvCreateTest(APITestCase):
         CustomUser.objects.create_superuser('myemail@test.com', password)
         Modules.objects.create(module_name='Sourcing')
         Modules.objects.create(module_name='SA')
-        Rfis.objects.create(rfiid="20R1")
-
 
     def test_vendor_from_csv_create_api(self):
         data = [
@@ -187,7 +185,7 @@ class ContactsUpdateViewTest(APITestCase):
     def test_contact_partial_update_api(self):
         data = {"email": "jac12k1@gmail.com"}
         vendor = Vendors.objects.create(vendor_name="U5", country="Belarus", nda="2020-12-12", )
-        contact = VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="testtest@gmail.com",
+        contact = VendorContacts.objects.create(contact_name="Mrk", phone="-2373823", email="testtest@gmail.com",
                                                 vendor=vendor)
         _id = contact.contact_id
         url = reverse('contact_update', kwargs={'contact_id': _id})
@@ -259,3 +257,22 @@ class RfiRoundCloseTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.content, b'[]')
 
+
+class VendorManagementScreenTest(APITestCase):
+
+    def test_url_get_success_response(self):
+        url = reverse('vendor_management_screen')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.content, b'[]')
+
+    def test_get_actual_information_api(self):
+        vendor = Vendors.objects.create(vendor_name="U4", country="Belarus", nda="2020-12-12", )
+        m1 = Modules.objects.create(module_name='Sourcing')
+        m2= Modules.objects.create(module_name='SA')
+        round = Rfis.objects.create(rfiid="20R1")
+        rfi = RfiParticipation.objects.create(vendor=vendor, rfi=round, m=m1)
+        self.assertEqual(RfiParticipation.objects.all().count(), 1)
+        url = reverse('vendor_management_screen')
+        response = self.client.get(url)
+        self.assertEqual(json.loads(response.content)[0]['vendor_name'], 'U4')
