@@ -259,29 +259,3 @@ class RfiRoundCloseTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.content, b'[]')
 
-
-class RfiRoundUpdateViewTest(APITestCase):
-
-    def test_update_round_and_check_status_change(self):
-        data = {
-            "issue_datetime": "2020-04-25T10:52:49.677955Z",
-            "open_datetime": "2020-03-10T16:06:01+03:00",
-            "close_datetime": "2020-03-10T16:06:01+03:00"
-        }
-        url = reverse('rfi_create')
-        self.client.post(url, data, format='json')
-        self.assertEqual(Rfis.objects.all().count(), 1)
-        data = {
-            "issue_datetime": "2020-02-10T16:06:01+03:00",
-            "open_datetime": "2020-01-10T16:06:01+03:00",
-            "close_datetime": "2020-03-10T16:06:01+03:00",
-        }
-        round = Rfis.objects.all().first()
-        self.assertNotEqual(round.rfi_status, 'Issued')
-        rfiid = round.rfiid
-        url = reverse('rfi_update', kwargs={"rfiid": rfiid})
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        round = Rfis.objects.get(rfiid=rfiid)
-        self.assertEqual(round.rfi_status, 'Issued')
-

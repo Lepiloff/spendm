@@ -29,7 +29,13 @@ class VendorContactSerializer(serializers.ModelSerializer):
                   'email',
                   'primary',
                     )
-
+    # def update(self, instance, validated_data):
+    #     # raise_errors_on_nested_writes('update', self, validated_data)
+    #     for attr, value in validated_data.items():
+    #         setattr(instance, attr, value)
+    #     instance.save()
+    #
+    #     return instance
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
     module = serializers.PrimaryKeyRelatedField(queryset=Modules.objects.all(), required=False, allow_null=True)
@@ -61,20 +67,23 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             superuser_id = current_user.id
         else:
             raise ValueError('Create superuser first')
-        round = Rfis.objects.all().order_by('-timestamp').first()
-        if round:
-            current_round = round
-        else:
-            raise ValueError('Create round first')
         vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, **data)
         if modules:
             for data in modules:
-                vmn = VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
+                VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
                                                  user=current_user, **data)
-                modules = Modules.objects.get(module_name=vmn.module.module_name)
-                RfiParticipation.objects.create(vendor=vendor, user_id=superuser_id, rfi=current_round, m=modules)
+
+        # Filter: only if we decide using modules from VendorModuleName list
+        # if modules:
+        #     for data in modules:
+        #         vmn = VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
+        #                                          user=current_user, **data)
+        #         modules = Modules.objects.get(module_name=vmn.module.module_name)
+        #         RfiParticipation.objects.create(vendor=vendor, user_id=superuser_id,  m=modules)
+
+        # Extra: create RfiParticipation tables with default active status = False
         return vendor
 
 
@@ -105,7 +114,6 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
 
 
 class VendorModulSerializer(serializers.ModelSerializer):
-    # serializers.RelatedField(source='module.id', read_only='True', many=True)
 
     class Meta:
         model = VendorModuleNames
@@ -118,112 +126,36 @@ class ModulesSerializer(serializers.ModelSerializer):
         fields = ('mid', 'module_name', )
 
 
-# VENDOR PROFILE
-
-class VendorManagementListSerializer(serializers.ModelSerializer):
-    vendor_modules = VendorModulSerializer(many=True)
-
-    class Meta:
-        model = Vendors
-        fields = ('vendor_name',
-                  'vendorid',
-                  'active',
-                  'vendor_modules',)
-
-
-class VendorManagementUpdateSerializer(serializers.ModelSerializer):
-    contacts = VendorContactSerializer(many=True)
-    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-
-    class Meta:
-        model = Vendors
-        fields = ('vendorid',
-                  'vendor_name',
-                  'active',
-                  'country',
-                  'nda',
-                  'parent',
-                  'contacts',
-                  )
-
-    def update(self, instance, validated_data):
-        # raise_errors_on_nested_writes('update', self, validated_data)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        return instance
-
-
-class VendorContactCreateSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
-                                                             message='Enter valid email address')])
-    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-
-    class Meta:
-        model = VendorContacts
-        fields = ('vendor',
-                  'contact_name',
-                  'phone',
-                  'email',
-                  'primary',
-                  )
-
-    def create(self, validated_data):
-        vendor = validated_data.pop('vendor', None)
-        VendorContacts.objects.create(vendor=vendor, **validated_data)
-        return self
-
-    def validate_email(self, value):
-        if VendorContacts.objects.filter(email=value):
-            raise serializers.ValidationError('Email {} already exists'.format(value))
-        return value
-
+# RFI
 
 class RfiParticipationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RfiParticipation
-        fields = ('active', 'm', 'rfi', 'vendor')
+        fields = ('pk', 'active', 'm', 'rfi', 'vendor', 'timestamp')
+        read_only_fields = ('timestamp', )
 
-    def update(self, instance, validated_data):
-        print('update')
-        # raise_errors_on_nested_writes('update', self, validated_data)
+    def create(self, validated_data):
+        superuser = CustomUser.objects.filter(is_superuser=True)
+        if superuser:
+            superuser_id = superuser[0].id
+        else:
+            raise ValueError('Create superuser first')
+        module, created = RfiParticipation.objects.update_or_create(
+            rfi=validated_data.get('rfi', None),
+            vendor=validated_data.get('vendor', None),
+            m=validated_data.get('m', None), user_id=superuser_id,
+            defaults={'active': validated_data.get('active', False)})
+        return module
 
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+    def to_representation(self, instance):
+        rep = super(RfiParticipationSerializer, self).to_representation(instance)
+        rep['m'] = instance.m.module_name
+        return rep
 
-        return instance
-
-
-
-
-# class VendorModulActiveSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = VendorModuleNames
-#         fields = ('module', )
-#
-#     def to_representation(self, instance):
-#         rep = super(VendorModulActiveSerializer, self).to_representation(instance)
-#         rep['module'] = instance.module.module_name
-#         return rep
-#
-#
-# class VendorProfileModulesUpdateSerializer(serializers.ModelSerializer):
-#     vendor_modules = VendorModulActiveSerializer(many=True)
-#     to_vendor = RfiParticipationSerializer(many=True)
-#
-#     class Meta:
-#         model = Vendors
-#         fields = ('vendorid', 'vendor_name', 'vendor_modules', 'to_vendor')
-
-
-# RFI
 
 class RfiRoundSerializer(serializers.ModelSerializer):
+    creation_date = serializers.CharField(source='timestamp', required=False)
 
     class Meta:
         model = Rfis
@@ -234,7 +166,7 @@ class RfiRoundSerializer(serializers.ModelSerializer):
              'issue_datetime',
              'open_datetime',
              'close_datetime',
-             'timestamp'
+             'creation_date'
             )
         read_only_fields = ('rfi_status', 'rfiid', 'timestamp')
 
@@ -290,10 +222,80 @@ class RfiRoundCloseSerializer(serializers.ModelSerializer):
 
 # RFI MANAGEMENT
 
-
 class VendorModulesListManagementSerializer(serializers.ModelSerializer):
-    vendor_modules_partisipation = RfiParticipationSerializer(many=True)
+    to_vendor = RfiParticipationSerializer(many=True)
 
     class Meta:
         model = Vendors
-        fields = ('vendorid', 'vendor_name', 'vendor_modules', 'vendor_modules_partisipation',)
+        fields = ('vendorid', 'vendor_name', 'to_vendor',)
+        read_only_fields = ('vendorid', 'vendor_name', )
+
+
+# VENDOR PROFILE
+
+class VendorManagementListSerializer(serializers.ModelSerializer):
+    company_information = serializers.SerializerMethodField()
+    vendor_modules = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Vendors
+        fields = ('vendor_name',
+                  'vendorid',
+                  'active',
+                  'company_information',
+                  'vendor_modules',)
+
+    def get_company_information(self, obj):
+        # Calculate last edited rfi participation module and get round information
+        last_round = RfiParticipation.objects.filter(vendor=obj).order_by('-timestamp').first()
+        return last_round.rfi.rfiid
+
+    def get_vendor_modules(self, obj):
+        # check round for all participate modules
+        r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').values('m', 'rfi')
+        return r
+
+
+class VendorManagementUpdateSerializer(serializers.ModelSerializer):
+    contacts = VendorContactSerializer(many=True)
+    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+    to_vendor = RfiParticipationSerializer(many=True)
+
+    class Meta:
+        model = Vendors
+        fields = ('vendorid',
+                  'vendor_name',
+                  'active',
+                  'country',
+                  'office',
+                  'abr_date',
+                  'nda',
+                  'parent',
+                  'contacts',
+                  'to_vendor',
+                  )
+
+
+class VendorContactCreateSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
+                                                             message='Enter valid email address')])
+    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = VendorContacts
+        fields = ('vendor',
+                  'contact_name',
+                  'phone',
+                  'email',
+                  'primary',
+                  )
+
+    def create(self, validated_data):
+        vendor = validated_data.pop('vendor', None)
+        VendorContacts.objects.create(vendor=vendor, **validated_data)
+        return self
+
+    def validate_email(self, value):
+        if VendorContacts.objects.filter(email=value):
+            raise serializers.ValidationError('Email {} already exists'.format(value))
+        return value

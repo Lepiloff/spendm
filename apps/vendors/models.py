@@ -413,7 +413,7 @@ class RfiParticipation(models.Model):
     m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules')
     active = models.BooleanField(default=False)
     user_id = models.IntegerField()
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfi')
+    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfi', blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -421,7 +421,7 @@ class RfiParticipation(models.Model):
         unique_together = (('vendor', 'm', 'rfi', 'timestamp'),)
 
     def __str__(self):
-        return "Module {} is {} in {} round".format(self.m.module_name, self.active, self.rfi.rfiid)
+        return "{} is {} for {}".format(self.m.module_name, self.active, self.vendor.vendor_name)
 
 
 class RfiParticipationStatus(models.Model):
@@ -435,7 +435,7 @@ class RfiParticipationStatus(models.Model):
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor_status')
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfis_status')
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
-    m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status', blank=True, null=True)
+    m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status')
     user_id = models.IntegerField()
     timestamp = models.DateTimeField()
     last_vendor_response = models.IntegerField(blank=True, null=True)
@@ -444,9 +444,6 @@ class RfiParticipationStatus(models.Model):
     class Meta:
         db_table = 'rfi_participation_status'
         unique_together = (('vendor', 'rfi', 'timestamp', 'pc'),)
-
-    # def __str__(self):
-    #     return ("{} for module {} in {round }").format(self.status, self.
 
 
 class Rfis(models.Model):
@@ -652,6 +649,8 @@ class Vendors(models.Model):
     vendorid = models.AutoField(primary_key=True)
     vendor_name = models.CharField(max_length=45, unique=True)
     country = models.CharField(max_length=45, choices=COUNTRY_CHOICES)
+    office = models.CharField(max_length=145)
+    abr_date = models.DateField(blank=True, null=True)
     nda = models.DateField(blank=True, null=True)
     consent = models.DateField(blank=True, null=True)
     parent = models.ForeignKey('Vendors', models.DO_NOTHING, blank=True, null=True)

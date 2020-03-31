@@ -200,22 +200,33 @@ class ModulesListView(generics.ListAPIView):
 
 
 # <--VENDOR PROFILE-->
+class VendorProfilePageView(generics.RetrieveAPIView):
+    """ Get vendor Profile personal data"""
+
+    serializer_class = VendorContactSerializer
+    permission_classes = [permissions.AllowAny, ]
+    lookup_field = "vendorid"
+
+    def get_object(self):
+        obj = get_object_or_404(VendorContacts, vendor=self.kwargs["vendorid"], primary=True)
+        return obj
+
 
 class VendorManagementList(generics.ListAPIView):
     """
-    Get Vendors Management page
+    Get Vendors Management screen
     """
     serializer_class = VendorManagementListSerializer
     queryset = Vendors.objects.all()
+    permission_classes = [permissions.AllowAny, ]
 
 
 class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
     """ Update main vendor info (exclude contact)
     Possible send partial data (just one field)
-    {
-    "parent": 109
-}
-
+    data = {
+            "vendor_name":"Forest G"
+           }
     """
 
     permission_classes = [permissions.AllowAny, ]
@@ -234,12 +245,12 @@ class VendorContactsCreateView(APIView):
     """
     Create new vendor from Vendor Manager screen
 
-      {      "vendor": 138,
-            "contact_name": "Sandra B",
-            "phone": 375293333333,
-            "email": "sand3f45r2a1@gmail.com",
-            "primary": false
-
+      {
+        "vendor": 138,
+        "contact_name": "Sandra B",
+        "phone": 375293333333,
+        "email": "sand3f45r2a1@gmail.com",
+        "primary": false
       }
 
     """
@@ -262,12 +273,11 @@ class VendorContactsCreateView(APIView):
 
 class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Update exist contact at Vendor Management Screen
-
-        Possible send partial data (just one field)
-    {
-    "email": "jac12k1@gmail.com"
-    }
+    Get or update exist contact at Vendor Management Screen
+    Possible send partial data (just one field) (PUT or PATH method)
+    data = {
+        "contact_name": "Name"
+        }
 
     """
 
@@ -280,38 +290,25 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-class VendorProfileModulesList(APIView):
-    """View Vendor profile modules activity status"""
+class VendorProfileModulesListCreate(generics.ListCreateAPIView):
+    """View Vendor profile modules activity status and update it
 
-    permission_classes = [permissions.AllowAny, ]
-
-    def get(self, request, format=None, *args, **kwargs):
-        # TODO last submission
-        id = kwargs.get('vendorid', None)
-        assert id, 'Vendors not exist'
-        vendor = Vendors.objects.get(vendorid=id)
-        round = Rfis.objects.all().order_by('-timestamp').first()
-        modules = VendorModuleNames.objects.filter(vendor=vendor)
-        vendor_module_list = []
-        for module in modules:
-            m = module.module.module_name
-            rfi_participation_module = RfiParticipation.objects.filter(rfi=round).filter(vendor=vendor).\
-                                                                filter(m__module_name=m).first()
-            vendor_module_list.append({m: rfi_participation_module.active,
-                                       "participation_module_id": rfi_participation_module.pk})
-        response = {'vendor': vendor.vendor_name, "round": round.rfiid, "module": vendor_module_list}
-        return Response(response)
-
-
-class VendorProfileModulesListUpdate(generics.RetrieveUpdateAPIView):
-    """Change Vendor profile modules activity status"""
+    data = {
+        "active": false,
+        "rfi": "20R1",
+        "vendor": 15,
+        "m": 4
+        }
+    """
 
     permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiParticipationSerializer
-    queryset = RfiParticipation.objects.all()
 
-    def put(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
+    def get_queryset(self, **kwargs):
+        round = Rfis.objects.all().order_by('-timestamp').first()
+        vendor = get_object_or_404(Vendors, vendorid=self.kwargs['vendorid'])
+        queryset = RfiParticipation.objects.filter(vendor=vendor, rfi=round)
+        return queryset
 
 
 # <--RFI-->
@@ -348,8 +345,8 @@ class RfiRoundClose(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-class RfiRoundUpdateView(generics.RetrieveUpdateAPIView):
-    """ Rfi round update
+class RfiRoundView(generics.RetrieveAPIView):
+    """ Rfi round info
     """
 
     permission_classes = [permissions.AllowAny, ]
@@ -357,15 +354,37 @@ class RfiRoundUpdateView(generics.RetrieveUpdateAPIView):
     queryset = Rfis.objects.all()
     lookup_field = 'rfiid'
 
-    def put(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
+
+class RfiRoundListView(generics.ListAPIView):
+    """ Rfi round info
+    """
+
+    permission_classes = [permissions.AllowAny, ]
+    serializer_class = RfiRoundSerializer
+    queryset = Rfis.objects.all()
 
 
 # RFI MANAGEMENT
 
-class AssosiateModulesWithVendorView(generics.ListCreateAPIView):
+class AssociateModulesWithVendorView(generics.ListCreateAPIView):
     """
-    RFI: Assign vendors to a module
+    RFI: List of vendors with participated modules and modules status change method
+
+    POST request data:
+    data =  {
+                "active": true,
+                "m": 1,
+                "rfi": "20R1",
+                "vendor": 15
+             }
+
     """
+    permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorModulesListManagementSerializer
     queryset = Vendors.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RfiParticipationSerializer
+        return VendorModulesListManagementSerializer
+
