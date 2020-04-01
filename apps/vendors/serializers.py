@@ -268,6 +268,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
     to_vendor = RfiParticipationSerializer(many=True)
+    history = serializers.SerializerMethodField()
 
     class Meta:
         model = Vendors
@@ -281,7 +282,14 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   'parent',
                   'contacts',
                   'to_vendor',
+                  'history',
                   )
+        read_only_fields = ('history',)
+
+    def get_history(self, obj):
+        # using slicing to exclude current field values
+        h = obj.history.all().order_by('-history_date').values('vendor_name')[1:]
+        return h
 
 
 class VendorContactCreateSerializer(serializers.ModelSerializer):
