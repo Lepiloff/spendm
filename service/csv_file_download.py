@@ -1,12 +1,27 @@
 import csv
-import json
+import collections
 
 from rest_framework.exceptions import ParseError
-from rest_framework.response import Response
 
-from apps.vendors.models import Vendors, VendorContacts
+from apps.vendors.models import Vendors, VendorContacts, Rfis
 
-jsonFilePath ='json_file_name.json'
+
+modules_list = [
+    "Sourcing",
+    "SA",
+    "SXM",
+    "CLM",
+    "ePRO",
+    "I2P",
+    "P2P",
+    "SPT",
+    "S2P",
+    "AP",
+    "TS",
+    "SOW",
+    "ICW"
+]
+
 
 def csv_file_parser(file):
     vendor_error = []
@@ -22,21 +37,7 @@ def csv_file_parser(file):
                   'Secondary Contact Email',
                   'Modules'
                  ]
-    modules_list = [
-               "Sourcing",
-               "SA",
-               "SXM",
-               "CLM",
-               "ePRO",
-               "I2P",
-               "P2P",
-               "SPT",
-               "S2P",
-               "AP",
-               "TS",
-               "SOW",
-               "ICW"
-               ]
+
     result_dict = []
     with open(file) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -97,3 +98,69 @@ def csv_file_parser(file):
                        {'email': s_email, 'contact_name': s_contact_name, 'primary': False}]
             vendor['contacts'] = contact
     return result_dict
+
+
+def rfi_csv_file_parser(file):
+    vendor_error = []
+    round_error = []
+    status_error = []
+    status = ['true', 'false']
+    csv_fields = [
+                  'Round',
+                  'Vendor',
+                  'Sourcing',
+                  'SA',
+                  'SXM',
+                  'CLM',
+                  'ePRO',
+                  'I2P',
+                  'P2P',
+                  'SPT',
+                  'S2P',
+                  'AP',
+                  'TS',
+                  'SOW',
+                  'ICW',
+                 ]
+    with open(file) as csvfile:
+        reader = csv.DictReader(csvfile)
+        headers = reader.fieldnames
+        # check the csv file header is equal for template
+        if headers != csv_fields:
+            raise ParseError('Wrong fields in csv file.')
+        # check the csv file modules list
+        csv_header_modules=reader.fieldnames[2:]
+        csv_header_modules.sort()
+        modules_list.sort()
+
+        if csv_header_modules != modules_list:
+            raise ParseError('Unknown Module name:  the system could not find the '
+                             'Module with such a name in the database.')
+        response = []
+        for count, rows in enumerate(reader, 1):
+            line_info = []
+            line_modules = []
+            for key, value in rows.items():
+                if key == 'Round':
+                    if Rfis.objects.filter(rfiid=value):
+                        rfi = value
+                    else:
+                        round_error.append('Unknown Vendor name: the system could not find the Vendor with such a name'
+                                           'in the database.  Check the {} line field {}'.format(count, value))
+                if key == 'Vendor':
+                    if Vendors.objects.filter(vendor_name=value):
+                        vendor = value
+                    else:
+                        vendor_error.append('Unknown Vendor name: the system could not find the Vendor with such a '
+                                            'name in the database.  Check the {} line field {}'.format(count, value))
+                if key in csv_header_modules:
+                    if value not in status:
+                        status_error.append('Unknown module status. Check the {} line field {}'.format(count, value))
+                    line_modules.append([key, value])
+            for m in line_modules:
+                d = {"rfi": rfi, "vendor": vendor, "m": m[0], "active": m[1]}
+                line_info.append(d)
+            response.append(line_info)
+        if len(vendor_error) or len(round_error) or len(status_error):
+            raise ParseError(detail={'The file could not be uploaded': [vendor_error, round_error, status_error]})
+        return response
