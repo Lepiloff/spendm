@@ -1,9 +1,10 @@
 from django.urls import path, include
 
-from .views import FileUploadView, CsvToDatabase, VendorsCreateView, AdministratorDashboard, VendorsToFrontView, \
+from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreateView, AdministratorDashboard, VendorsToFrontView, \
     ModulesListView, VendorManagementListScreen, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
-    VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView
+    VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView, AssociateModulesWithVendorCsv,\
+    CsvRfiTemplateDownload
 
 
 urlpatterns = [
@@ -27,4 +28,7 @@ urlpatterns = [
     path('rfi/list', RfiRoundListView.as_view(), name='rfi_list'),
     path('rfi/<str:rfiid>/vendor_module_to_round_list/', AssociateModulesWithVendorView.as_view(),
          name='vendor_module_to_round'),
+    path('rfi_csv_upload/', RfiCsvUploadView.as_view(), name='rfi_csv_upload'),
+    path('rfi_csv_update/', AssociateModulesWithVendorCsv.as_view(), name='rfi_csv_update'),
+    path('<str:rfiid>/rfi_csv_template_download/', CsvRfiTemplateDownload.as_view(), name='rfi_csv_download'),
 ]

@@ -1,6 +1,10 @@
+import csv
+import json
+
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError
@@ -10,12 +14,12 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 
-from service.csv_file_download import csv_file_parser
+from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
 from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
-    RfiParticipationSerializer
+    RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -364,8 +368,6 @@ class RfiRoundListView(generics.ListAPIView):
     queryset = Rfis.objects.all()
 
 
-# RFI MANAGEMENT
-
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
     """
     RFI: List of vendors with participated modules and modules status change method
@@ -388,3 +390,133 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
             return RfiParticipationSerializer
         return VendorModulesListManagementSerializer
 
+
+# Rfi Csv
+class RfiCsvUploadView(APIView):
+    """ Upload rfi csv file"""
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = VendorsCsvSerializer
+
+    def put(self, request, format=None):
+        if 'file' not in request.data:
+            raise ParseError("Empty content")
+        f = request.data['file']
+        filename = f.name
+        if filename.endswith('.csv'):
+            try:
+                file = default_storage.save(filename, f)
+                r = rfi_csv_file_parser(file)
+                status = 200
+            finally:
+                default_storage.delete(file)
+        else:
+            status = 406
+            r = "File format error"
+        return Response(r, status=status)
+
+
+class AssociateModulesWithVendorCsv(APIView):
+
+    """
+    Create or update modules to rfi
+
+    data = [
+        {
+            "rfi": "20R1",
+            "module": [
+                {
+                    "Sourcing": "false"
+                },
+                {
+                    "SA": "true"
+                },
+                {
+                    "SXM": "false"
+                }
+
+            ],
+            "vendor": "Arny3"
+        },
+        {
+            "rfi": "20R1",
+            "module": [
+                {
+                    "S2P": "false"
+                },
+                {
+                    "AP": "false"
+                },
+                {
+                    "TS": "false"
+                },
+                {
+                    "SOW": "false"
+                },
+                {
+                    "ICW": "true"
+                }
+            ],
+            "vendor": "Mark Shagal"
+        }
+    ]
+    """
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = RfiParticipationCsvSerializer
+
+    def post(self, request, format=None):
+        r_data = request.data
+        for data in r_data:
+            for data in data:
+                v = data.get('vendor', None)
+                vendor = get_object_or_404(Vendors, vendor_name=v)
+                data['vendor'] = vendor.vendorid
+                m = data.get('m', None)
+                module = get_object_or_404(Modules, module_name=m)
+                data['m'] = module.mid
+                serializer = RfiParticipationCsvSerializer(data=data)
+                try:
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                except ValidationError:
+                    return Response({"errors": (serializer.errors,)},
+                                    status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
+
+
+class CsvRfiTemplateDownload(APIView):
+    """ Download rfi modules .csv file """
+
+    permission_classes = (permissions.AllowAny,)
+
+    def get(self, request, format=None, **kwargs):
+        rfi = kwargs['rfiid']
+        csv_header_fields = ['Round', 'Vendor', 'Sourcing', 'SA', 'SXM', 'CLM', 'ePRO', 'I2P',
+                             'P2P', 'SPT', 'S2P', 'AP', 'TS', 'SOW', 'ICW']
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="export_rfi.csv"'
+        writer = csv.DictWriter(response, fieldnames=csv_header_fields)
+        writer.writeheader()
+        vendor = Vendors.objects.all()
+        for v in vendor:
+            vendor_name = v.vendor_name
+            module = RfiParticipation.objects.filter(rfi=rfi, vendor=v)
+            module_to_vendor = []
+            for m in module:
+                serializer = RfiParticipationCsvDownloadSerializer(m)
+                print(type(serializer))
+                qs = json.dumps(serializer.data)
+                print(type(qs))
+                module_dict = json.loads(qs)
+                print(type(module_dict))# get dict object
+                module_to_vendor.append(module_dict)
+            res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
+            writer.writerow({'Round': rfi, 'Vendor': vendor_name, 'Sourcing': res.get('Sourcing', False),
+                             'SA': res.get('SA', False), 'SXM': res.get('SXM', False),
+                             'CLM': res.get('CLM', False), 'ePRO': res.get('ePRO', False),
+                             'I2P': res.get('I2P', False), 'P2P': res.get('P2P', False),
+                             'SPT': res.get('SPT', False), 'S2P': res.get('S2P', False),
+                             'AP': res.get('AP', False), 'TS': res.get('TS', False),
+                             'SOW': res.get('SOW', False), 'ICW': res.get('ICW', False)})
+        return response

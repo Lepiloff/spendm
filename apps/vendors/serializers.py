@@ -133,6 +133,26 @@ class ModulesSerializer(serializers.ModelSerializer):
 
 
 # RFI
+class RfiParticipationCsvSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RfiParticipation
+        fields = ('pk', 'active', 'm', 'rfi', 'vendor', 'timestamp')
+        read_only_fields = ('timestamp', )
+
+    def create(self, validated_data):
+        module, created = RfiParticipation.objects.update_or_create(
+            rfi=validated_data.get('rfi', None),
+            vendor=validated_data.get('vendor', None),
+            m=validated_data.get('m', None),
+            defaults={'active': validated_data.get('active', False)})
+        return module
+
+    # def to_representation(self, instance):
+    #     rep = super(RfiParticipationSerializer, self).to_representation(instance)
+    #     rep['m'] = instance.m.module_name
+    #     return rep
+
 
 class RfiParticipationSerializer(serializers.ModelSerializer):
 
@@ -156,6 +176,18 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super(RfiParticipationSerializer, self).to_representation(instance)
+        rep['m'] = instance.m.module_name
+        return rep
+
+
+class RfiParticipationCsvDownloadSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RfiParticipation
+        fields = ('active', 'm',)
+
+    def to_representation(self, instance):
+        rep = super(RfiParticipationCsvDownloadSerializer, self).to_representation(instance)
         rep['m'] = instance.m.module_name
         return rep
 
