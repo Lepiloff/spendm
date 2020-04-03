@@ -1,10 +1,11 @@
 import csv
-import collections
+import pandas as pd
+
 
 from rest_framework.exceptions import ParseError
 
 from apps.vendors.models import Vendors, VendorContacts, Rfis
-
+from service.countries import COUNTRIES_LIST
 
 modules_list = [
     "Sourcing",
@@ -26,7 +27,7 @@ modules_list = [
 def csv_file_parser(file):
     vendor_error = []
     email_error = []
-
+    country_error = []
     csv_fields = [
                   'Vendor',
                   'Country',
@@ -39,12 +40,39 @@ def csv_file_parser(file):
                  ]
 
     result_dict = []
-    with open(file) as csvfile:
+    with open(file, encoding='windows-1252') as csvfile:
         reader = csv.DictReader(csvfile)
         headers = reader.fieldnames
         # check the csv file header is equal for template
         if headers != csv_fields:
             raise ParseError('Wrong fields in csv file. Use our template.')
+
+
+        # Check uniques vendor name and email in file without request to DB using pandas
+        result_vendor_name_error = []
+        result_vendor_email_error = []
+        record = pd.read_csv(file, encoding='windows-1252')
+        df = pd.DataFrame(data=record)
+        vendor_name_error = {v: k + 1 for k, v in df.loc[df['Vendor'].duplicated() & df['Primary Contact Email'].notna(), 'Vendor'].items()}
+        vendor_p_email_error = {v: k + 1 for k, v in df.loc[df['Primary Contact Email'].duplicated() & df['Primary Contact Email'].notna(), 'Primary Contact Email'].items()}
+        vendor_s_email_error = {v: k + 1 for k, v in df.loc[df['Secondary Contact Email'].duplicated() & df['Secondary Contact Email'].notna(), 'Secondary Contact Email'].items()}
+        # Create list of error
+        if len(vendor_s_email_error):
+            for k, v in vendor_s_email_error.items():
+                result_vendor_email_error.append(['Error in row {}: '
+                                                    'Email {} already exist. '
+                                                    'Please correct the error and try again'.format(v, k)])
+        if len(vendor_p_email_error):
+            for k, v in vendor_p_email_error.items():
+                result_vendor_email_error.append(['Error in row {}: '
+                                                    'Email {} already exist. '
+                                                    'Please correct the error and try again'.format(v, k)])
+        if len(vendor_name_error):
+            for k, v in vendor_s_email_error.items():
+                result_vendor_name_error.append(['Error in row {}: '
+                                                    'Name {} already exist. '
+                                                    'Please correct the error and try again'.format(v, k)])
+        # Main parsing start
         for count, rows in enumerate(reader, 1):
             for key, value in rows.items():
                 if not rows[key]:
@@ -61,21 +89,30 @@ def csv_file_parser(file):
                                     'Check the Modules field value. Accepted value are: {}'.format(modules_list))
 
                 if key == "Vendor":
-                        vendor = Vendors.objects.filter(vendor_name=value).first()
-                        if vendor:
-                            vendor_error.append(['Error in row {}: '
-                                                 'Vendor {} already exist. '
-                                                 'Please correct the error and try again'.format(count, value)])
+                    vendor = Vendors.objects.filter(vendor_name=value).first()
+                    if vendor:
+                        vendor_error.append(['Error in row {}: '
+                                             'Vendor {} already exist. '
+                                             'Please correct the error and try again'.format(count, value)])
                 if key == "Primary Contact Email" or key == "Secondary Contact Name":
-                        email = VendorContacts.objects.filter(email=value).first()
-                        if email:
-                            email_error.append(['Error in row {}: '
-                                                'Email {} already exist. '
-                                                'Please correct the error and try again'.format(count, value)])
+                    email = VendorContacts.objects.filter(email=value).first()
+                    if email:
+                        email_error.append(['Error in row {}: '
+                                            'Email {} already exist. '
+                                            'Please correct the error and try again'.format(count, value)])
+                if key == "Country":
+                    if value not in COUNTRIES_LIST:
+                        country_error.append(['Error in row {}: '
+                                              'Country name {} not valid. '
+                                              'Please correct the error and try again'.format(count, value)])
 
             result_dict.append(rows)
-        if len(vendor_error) or len(email_error):
-            raise ParseError(detail={'The file could not be uploaded': [vendor_error, email_error]})
+        if len(vendor_error) or len(email_error) or len(country_error):
+            raise ParseError(detail={'error': [vendor_error, email_error, country_error]})
+
+        if len(result_vendor_name_error) or len(result_vendor_email_error):
+            raise ParseError(detail={'error': [result_vendor_name_error, result_vendor_email_error]})
+
         # Remove contact from result_dict wright it to intermediate_dict
         # and update result_dict['contacts'] as intermediate_dict
         # change keys to models field name format

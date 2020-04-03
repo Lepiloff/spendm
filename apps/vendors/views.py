@@ -5,6 +5,8 @@ from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from django.db import transaction
+
 
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError
@@ -111,26 +113,29 @@ class CsvToDatabase(APIView):
 
     def post(self, request, format=None):
         r_data = request.data
-        for data in r_data:
-            if data['nda'] == '':
-                data['nda'] = None
-            for contact in data['contacts']:
-                if contact['email']:
-                    contact['email'] = contact['email'].lower()
-            for module in data['modules']:
-                if module['module']:
-                    module['module'] = get_object_or_404(Modules, module_name=module['module']).mid
-                else:
-                    data.pop('modules')
-            serializer = VendorsCsvSerializer(data=data)
-            try:
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-            except ValidationError:
-                return Response({"errors": (serializer.errors,)},
-                                status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # implement transaction  - if exception appear during for loop iteration none data save to DB
+            with transaction.atomic():
+                for data in r_data:
+                    if data['nda'] == '':
+                        data['nda'] = None
+                    for contact in data['contacts']:
+                        if contact['email']:
+                            contact['email'] = contact['email'].lower()
+                    for module in data['modules']:
+                        if module['module']:
+                            module['module'] = get_object_or_404(Modules, module_name=module['module']).mid
+                        else:
+                            data.pop('modules')
+                    serializer = VendorsCsvSerializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+
+        except ValidationError:
+            return Response({"errors": (serializer.errors,)},
+                            status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(request.data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class VendorsCreateView(APIView):
@@ -486,6 +491,9 @@ class AssociateModulesWithVendorCsv(APIView):
 
 
 class CsvRfiTemplateDownload(APIView):
+
+
+    # TODO filter vendor by round partisipation
     """ Download rfi modules .csv file """
 
     permission_classes = (permissions.AllowAny,)
@@ -505,11 +513,9 @@ class CsvRfiTemplateDownload(APIView):
             module_to_vendor = []
             for m in module:
                 serializer = RfiParticipationCsvDownloadSerializer(m)
-                print(type(serializer))
-                qs = json.dumps(serializer.data)
-                print(type(qs))
-                module_dict = json.loads(qs)
-                print(type(module_dict))# get dict object
+                module_dict = serializer.data.copy()  # get dict object
+                # qs = json.dumps(serializer.data)
+                # module_dict = json.loads(qs)
                 module_to_vendor.append(module_dict)
             res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
             writer.writerow({'Round': rfi, 'Vendor': vendor_name, 'Sourcing': res.get('Sourcing', False),
