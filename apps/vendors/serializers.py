@@ -1,13 +1,13 @@
 import re
 from datetime import date
 import datetime
+
 from django.db.models import F
+from django.db import DataError
+from django.shortcuts import get_object_or_404
+from django.core.validators import RegexValidator
 
 from rest_framework import serializers
-from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
-from rest_framework.response import Response
-from rest_framework import status
 
 from apps.c_users.models import CustomUser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, RfiParticipation, RfiParticipationStatus
@@ -75,7 +75,10 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             raise ValueError('Create superuser first')
         vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         for data in contact_data:
-            VendorContacts.objects.create(vendor=vendor, **data)
+            try:
+                VendorContacts.objects.create(vendor=vendor, **data)
+            except DataError as e:
+                raise serializers.ValidationError({"error": "Some data are incorrect (possibly too long email value)"})
         if modules:
             for data in modules:
                 VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
@@ -346,6 +349,11 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
         return contact
 
     def validate_email(self, value):
-        if VendorContacts.objects.filter(email=value):
-            raise serializers.ValidationError('Email {} already exists'.format(value))
+        print('Validate')
+        exist_contact = VendorContacts.objects.filter(email=value)
+        if exist_contact:
+            vc = get_object_or_404(VendorContacts, email=value)
+            v = vc.vendor
+            if v.active:
+                raise serializers.ValidationError('Email {} already exists'.format(value))
         return value

@@ -612,7 +612,8 @@ class VendorContacts(models.Model):
     contact_id = models.AutoField(primary_key=True)
     vendor = models.ForeignKey('Vendors', related_name='contacts', on_delete=models.CASCADE)
     contact_name = models.CharField(max_length=45, blank=True, null=True)
-    email = models.CharField(max_length=80, blank=True, null=True, unique=True)
+    email = models.CharField(max_length=80, blank=True, null=True, unique=True,
+                             error_messages={'unique': "Email already exists"})
     phone = models.CharField(max_length=45, blank=True, null=True)
     primary = models.BooleanField(default=True)
 
@@ -642,8 +643,8 @@ class Vendors(models.Model):
     COUNTRY_CHOICES = tuple(COUNTRIES)
 
     vendorid = models.AutoField(primary_key=True)
-    vendor_name = models.CharField(max_length=45, unique=True)
-    country = models.CharField(max_length=45, choices=COUNTRY_CHOICES)
+    vendor_name = models.CharField(max_length=45, unique=True, error_messages={'unique': "Vendor already exists"})
+    country = models.CharField(max_length=145, choices=COUNTRY_CHOICES)
     office = models.CharField(max_length=145)
     abr_date = models.DateField(blank=True, null=True)
     nda = models.DateField(blank=True, null=True)

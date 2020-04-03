@@ -7,3 +7,6 @@ drf-yasg==1.17.1
 mysqlclient==1.4.6
 python-decouple==3.3
 django-simple-history==2.8.0
+numpy==1.18.2
+pandas==1.0.3
+python-dateutil==2.8.1
