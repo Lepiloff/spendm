@@ -21,7 +21,7 @@ class VendorToFrontSerializer(serializers.ModelSerializer):
 
 class VendorContactSerializer(serializers.ModelSerializer):
     email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
-                                                             message='Enter valid email address')])
+                                                             message='Enter valid email address')], allow_blank=True)
 
     class Meta:
         model = VendorContacts
@@ -119,6 +119,7 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
                   'parent',)
 
     def create(self, validated_data):
+        print(validated_data)
         contact_data = validated_data.pop('contacts')
         # Only for first phase for workin with admin instancess only. Rewrite after !!!
         superuser = CustomUser.objects.filter(is_superuser=True)

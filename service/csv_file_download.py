@@ -112,11 +112,12 @@ def csv_file_parser(file):
                         email_error.append(['Error in row {}: '
                                             'Email {} is not in the right format. '
                                             'Please correct the error and try again'.format(count, value)])
-                    email = VendorContacts.objects.filter(email=value).first()
-                    if email:
-                        email_error.append(['Error in row {}: '
-                                            'Email {} already exist. '
-                                            'Please correct the error and try again'.format(count, value)])
+                    if value != "":
+                        email = VendorContacts.objects.filter(email=value).first()
+                        if email:
+                            email_error.append(['Error in row {}: '
+                                                'Email {} already exist. '
+                                                'Please correct the error and try again'.format(count, value)])
                 if key == "Country":
                     if value not in COUNTRIES_LIST:
                         country_error.append(['Error in row {}: '
