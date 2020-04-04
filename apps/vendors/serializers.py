@@ -42,6 +42,16 @@ class VendorContactSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def validate_email(self, value):
+        # Check if email exist in active vendor and raise exception
+        exist_contact = VendorContacts.objects.filter(email=value)
+        vendors = Vendors.objects.filter(active=True)
+        if exist_contact:
+            for contact in exist_contact:
+                if contact.vendor in vendors:
+                    raise serializers.ValidationError('Email {} already exists'.format(value))
+        return value
+
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
     module = serializers.PrimaryKeyRelatedField(queryset=Modules.objects.all(), required=False, allow_null=True)
@@ -349,7 +359,6 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
         return contact
 
     def validate_email(self, value):
-        print('Validate')
         exist_contact = VendorContacts.objects.filter(email=value)
         if exist_contact:
             vc = get_object_or_404(VendorContacts, email=value)

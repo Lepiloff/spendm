@@ -23,7 +23,7 @@ class VendorManualCreateTest(APITestCase):
 
     def setUp(self):
         password = 'mypassword'
-        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", )
+        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", active=True)
         VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com", vendor=vendor)
         CustomUser.objects.create_superuser('myemail@test.com', password)
 
@@ -37,9 +37,17 @@ class VendorManualCreateTest(APITestCase):
 
     def test_vendor_contact_email_create_unique(self):
         vendor = Vendors.objects.create(vendor_name="U2R", country="Belarus", nda="2020-12-12", )
-        with self.assertRaises(IntegrityError):
-            VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com",
-                                          vendor=vendor)
+        data ={
+            "vendor": vendor.vendorid,
+            "contact_name": "Sandra B",
+            "phone": 375293333333,
+            "email": "test1@rgmail.com",
+            "primary": False
+          }
+        url = reverse('contact_create')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(json.loads(response.content), {'email': ['Email test1@rgmail.com already exists']})
+
     #API
     def test_create_vendor_api(self):
 
@@ -151,7 +159,7 @@ class VendorContactsCreateViewTest(APITestCase):
         self.assertEqual(VendorContacts.objects.count(), 1)
 
     def test_create_new_contact_duplicate_email_check_api(self):
-        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", )
+        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", active=True)
         VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="testtests@rgmail.com", vendor=vendor)
         _id = vendor.vendorid
         data = {"vendor": _id,
@@ -161,10 +169,9 @@ class VendorContactsCreateViewTest(APITestCase):
                 "primary": False
                 }
         url = reverse('contact_create')
-        with self.assertRaises(IntegrityError):
-            response = self.client.post(url, data, format='json')
-        # self.assertEqual(json.loads(response.content), {'email': ['Email testtests@rgmail.com already exists']})
-        # self.assertEqual(VendorContacts.objects.count(), 1)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(json.loads(response.content), {'email': ['Email testtests@rgmail.com already exists']})
+        self.assertEqual(VendorContacts.objects.count(), 1)
 
 
 class VendorProfileUpdateViewTest(APITestCase):

@@ -612,8 +612,7 @@ class VendorContacts(models.Model):
     contact_id = models.AutoField(primary_key=True)
     vendor = models.ForeignKey('Vendors', related_name='contacts', on_delete=models.CASCADE)
     contact_name = models.CharField(max_length=45, blank=True, null=True)
-    email = models.CharField(max_length=80, blank=True, null=True, unique=True,
-                             error_messages={'unique': "Email already exists"})
+    email = models.CharField(max_length=80, blank=True, null=True)
     phone = models.CharField(max_length=45, blank=True, null=True)
     primary = models.BooleanField(default=True)
 
