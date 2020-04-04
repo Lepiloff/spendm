@@ -102,7 +102,7 @@ def csv_file_parser(file):
                         vendor_error.append(['Error in row {}: '
                                              'Vendor {} already exist. '
                                              'Please correct the error and try again'.format(count, value)])
-                if key == "Primary Contact Email" or key == "Secondary Contact Name":
+                if key == "Primary Contact Email" or key == "Secondary Contact Email":
                     if not re.search(r'^$|[^@]+@[^\.]+\..+', value):
                         email_error.append(['Error in row {}: '
                                             'Email {} is not in the right format. '
