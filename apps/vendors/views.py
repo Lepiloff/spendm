@@ -174,15 +174,18 @@ class VendorsCreateView(APIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        if data['nda'] == '':
-            data['nda'] = None
-        for contact in data['contacts']:
-            if contact['email']:
-                contact['email'] = contact['email'].lower()
-        serializer = VendorsCreateSerializer(data=data)
+
         try:
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            # implement transaction  - if exception appear during for loop iteration none data save to DB
+            with transaction.atomic():
+                if data['nda'] == '':
+                    data['nda'] = None
+                for contact in data['contacts']:
+                    if contact['email']:
+                        contact['email'] = contact['email'].lower()
+                serializer = VendorsCreateSerializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
         except ValidationError:
             return Response({"errors": (serializer.errors,)},
                             status=status.HTTP_400_BAD_REQUEST)
