@@ -1,6 +1,8 @@
 import csv
 import pandas as pd
-
+import re
+from datetime import date
+import datetime
 
 from rest_framework.exceptions import ParseError
 
@@ -28,6 +30,8 @@ def csv_file_parser(file):
     vendor_error = []
     email_error = []
     country_error = []
+    date_error = []
+    missing_value = []
     csv_fields = [
                   'Vendor',
                   'Country',
@@ -47,7 +51,10 @@ def csv_file_parser(file):
         if headers != csv_fields:
             raise ParseError('Wrong fields in csv file. Use our template.')
 
-
+        # Check empty file
+        df = pd.read_csv(file)  # or pd.read_excel(filename) for xls file
+        if df.empty:
+            raise ParseError("File is empty")
         # Check uniques vendor name and email in file without request to DB using pandas
         result_vendor_name_error = []
         result_vendor_email_error = []
@@ -80,7 +87,8 @@ def csv_file_parser(file):
                             or key == 'Modules':
                         pass
                     else:
-                        raise ParseError('Missing value in file! Check the {} line field {}'.format(count, key))
+                        missing_value.append(['Missing value in file! Check the {} line field {}'.format(count, key)])
+                        # raise ParseError('Missing value in file! Check the {} line field {}'.format(count, key))
                 if key == 'Modules':
                     if value != '':
                         for v in value.split(','):
@@ -95,6 +103,10 @@ def csv_file_parser(file):
                                              'Vendor {} already exist. '
                                              'Please correct the error and try again'.format(count, value)])
                 if key == "Primary Contact Email" or key == "Secondary Contact Name":
+                    if not re.search(r'^$|[^@]+@[^\.]+\..+', value):
+                        email_error.append(['Error in row {}: '
+                                            'Email {} is not in the right format. '
+                                            'Please correct the error and try again'.format(count, value)])
                     email = VendorContacts.objects.filter(email=value).first()
                     if email:
                         email_error.append(['Error in row {}: '
@@ -105,10 +117,22 @@ def csv_file_parser(file):
                         country_error.append(['Error in row {}: '
                                               'Country name {} not valid. '
                                               'Please correct the error and try again'.format(count, value)])
+                if key == "NDA date":
+                    if not re.search(r'^$|\d{4}-\d{2}-\d{2}', value):  # regular expression for date
+                        date_error.append(['Error in row {}: '
+                                           'date {} not valid. '
+                                           'Please correct the error and try again'.format(count, value)])
+                    if value != '':
+                        curent_date = datetime.date.today()
+                        csv_date = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+                        if csv_date > curent_date:
+                             date_error.append(['Error in row {}: '
+                                                'date {} can no be more then future NDA date. '
+                                                'Please correct the error and try again'.format(count, value)])
 
             result_dict.append(rows)
-        if len(vendor_error) or len(email_error) or len(country_error):
-            raise ParseError(detail={'error': [vendor_error, email_error, country_error]})
+        if len(vendor_error) or len(email_error) or len(country_error) or len(date_error):
+            raise ParseError(detail={'error': [vendor_error, email_error, country_error, date_error]})
 
         if len(result_vendor_name_error) or len(result_vendor_email_error):
             raise ParseError(detail={'error': [result_vendor_name_error, result_vendor_email_error]})

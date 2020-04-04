@@ -517,8 +517,6 @@ class CsvRfiTemplateDownload(APIView):
             for m in module:
                 serializer = RfiParticipationCsvDownloadSerializer(m)
                 module_dict = serializer.data.copy()  # get dict object
-                # qs = json.dumps(serializer.data)
-                # module_dict = json.loads(qs)
                 module_to_vendor.append(module_dict)
             res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
             writer.writerow({'Round': rfi, 'Vendor': vendor_name, 'Sourcing': res.get('Sourcing', False),
