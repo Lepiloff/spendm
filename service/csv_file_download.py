@@ -123,17 +123,18 @@ def csv_file_parser(file):
                                               'Country name {} not valid. '
                                               'Please correct the error and try again'.format(count, value)])
                 if key == "NDA date":
-                    if not re.search(r'^$|\d{4}-\d{2}-\d{2}', value):  # regular expression for date
+                    if re.search(r'^$|\d{4}-\d{2}-\d{2}', value):  # regular expression for date
+                        if value != '':
+                            curent_date = datetime.date.today()
+                            csv_date = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+                            if csv_date > curent_date:
+                                 date_error.append(['Error in row {}: '
+                                                    'date {} can no be more then future NDA date. '
+                                                    'Please correct the error and try again'.format(count, value)])
+                    else:
                         date_error.append(['Error in row {}: '
                                            'date {} not valid. '
                                            'Please correct the error and try again'.format(count, value)])
-                    if value != '':
-                        curent_date = datetime.date.today()
-                        csv_date = datetime.datetime.strptime(value, "%Y-%m-%d").date()
-                        if csv_date > curent_date:
-                             date_error.append(['Error in row {}: '
-                                                'date {} can no be more then future NDA date. '
-                                                'Please correct the error and try again'.format(count, value)])
 
             result_dict.append(rows)
         if len(vendor_error) or len(email_error) or len(country_error) or len(date_error):
