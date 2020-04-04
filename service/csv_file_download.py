@@ -103,6 +103,11 @@ def csv_file_parser(file):
                                              'Vendor {} already exist. '
                                              'Please correct the error and try again'.format(count, value)])
                 if key == "Primary Contact Email" or key == "Secondary Contact Email":
+                    if len(value) > 80:
+                        email_error.append(['Error in row {}: '
+                                            'Email {} is not in the right format. '
+                                            'The value cannot be longer than 80 characters.'
+                                            'Please correct the error and try again'.format(count, value)])
                     if not re.search(r'^$|[^@]+@[^\.]+\..+', value):
                         email_error.append(['Error in row {}: '
                                             'Email {} is not in the right format. '
