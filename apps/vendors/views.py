@@ -176,7 +176,7 @@ class VendorsCreateView(APIView):
         data = request.data
 
         try:
-            # implement transaction  - if exception appear during for loop iteration none data save to DB
+            # implement transaction  - if exception appearpyt during for loop iteration none data save to DB
             with transaction.atomic():
                 if data['nda'] == '':
                     data['nda'] = None
