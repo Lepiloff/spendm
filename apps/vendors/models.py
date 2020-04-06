@@ -408,7 +408,7 @@ class RfiParticipation(models.Model):
     m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules')
     active = models.BooleanField(default=False)
     user_id = models.IntegerField(null=True, blank=True)
-    rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfi')
+    rfi = models.ForeignKey('Rfis', related_name='to_rfi', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now=True)
 
     class Meta:
