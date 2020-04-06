@@ -46,7 +46,8 @@ class VendorManualCreateTest(APITestCase):
           }
         url = reverse('contact_create')
         response = self.client.post(url, data, format='json')
-        self.assertEqual(json.loads(response.content), {'email': ['Email test1@rgmail.com already exists']})
+        self.assertEqual(json.loads(response.content),
+                         {'email': {'contacts': [{'email': 'Email test1@rgmail.com already exists'}]}})
 
     #API
     def test_create_vendor_api(self):
@@ -170,7 +171,8 @@ class VendorContactsCreateViewTest(APITestCase):
                 }
         url = reverse('contact_create')
         response = self.client.post(url, data, format='json')
-        self.assertEqual(json.loads(response.content), {'email': ['Email testtests@rgmail.com already exists']})
+        self.assertEqual(json.loads(response.content),
+                         {'email': {'contacts': [{'email': 'Email testtests@rgmail.com already exists'}]}})
         self.assertEqual(VendorContacts.objects.count(), 1)
 
 
