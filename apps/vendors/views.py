@@ -50,7 +50,7 @@ class FileUploadView(APIView):
                 default_storage.delete(file)
         else:
             status = 406
-            r = "File format error"
+            r = { "general_errors": ["Please upload only CSV files"] }
         return Response(r, status=status)
 
 
@@ -420,7 +420,7 @@ class RfiCsvUploadView(APIView):
                 default_storage.delete(file)
         else:
             status = 406
-            r = "File format error"
+            r = { "general_errors": ["Please upload only CSV files"] }
         return Response(r, status=status)
 
 
