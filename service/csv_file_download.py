@@ -66,19 +66,19 @@ def csv_file_parser(file):
         # Create list of error
         if len(vendor_s_email_error):
             for k, v in vendor_s_email_error.items():
-                result_vendor_email_error.append(['Error in row {}: '
+                result_vendor_email_error.append('Error in row {}: '
                                                     'Email {} already exist. '
-                                                    'Please correct the error and try again'.format(v, k)])
+                                                    'Please correct the error and try again'.format(v, k))
         if len(vendor_p_email_error):
             for k, v in vendor_p_email_error.items():
-                result_vendor_email_error.append(['Error in row {}: '
+                result_vendor_email_error.append('Error in row {}: '
                                                     'Email {} already exist. '
-                                                    'Please correct the error and try again'.format(v, k)])
+                                                    'Please correct the error and try again'.format(v, k))
         if len(vendor_name_error):
             for k, v in vendor_s_email_error.items():
-                result_vendor_name_error.append(['Error in row {}: '
+                result_vendor_name_error.append('Error in row {}: '
                                                     'Name {} already exist. '
-                                                    'Please correct the error and try again'.format(v, k)])
+                                                    'Please correct the error and try again'.format(v, k))
         # Main parsing start
         for count, rows in enumerate(reader, 1):
             for key, value in rows.items():
@@ -87,7 +87,7 @@ def csv_file_parser(file):
                             or key == 'Modules':
                         pass
                     else:
-                        missing_value.append(['Missing value in file! Check the {} line field {}'.format(count, key)])
+                        missing_value.append('Missing value in file! Check the {} line field {}'.format(count, key))
                         # raise ParseError('Missing value in file! Check the {} line field {}'.format(count, key))
                 if key == 'Modules':
                     if value != '':
@@ -99,50 +99,54 @@ def csv_file_parser(file):
                 if key == "Vendor":
                     vendor = Vendors.objects.filter(vendor_name=value).first()
                     if vendor:
-                        vendor_error.append(['Error in row {}: '
+                        vendor_error.append('Error in row {}: '
                                              'Vendor {} already exist. '
-                                             'Please correct the error and try again'.format(count, value)])
+                                             'Please correct the error and try again'.format(count, value))
                 if key == "Primary Contact Email" or key == "Secondary Contact Email":
                     if len(value) > 80:
-                        email_error.append(['Error in row {}: '
+                        email_error.append('Error in row {}: '
                                             'Email {} is not in the right format. '
                                             'The value cannot be longer than 80 characters.'
-                                            'Please correct the error and try again'.format(count, value)])
+                                            'Please correct the error and try again'.format(count, value))
                     if not re.search(r'^$|[^@]+@[^\.]+\..+', value):
-                        email_error.append(['Error in row {}: '
+                        email_error.append('Error in row {}: '
                                             'Email {} is not in the right format. '
-                                            'Please correct the error and try again'.format(count, value)])
+                                            'Please correct the error and try again'.format(count, value))
                     if value != "":
                         email = VendorContacts.objects.filter(email=value).first()
                         if email:
-                            email_error.append(['Error in row {}: '
+                            email_error.append('Error in row {}: '
                                                 'Email {} already exist. '
-                                                'Please correct the error and try again'.format(count, value)])
+                                                'Please correct the error and try again'.format(count, value))
                 if key == "Country":
                     if value not in COUNTRIES_LIST:
-                        country_error.append(['Error in row {}: '
+                        country_error.append('Error in row {}: '
                                               'Country name {} not valid. '
-                                              'Please correct the error and try again'.format(count, value)])
+                                              'Please correct the error and try again'.format(count, value))
                 if key == "NDA date":
                     if re.search(r'^$|\d{4}-\d{2}-\d{2}', value):  # regular expression for date
                         if value != '':
                             curent_date = datetime.date.today()
                             csv_date = datetime.datetime.strptime(value, "%Y-%m-%d").date()
                             if csv_date > curent_date:
-                                 date_error.append(['Error in row {}: '
+                                 date_error.append('Error in row {}: '
                                                     'date {} can no be more then future NDA date. '
-                                                    'Please correct the error and try again'.format(count, value)])
+                                                    'Please correct the error and try again'.format(count, value))
                     else:
-                        date_error.append(['Error in row {}: '
+                        date_error.append('Error in row {}: '
                                            'date {} not valid. '
-                                           'Please correct the error and try again'.format(count, value)])
+                                           'Please correct the error and try again'.format(count, value))
 
             result_dict.append(rows)
         if len(vendor_error) or len(email_error) or len(country_error) or len(date_error):
-            raise ParseError(detail={'error': [vendor_error, email_error, country_error, date_error]})
+            error_pre_formatted_list = [vendor_error, email_error, country_error, date_error]
+            error_formatted_list = [", ".join(x) for x in error_pre_formatted_list]
+            raise ParseError(detail={'general_errors': error_formatted_list})
 
         if len(result_vendor_name_error) or len(result_vendor_email_error):
-            raise ParseError(detail={'error': [result_vendor_name_error, result_vendor_email_error]})
+            pandas_error_pre_formatted_list = [result_vendor_name_error, result_vendor_email_error]
+            error_formatted_list = [", ".join(x) for x in pandas_error_pre_formatted_list]
+            raise ParseError(detail={'general_errors': error_formatted_list})
 
         # Remove contact from result_dict wright it to intermediate_dict
         # and update result_dict['contacts'] as intermediate_dict

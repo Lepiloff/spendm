@@ -49,7 +49,8 @@ class VendorContactSerializer(serializers.ModelSerializer):
         if exist_contact:
             for contact in exist_contact:
                 if contact.vendor in vendors:
-                    raise serializers.ValidationError('Email {} already exists'.format(value))
+                    raise serializers.ValidationError({"contacts":
+                                                           [{'email': 'Email {} already exists'.format(value)}]})
         return value
 
 
@@ -88,7 +89,8 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             try:
                 VendorContacts.objects.create(vendor=vendor, **data)
             except DataError as e:
-                raise serializers.ValidationError({"error": "Some data are incorrect (possibly too long email value)"})
+                raise serializers.ValidationError({"general_errors":
+                                                       ["Some data are incorrect (possibly too long email value)"]})
         if modules:
             for data in modules:
                 VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
@@ -162,8 +164,8 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
                     vendors = Vendors.objects.filter(active=True)
                     if exist_contact:
                         for contact in exist_contact:
-                            if contact.vendor in vendors:
-                                raise serializers.ValidationError('Email {} already exists'.format(email))
+                            raise serializers.ValidationError({"contacts":
+                                                                [{'email': 'Email {} already exists'.format(email)}]})
 
         else:
             exist_contact = VendorContacts.objects.filter(email=email)
@@ -171,7 +173,8 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
             if exist_contact:
                 for contact in exist_contact:
                     if contact.vendor in vendors:
-                        raise serializers.ValidationError('Email {} already exists'.format(email))
+                        raise serializers.ValidationError({"contacts":
+                                                            [{'email': 'Email {} already exists'.format(email)}]})
         return data
 
     def create(self, validated_data):
@@ -446,5 +449,5 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
             vc = get_object_or_404(VendorContacts, email=value)
             v = vc.vendor
             if v.active:
-                raise serializers.ValidationError('Email {} already exists'.format(value))
+                raise serializers.ValidationError({"contacts": [{'email': 'Email {} already exists'.format(value)}]})
         return value
