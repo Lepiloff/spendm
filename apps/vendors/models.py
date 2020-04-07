@@ -413,7 +413,7 @@ class RfiParticipation(models.Model):
 
     class Meta:
         db_table = 'rfi_participation'
-        unique_together = (('vendor', 'm', 'rfi', 'timestamp'),)
+        unique_together = (('vendor', 'm', 'rfi',),)
 
     def __str__(self):
         return "{} is {} for {}".format(self.m.module_name, self.active, self.vendor.vendor_name)

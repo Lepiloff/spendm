@@ -409,6 +409,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
     to_vendor = RfiParticipationSerializer(many=True)
     history = serializers.SerializerMethodField()
+    current_round_participate = serializers.SerializerMethodField()
 
     class Meta:
         model = Vendors
@@ -423,13 +424,44 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   'contacts',
                   'to_vendor',
                   'history',
+                  'current_round_participate',
                   )
-        read_only_fields = ('history',)
+        read_only_fields = ('history', 'current_round_participate')
+
+    def update(self, instance, validated_data):
+        # raise_errors_on_nested_writes('update', self, validated_data)
+        for attr, value in validated_data.items():
+            if attr == 'nda':
+                # TODO remove partisipate to round modules
+                pass
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
+    def validate_nda(self, value):
+        curent_date = datetime.date.today()
+        if value > curent_date:
+            raise serializers.ValidationError({'nda': ['Future date is not allowed']})
+        return value
 
     def get_history(self, obj):
         # using slicing to exclude current field values
         h = obj.history.all().order_by('-history_date').values('vendor_name')[1:]
         return h
+
+    def get_current_round_participate(self, obj):
+        round_exist = Rfis.objects.filter()
+        if round_exist:
+            current_round = round_exist.first()
+            vendor_module_round = RfiParticipation.objects.filter(vendor=obj, rfi=current_round)
+            if vendor_module_round:
+                _round = True
+            else:
+                _round = False
+        else:
+            _round = False
+        return _round
 
 
 class VendorContactCreateSerializer(serializers.ModelSerializer):

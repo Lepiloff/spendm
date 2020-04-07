@@ -235,6 +235,50 @@ class VendorManagementListScreen(generics.ListAPIView):
 
 class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
     """ Update main vendor info (exclude contact)
+
+    GET:
+       {
+        "vendorid": 118,
+        "vendor_name": "rdty",
+        "active": true,
+        "country": "Belarus",
+        "office": "",
+        "abr_date": null,
+        "nda": "2020-12-12",
+        "parent": null,
+        "contacts": [],
+        "to_vendor": [
+            {
+                "pk": 3,
+                "active": true,
+                "m": "Sourcing",
+                "rfi": "20R1",
+                "vendor": 118,
+                "timestamp": "2020-04-06T12:50:14.762535"
+            },
+            {
+                "pk": 4,
+                "active": true,
+                "m": "SA",
+                "rfi": "20R1",
+                "vendor": 118,
+                "timestamp": "2020-04-06T13:57:33.988896"
+            }
+        ],
+        "history": [
+                {
+                    "vendor_name": "rty"
+                },
+                {
+                    "vendor_name": "TTT"
+                }
+            ],
+    "current_round_participate": false
+    }
+
+
+
+    PUT (PATH):
     Possible send partial data (just one field)
     data = {
             "vendor_name":"Forest G"
