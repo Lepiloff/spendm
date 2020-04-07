@@ -16,7 +16,7 @@ urlpatterns = [
     path('modules_list/', ModulesListView.as_view()),
     path('vendor_management_screen/', VendorManagementListScreen.as_view(), name='vendor_management_screen'),
     # vendor profile
-    path('<int:vendorid>/profile/', VendorProfilePageView.as_view(), name='vendor_profile'),
+    # path('<int:vendorid>/profile/', VendorProfilePageView.as_view(), name='vendor_profile'),
     path('<int:vendorid>/', VendorProfileUpdateView.as_view(), name='vendor_update'),
     path('contact_create/', VendorContactsCreateView.as_view(), name='contact_create'),
     path('contact/<int:contact_id>/update/', ContactsUpdateView.as_view(), name='contact_update'),
