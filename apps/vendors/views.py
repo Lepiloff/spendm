@@ -360,6 +360,14 @@ class VendorProfileModulesListCreate(generics.ListCreateAPIView):
     permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiParticipationSerializer
 
+    # Implement just to rewrite status code from 201(default) to 200
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
+
     def get_queryset(self, **kwargs):
         round = Rfis.objects.all().order_by('-timestamp').first()
         vendor = get_object_or_404(Vendors, vendorid=self.kwargs['vendorid'])

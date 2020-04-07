@@ -383,6 +383,7 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
 
     def get_company_information(self, obj):
         # Calculate last edited rfi participation module and get round information
+        rfi_id = None
         round = Rfis.objects.filter()
         if round:
             vendor_module_round = RfiParticipation.objects.filter(vendor=obj)
@@ -392,8 +393,6 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
                     rfi_id = last_vendor_module_round.rfi.rfiid
                 else:
                     rfi_id = None
-        else:
-            rfi_id = None
         return rfi_id
 
     def get_vendor_modules(self, obj):
@@ -487,10 +486,10 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         exist_contact = VendorContacts.objects.filter(email=value)
+        vendors = Vendors.objects.filter(active=True)
         if exist_contact:
-            vc = get_object_or_404(VendorContacts, email=value)
-            v = vc.vendor
-            if v.active:
-                raise serializers.ValidationError({"contacts":
-                                                 [{'email': ['Email {} already exists'.format(value)]}]})
+            for contact in exist_contact:
+                if contact.vendor in vendors:
+                    raise serializers.ValidationError({"contacts":
+                                                           [{'email': ['Email {} already exists'.format(value)]}]})
         return value

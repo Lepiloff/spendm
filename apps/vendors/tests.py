@@ -36,18 +36,23 @@ class VendorManualCreateTest(APITestCase):
             Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12",)
 
     def test_vendor_contact_email_create_unique(self):
-        vendor = Vendors.objects.create(vendor_name="U2R", country="Belarus", nda="2020-12-12", )
+        vendor = Vendors.objects.create(vendor_name="U2R", country="Belarus", nda="2020-12-12")
         data ={
             "vendor": vendor.vendorid,
             "contact_name": "Sandra B",
             "phone": 375293333333,
-            "email": "test1@rgmail.com",
+            "email": "testemail@rgmail.com",
             "primary": False
           }
+        VendorContacts.objects.create(contact_name="Any", phone="2373823", email="testemail@rgmail.com", vendor=vendor)
         url = reverse('contact_create')
         response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        vendor.active = True
+        vendor.save()
+        response = self.client.post(url, data, format='json')
         self.assertEqual(json.loads(response.content),
-                         {'email': {'contacts': [{'email': ['Email test1@rgmail.com already exists']}]}})
+                         {'email': {'contacts': [{'email': ['Email testemail@rgmail.com already exists']}]}})
 
     #API
     def test_create_vendor_api(self):
@@ -194,7 +199,7 @@ class ContactsUpdateViewTest(APITestCase):
 
     def test_contact_partial_update_api(self):
         data = {"email": "jac12k1@gmail.com"}
-        vendor = Vendors.objects.create(vendor_name="U5", country="Belarus", nda="2020-12-12", )
+        vendor = Vendors.objects.create(vendor_name="U5", country="Belarus", nda="2020-12-12", active=True)
         contact = VendorContacts.objects.create(contact_name="Mrk", phone="-2373823", email="testtest@gmail.com",
                                                 vendor=vendor)
         _id = contact.contact_id
@@ -203,6 +208,26 @@ class ContactsUpdateViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         contact = VendorContacts.objects.get(contact_id=_id)
         self.assertEqual(contact.email, 'jac12k1@gmail.com')
+
+
+class VendorProfileModulesListCreateTest(APITestCase):
+
+    def test_associate_module_to_round(self):
+        password = 'mypassword'
+        CustomUser.objects.create_superuser('myemail@test.com', password)
+        round = Rfis.objects.create(rfiid="20R1")
+        m = Modules.objects.create(module_name='Sourcing')
+        vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", active=True)
+        _id =vendor.vendorid
+        data = {
+            "active": False,
+            "rfi": round.rfiid,
+            "vendor": _id,
+            "m": m.mid
+        }
+        url = reverse('modules_to_vendor', kwargs={"vendorid": _id})
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class NewRfiRoundCreateViewTest(APITestCase):
