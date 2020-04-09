@@ -17,6 +17,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
+from service.xml_file_upload_downlod import parse_excel_rfi_sheet, InvalidFormatException
 from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
@@ -34,7 +35,6 @@ class AdministratorDashboard(APIView):
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = (permissions.AllowAny,)
-    serializer_class = VendorsCsvSerializer
 
     def put(self, request, format=None):
         if 'file' not in request.data:
@@ -50,11 +50,38 @@ class FileUploadView(APIView):
                 default_storage.delete(file)
         else:
             status = 406
-            r = { "general_errors": ["Please upload only CSV files"] }
+            r = {"general_errors": ["Please upload only CSV files"]}
         return Response(r, status=status)
 
 
-# Using serializer
+class ExcelFileUploadView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (permissions.AllowAny,)
+
+    def put(self, request, format=None):
+        if 'file' not in request.data:
+            raise ParseError("Empty content")
+        f = request.data['file']
+        filename = f.name
+        if filename.endswith('.xlsx'):
+            try:
+                file = default_storage.save(filename, f)
+                r = parse_excel_rfi_sheet(file)
+                status = 200
+            except InvalidFormatException as e:
+                r = {"general_errors": [e.__str__()]}
+                status = 406
+            except Exception as e:
+                r = {"general_errors": [e.__str__()]}
+                status = 406
+            finally:
+                default_storage.delete(file)
+        else:
+            status = 406
+            r = {"general_errors": ["Please upload only xlsx files"]}
+        return Response(r, status=status)
+
+
 class CsvToDatabase(APIView):
     """
 [
@@ -348,14 +375,14 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
 
 class VendorProfileModulesListCreate(generics.ListCreateAPIView):
     """View Vendor profile modules activity status and update it
-
-    data = {
-        "active": false,
-        "rfi": "20R1",
-        "vendor": 15,
-        "m": 4
-        }
-    """
+    POST:
+        data = {
+            "active": false,
+            "rfi": "20R1",
+            "vendor": 15,
+            "m": 4
+            }
+        """
 
     permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiParticipationSerializer
