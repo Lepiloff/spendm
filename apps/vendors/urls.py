@@ -4,10 +4,11 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
     ModulesListView, VendorManagementListScreen, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
     VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView, AssociateModulesWithVendorCsv,\
-    CsvRfiTemplateDownload
+    CsvRfiTemplateDownload, ExcelFileUploadView
 
 
 urlpatterns = [
+    path('excel_upload/', ExcelFileUploadView.as_view(), name='excel_upload'),
     path('csv_upload/', FileUploadView.as_view(), name='csv_upload'),
     path('from_csv_create/', CsvToDatabase.as_view(), name='csv_vendor_create'),
     path('create/', VendorsCreateView.as_view(), name='vendor_create'),

@@ -405,7 +405,7 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
 
 class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
-    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+    parent = VendorToFrontSerializer()
     to_vendor = RfiParticipationSerializer(many=True)
     history = serializers.SerializerMethodField()
     current_round_participate = serializers.SerializerMethodField()
