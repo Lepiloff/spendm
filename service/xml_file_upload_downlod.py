@@ -7,7 +7,7 @@ class InvalidFormatException(Exception):
 
 
 def check_exel_rfi_template_structure(structure):
-    modules_coordinate = ["COMMON S2P",
+    p_category_coordinate = ["COMMON S2P",
                             "COMMON SOURCING - SXM",
                             "SERVICES",
                             "SOURCING",
@@ -17,7 +17,7 @@ def check_exel_rfi_template_structure(structure):
                             "eProcurement",
                             "I2P",
                           ]
-    if structure == modules_coordinate:
+    if structure == p_category_coordinate:
         return True
     else:
         return False
@@ -25,18 +25,18 @@ def check_exel_rfi_template_structure(structure):
 def parse_excel_rfi_sheet(file):
     workbook = load_workbook(filename=file)
     sheet = workbook["RFI"]
-    curent_module_coordinate = []
+    curent_paren_category_coordinate = []
     try:
-        curent_module_coordinate.append(sheet['E4'].value)  # COMMON S2P
-        curent_module_coordinate.append(sheet['E222'].value)  # COMMON SOURCING - SXM
-        curent_module_coordinate.append(sheet['E348'].value)  # SERVICES
-        curent_module_coordinate.append(sheet['E381'].value)  # SOURCING
-        curent_module_coordinate.append(sheet['E519'].value)  # SXM
-        curent_module_coordinate.append(sheet['E568'].value)  # Spend Analytics
-        curent_module_coordinate.append(sheet['E617'].value)  # CLM
-        curent_module_coordinate.append(sheet['E688'].value)  # eProcurement
-        curent_module_coordinate.append(sheet['E950'].value)  # I2P
-        if check_exel_rfi_template_structure(structure=curent_module_coordinate):
+        curent_paren_category_coordinate.append(sheet['E4'].value)  # COMMON S2P
+        curent_paren_category_coordinate.append(sheet['E222'].value)  # COMMON SOURCING - SXM
+        curent_paren_category_coordinate.append(sheet['E348'].value)  # SERVICES
+        curent_paren_category_coordinate.append(sheet['E381'].value)  # SOURCING
+        curent_paren_category_coordinate.append(sheet['E519'].value)  # SXM
+        curent_paren_category_coordinate.append(sheet['E568'].value)  # Spend Analytics
+        curent_paren_category_coordinate.append(sheet['E617'].value)  # CLM
+        curent_paren_category_coordinate.append(sheet['E688'].value)  # eProcurement
+        curent_paren_category_coordinate.append(sheet['E950'].value)  # I2P
+        if check_exel_rfi_template_structure(structure=curent_paren_category_coordinate):
             file_status = True
         else:
             file_status = False
@@ -50,5 +50,5 @@ def parse_excel_rfi_sheet(file):
                     sheet['E7'] = 4
                     workbook.save("sample.xlsx")
                     print('Yep found in {}'.format(cell.coordinate))
-    return json.dumps(curent_module_coordinate)
+    return json.dumps(curent_paren_category_coordinate)
 

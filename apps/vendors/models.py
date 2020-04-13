@@ -280,14 +280,26 @@ class ModulePersonas(models.Model):
 
 
 class Modules(models.Model):
+    # MODULES_NAME = (
+    #                 ("Sourcing", "Sourcing"), ("SA", "SA"),
+    #                 ("SXM", "SXM"), ("CLM", "CLM"),
+    #                 ("ePRO", "ePRO"), ("I2P", "I2P"),
+    #                 ("P2P", "P2P"), ("SPT", "SPT"),
+    #                 ("S2P", "S2P"), ("AP", "AP"),
+    #                 ("TS", "TS"), ("SOW", "SOW"),
+    #                 ("ICW", "ICW"),
+    #                 )
     MODULES_NAME = (
-                    ("Sourcing", "Sourcing"), ("SA", "SA"),
-                    ("SXM", "SXM"), ("CLM", "CLM"),
-                    ("ePRO", "ePRO"), ("I2P", "I2P"),
-                    ("P2P", "P2P"), ("SPT", "SPT"),
-                    ("S2P", "S2P"), ("AP", "AP"),
-                    ("TS", "TS"), ("SOW", "SOW"),
-                    ("ICW", "ICW"),
+                    ("Sourcing", "Sourcing"),
+                    ("Supplier Management", "Supplier Management"),
+                    ("Spend Analytics", "Spend Analytics"),
+                    ("Contract Management", "Contract Management"),
+                    ("e-Procurement", "e-Procurement"),
+                    ("Invoice-to-Pay", "Invoice-to-Pay"),
+                    ("Strategic Procurement", "Strategic Procurement"),
+                    ("Technologies", "Technologies"),
+                    ("Procure-to-Pay", "Procure-to-Pay"),
+                    ("Source-to-Pay", "Source-to-Pay"),
                     )
     mid = models.AutoField(primary_key=True)
     module_name = models.CharField(max_length=50, choices=MODULES_NAME, unique=True)
@@ -300,7 +312,7 @@ class Modules(models.Model):
         unique_together = (('mid', 'timestamp'),)
 
     def __str__(self):
-        return self.module_name
+        return "{} id: {}".format(self.module_name, self.mid)
 
 
 class MsSmScores(models.Model):
@@ -331,14 +343,29 @@ class NormEWeights(models.Model):
 
 
 class ParentCategories(models.Model):
+    PC = (
+        ("Common S2P", "Common S2P"),
+        ("Common Sourcing - SXM", "Common Sourcing - SXM"),
+        ("Services", "Services"),
+        ("Sourcing", "Sourcing"),
+        ("SXM", "SXM"),
+        ("Spend Analytics", "Spend Analytics"),
+        ("CLM", "CLM"),
+        ("eProcurement", "eProcurement"),
+        ("I2P", "I2P"),
+
+    )
     pcid = models.AutoField(primary_key=True)
-    parent_category_name = models.CharField(max_length=45, blank=True, null=True)
-    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
-    timestamp = models.DateTimeField()
+    parent_category_name = models.CharField(max_length=45, choices=PC, unique=True)
+    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'parent_categories'
         unique_together = (('pcid', 'timestamp'),)
+
+    def __str__(self):
+        return self.parent_category_name
 
 
 class Personas(models.Model):

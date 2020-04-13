@@ -8,8 +8,10 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
 
 
 urlpatterns = [
+    # file parsing
     path('excel_upload/', ExcelFileUploadView.as_view(), name='excel_upload'),
     path('csv_upload/', FileUploadView.as_view(), name='csv_upload'),
+    #
     path('from_csv_create/', CsvToDatabase.as_view(), name='csv_vendor_create'),
     path('create/', VendorsCreateView.as_view(), name='vendor_create'),
     path('administrator_dashboard/', AdministratorDashboard.as_view(), name='administartor_dashboard'),

@@ -253,11 +253,16 @@ class RfiParticipationCsvSerializer(serializers.ModelSerializer):
 
 
 class RfiParticipationSerializer(serializers.ModelSerializer):
+    rfi = serializers.PrimaryKeyRelatedField(queryset=Rfis.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = RfiParticipation
         fields = ('pk', 'active', 'm', 'rfi', 'vendor', 'timestamp')
         read_only_fields = ('timestamp', )
+
+    def get_unique_together_validators(self):
+        """Overriding method to disable unique together checks"""
+        return []
 
     def create(self, validated_data):
         superuser = CustomUser.objects.filter(is_superuser=True)
@@ -265,6 +270,22 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
             superuser_id = superuser[0].id
         else:
             raise ValueError('Create superuser first')
+        rfi = validated_data.get('rfi', None)
+        # Allow send empty rfi data and apply last participate vendor round instead
+        if not rfi:
+            round = Rfis.objects.filter()
+            if round:
+                vendor_module_round = RfiParticipation.objects.filter(vendor=validated_data['vendor'])
+                if vendor_module_round:
+                    last_vendor_module_round = vendor_module_round.order_by('-timestamp').first()
+                    if last_vendor_module_round:
+                        rfi_id = last_vendor_module_round.rfi.rfiid
+                        validated_data['rfi'] = rfi_id
+                    else:
+                        raise serializers.ValidationError({"general_errors": ["Rfi round calculate error"]})
+                else:
+                    raise serializers.ValidationError({"general_errors": ["Vendor is not participate in any round"]})
+
         module, created = RfiParticipation.objects.update_or_create(
             rfi=validated_data.get('rfi', None),
             vendor=validated_data.get('vendor', None),
@@ -405,7 +426,8 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
 
 class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
-    parent = VendorToFrontSerializer()
+    # parent = VendorToFrontSerializer()
+    parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
     to_vendor = RfiParticipationSerializer(many=True)
     history = serializers.SerializerMethodField()
     current_round_participate = serializers.SerializerMethodField()
@@ -439,9 +461,10 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
 
 
     def validate_nda(self, value):
-        curent_date = datetime.date.today()
-        if value > curent_date:
-            raise serializers.ValidationError({'nda': ['Future date is not allowed']})
+        if value is not None:
+            curent_date = datetime.date.today()
+            if value > curent_date:
+                raise serializers.ValidationError({'nda': ['Future date is not allowed']})
         return value
 
     def get_history(self, obj):
@@ -452,7 +475,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     def get_current_round_participate(self, obj):
         round_exist = Rfis.objects.filter()
         if round_exist:
-            current_round = round_exist.first()
+            current_round = round_exist.order_by('-timestamp').first()
             vendor_module_round = RfiParticipation.objects.filter(vendor=obj, rfi=current_round)
             if vendor_module_round:
                 _round = True

@@ -378,7 +378,7 @@ class VendorProfileModulesListCreate(generics.ListCreateAPIView):
     POST:
         data = {
             "active": false,
-            "rfi": "20R1",
+            "rfi": "20R1", # allow send blank field (Null)
             "vendor": 15,
             "m": 4
             }
@@ -606,3 +606,9 @@ class CsvRfiTemplateDownload(APIView):
                              'AP': res.get('AP', False), 'TS': res.get('TS', False),
                              'SOW': res.get('SOW', False), 'ICW': res.get('ICW', False)})
         return response
+
+
+# EXCELL
+
+class CreateElementFromExcellFile(generics.CreateAPIView):
+    permission_classes = (permissions.AllowAny,)
