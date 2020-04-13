@@ -279,8 +279,8 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 if vendor_module_round:
                     last_vendor_module_round = vendor_module_round.order_by('-timestamp').first()
                     if last_vendor_module_round:
-                        rfi_id = last_vendor_module_round.rfi.rfiid
-                        validated_data['rfi'] = rfi_id
+                        rfi = last_vendor_module_round.rfi
+                        validated_data['rfi'] = rfi
                     else:
                         raise serializers.ValidationError({"general_errors": ["Rfi round calculate error"]})
                 else:
@@ -448,6 +448,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   'current_round_participate',
                   )
         read_only_fields = ('history', 'current_round_participate')
+
 
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
