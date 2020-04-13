@@ -1,7 +1,7 @@
 module_to_category = {"Sourcing": "", "Supplier Management": "", "Spend Analytics": "", "Contract Management": "", "e-Procurement": "", "Invoice-to-Pay": "", "Strategic Procurement": "", "Technologies": "" }
 
 MODULES_NAME = (
-    ("Sourcing", "Sourcing"),
+    ("Strategic Sourcing", "Strategic Sourcing"),
     ("Supplier Management", "Supplier Management"),
     ("Spend Analytics", "Spend Analytics"),
     ("Contract Management", "Contract Management"),

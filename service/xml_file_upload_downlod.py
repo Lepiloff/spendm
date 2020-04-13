@@ -46,7 +46,6 @@ def parse_excel_rfi_sheet(file):
         for row in sheet.rows:
             for cell in row:
                 if cell.value == "COMMON S2P":
-                    print('Start')
                     sheet['E7'] = 4
                     workbook.save("sample.xlsx")
                     print('Yep found in {}'.format(cell.coordinate))

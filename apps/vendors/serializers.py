@@ -293,10 +293,10 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
             defaults={'active': validated_data.get('active', False)})
         return module
 
-    def to_representation(self, instance):
-        rep = super(RfiParticipationSerializer, self).to_representation(instance)
-        rep['m'] = instance.m.module_name
-        return rep
+    # def to_representation(self, instance):
+    #     rep = super(RfiParticipationSerializer, self).to_representation(instance)
+    #     rep['m'] = instance.m.module_name
+    #     return rep
 
 
 class RfiParticipationCsvDownloadSerializer(serializers.ModelSerializer):
