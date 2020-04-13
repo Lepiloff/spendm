@@ -273,18 +273,12 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
         rfi = validated_data.get('rfi', None)
         # Allow send empty rfi data and apply last participate vendor round instead
         if not rfi:
-            round = Rfis.objects.filter()
+            round = Rfis.objects.all()
             if round:
-                vendor_module_round = RfiParticipation.objects.filter(vendor=validated_data['vendor'])
-                if vendor_module_round:
-                    last_vendor_module_round = vendor_module_round.order_by('-timestamp').first()
-                    if last_vendor_module_round:
-                        rfi = last_vendor_module_round.rfi
-                        validated_data['rfi'] = rfi
-                    else:
-                        raise serializers.ValidationError({"general_errors": ["Rfi round calculate error"]})
-                else:
-                    raise serializers.ValidationError({"general_errors": ["Vendor is not participate in any round"]})
+                lastr_round = round.order_by('-timestamp').first()
+                validated_data['rfi'] = lastr_round
+            else:
+                raise serializers.ValidationError({"general_errors": ["Round is not created yet"]})
 
         module, created = RfiParticipation.objects.update_or_create(
             rfi=validated_data.get('rfi', None),
