@@ -420,7 +420,6 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
 
 class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
-    # parent = VendorToFrontSerializer()
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
     to_vendor = RfiParticipationSerializer(many=True)
     history = serializers.SerializerMethodField()
@@ -443,7 +442,6 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   )
         read_only_fields = ('history', 'current_round_participate')
 
-
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
         for attr, value in validated_data.items():
@@ -453,7 +451,6 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
-
 
     def validate_nda(self, value):
         if value is not None:
@@ -479,6 +476,11 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         else:
             _round = False
         return _round
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        response['parent'] = VendorToFrontSerializer(instance.parent).data
+        return response
 
 
 class VendorContactCreateSerializer(serializers.ModelSerializer):
