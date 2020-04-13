@@ -290,7 +290,7 @@ class Modules(models.Model):
     #                 ("ICW", "ICW"),
     #                 )
     MODULES_NAME = (
-                    ("Sourcing", "Sourcing"),
+                    ("Strategic Sourcing", "Strategic Sourcing"),
                     ("Supplier Management", "Supplier Management"),
                     ("Spend Analytics", "Spend Analytics"),
                     ("Contract Management", "Contract Management"),

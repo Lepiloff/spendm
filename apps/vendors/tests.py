@@ -52,7 +52,7 @@ class VendorManualCreateTest(APITestCase):
         vendor.save()
         response = self.client.post(url, data, format='json')
         self.assertEqual(json.loads(response.content),
-                         {'email': {'email': ['Email testemail@rgmail.com already exists']}})
+                         {'email': ['Email testemail@rgmail.com already exists']})
 
     #API
     def test_create_vendor_api(self):
@@ -79,7 +79,7 @@ class VendorCsvValidateTest(TestCase):
         field2 = response[1]
         self.assertEqual((field1['vendor_name']), 'Testtest')
         self.assertEqual((field2['vendor_name']), 'Test2test')
-        self.assertEqual((field1['modules'][0]['module']), 'Sourcing')
+        self.assertEqual((field1['modules'][0]['module']), 'Strategic Sourcing')
         self.assertEqual((field2['modules'][0]['module']), '')
         self.assertTrue((type(field2['nda']), 'str'))
 
@@ -88,8 +88,8 @@ class VendorCsvCreateTest(APITestCase):
     def setUp(self):
         password = 'mypassword'
         CustomUser.objects.create_superuser('myemail@test.com', password)
-        Modules.objects.create(module_name='Sourcing')
-        Modules.objects.create(module_name='SA')
+        Modules.objects.create(module_name='Strategic Sourcing')
+        Modules.objects.create(module_name='Supplier Management')
 
     def test_vendor_from_csv_create_api(self):
         data = [
@@ -99,10 +99,10 @@ class VendorCsvCreateTest(APITestCase):
         "nda": "2019-12-24",
         "modules": [
             {
-                "module": "Sourcing"
+                "module": "Strategic Sourcing"
             },
             {
-                "module": "SA"
+                "module": "Supplier Management"
             }
         ],
         "contacts": [
@@ -177,7 +177,7 @@ class VendorContactsCreateViewTest(APITestCase):
         url = reverse('contact_create')
         response = self.client.post(url, data, format='json')
         self.assertEqual(json.loads(response.content),
-                         {'email': {'email': ['Email testtests@rgmail.com already exists']}})
+                         {'email': ['Email testtests@rgmail.com already exists']})
         self.assertEqual(VendorContacts.objects.count(), 1)
 
 
@@ -303,8 +303,8 @@ class VendorManagementScreenTest(APITestCase):
 
     def test_get_actual_information_api(self):
         vendor = Vendors.objects.create(vendor_name="U4", country="Belarus", nda="2020-12-12", )
-        m1 = Modules.objects.create(module_name='Sourcing')
-        m2= Modules.objects.create(module_name='SA')
+        m1 = Modules.objects.create(module_name='Strategic Sourcing')
+        m2= Modules.objects.create(module_name='Supplier Management')
         round = Rfis.objects.create(rfiid="20R1")
         rfi = RfiParticipation.objects.create(vendor=vendor, rfi=round, m=m1)
         self.assertEqual(RfiParticipation.objects.all().count(), 1)
