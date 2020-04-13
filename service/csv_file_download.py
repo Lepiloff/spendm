@@ -10,19 +10,16 @@ from apps.vendors.models import Vendors, VendorContacts, Rfis
 from service.countries import COUNTRIES_LIST
 
 modules_list = [
-    "Sourcing",
-    "SA",
-    "SXM",
-    "CLM",
-    "ePRO",
-    "I2P",
-    "P2P",
-    "SPT",
-    "S2P",
-    "AP",
-    "TS",
-    "SOW",
-    "ICW"
+    "Strategic Sourcing",
+    "Supplier Management",
+    "Spend Analytics",
+    "Contract Management",
+    "e-Procurement",
+    "Invoice-to-Pay",
+    "Strategic Procurement",
+    "Technologies",
+    "Procure-to-Pay",
+    "Source-to-Pay",
 ]
 
 
@@ -178,21 +175,18 @@ def rfi_csv_file_parser(file):
     status_error = []
     status = ['true', 'false']
     csv_fields = [
-                  'Round',
-                  'Vendor',
-                  'Sourcing',
-                  'SA',
-                  'SXM',
-                  'CLM',
-                  'ePRO',
-                  'I2P',
-                  'P2P',
-                  'SPT',
-                  'S2P',
-                  'AP',
-                  'TS',
-                  'SOW',
-                  'ICW',
+                    "Round",
+                    "Vendor",
+                    "Strategic Sourcing",
+                    "Supplier Management",
+                    "Spend Analytics",
+                    "Contract Management",
+                    "e-Procurement",
+                    "Invoice-to-Pay",
+                    "Strategic Procurement",
+                    "Technologies",
+                    "Procure-to-Pay",
+                    "Source-to-Pay",
                  ]
     with open(file) as csvfile:
         reader = csv.DictReader(csvfile)

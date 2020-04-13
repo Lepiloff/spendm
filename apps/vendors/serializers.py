@@ -33,14 +33,14 @@ class VendorContactSerializer(serializers.ModelSerializer):
                     )
         read_only_fields = ('contact_id', )
 
-    def update(self, instance, validated_data):
-        phone = validated_data.pop('phone', instance.phone)
-        result = re.sub('[^0-9]','', phone)
-        instance.phone = result
-        instance.email = validated_data.get('email', instance.email)
-        instance.contact_name = validated_data.get('contact_name', instance.contact_name)
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     phone = validated_data.pop('phone', instance.phone)
+    #     result = re.sub('[^0-9]','', phone)
+    #     instance.phone = result
+    #     instance.email = validated_data.get('email', instance.email)
+    #     instance.contact_name = validated_data.get('contact_name', instance.contact_name)
+    #     instance.save()
+    #     return instance
 
     def validate_email(self, value):
         # Check if email exist in active vendor and raise exception
@@ -49,7 +49,7 @@ class VendorContactSerializer(serializers.ModelSerializer):
         if exist_contact:
             for contact in exist_contact:
                 if contact.vendor in vendors:
-                    raise serializers.ValidationError({'email': ['Email {} already exists'.format(value)]})
+                    raise serializers.ValidationError(['Email {} already exists'.format(value)])
         return value
 
 
@@ -111,14 +111,14 @@ class VendorContactManualSerializer(serializers.ModelSerializer):
                     )
         read_only_fields = ('contact_id', )
 
-    def update(self, instance, validated_data):
-        phone = validated_data.pop('phone', instance.phone)
-        result = re.sub('[^0-9]','', phone)
-        instance.phone = result
-        instance.email = validated_data.get('email', instance.email)
-        instance.contact_name = validated_data.get('contact_name', instance.contact_name)
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     phone = validated_data.pop('phone', instance.phone)
+    #     result = re.sub('[^0-9]','', phone)
+    #     instance.phone = result
+    #     instance.email = validated_data.get('email', instance.email)
+    #     instance.contact_name = validated_data.get('contact_name', instance.contact_name)
+    #     instance.save()
+    #     return instance
 
 
 class VendorsCreateSerializer(serializers.ModelSerializer):
@@ -419,7 +419,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         if value is not None:
             curent_date = datetime.date.today()
             if value > curent_date:
-                raise serializers.ValidationError({'nda': ['Future date is not allowed']})
+                raise serializers.ValidationError(['Future date is not allowed'])
         return value
 
     def get_history(self, obj):
@@ -479,11 +479,12 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
         if exist_contact:
             for contact in exist_contact:
                 if contact.vendor in vendors:
-                    raise serializers.ValidationError({'email': ['Email {} already exists'.format(value)]})
+                    raise serializers.ValidationError(['Email {} already exists'.format(value)])
         return value
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
+    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all())
 
     class Meta:
         model = VendorContacts
@@ -492,5 +493,33 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                   'phone',
                   'email',
                   'primary',
+                  'vendor',
                     )
-        read_only_fields = ('contact_id', )
+        read_only_fields = ('contact_id', 'vendor')
+
+    def validate_email(self, value):
+        vendor = self.instance.vendor
+        parent = vendor.parent
+        # Check that response contact is/not parent contact. If not parent contact - raise exception
+        if parent:
+            p_contact_email_list = []
+            parent_contact = VendorContacts.objects.filter(vendor=parent)
+            for contact in parent_contact:
+                p_contact_email_list.append(contact.email)  # get list of parent vendors emails
+            if value != "":
+                if value in p_contact_email_list:
+                    pass
+                else:
+                    exist_contact = VendorContacts.objects.filter(email=value)
+                    vendors = Vendors.objects.filter(active=True)
+                    if exist_contact:
+                        for contact in exist_contact:
+                            raise serializers.ValidationError(['Email {} already exists'.format(value)])
+        else:
+            exist_contact = VendorContacts.objects.filter(email=value)
+            vendors = Vendors.objects.filter(active=True)
+            if exist_contact:
+                for contact in exist_contact:
+                    if contact.vendor in vendors:
+                        raise serializers.ValidationError(['Email {} already exists'.format(value)])
+        return value
