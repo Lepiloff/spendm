@@ -22,7 +22,9 @@ from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, R
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
-    RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer
+    RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
+    ContactUpdateSerializer
+
 
 
 class AdministratorDashboard(APIView):
@@ -324,34 +326,57 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-class VendorContactsCreateView(APIView):
-    """
-    Create new vendor from Vendor Manager screen
+# class VendorContactsCreateView(APIView):
+#     """
+#     Create new vendor from Vendor Manager screen
+#
+#       {
+#         "vendor": 138,
+#         "contact_name": "Sandra B",
+#         "phone": 375293333333,
+#         "email": "sand3f45r2a1@gmail.com",
+#         "primary": false
+#       }
+#
+#     """
+#     permission_classes = [permissions.AllowAny, ]
+#     serializer_class = VendorContactCreateSerializer
+#
+#     def post(self, request, *args, **kwargs):
+#         data = request.data
+#         serializer = VendorContactCreateSerializer(data=data)
+#         try:
+#             serializer.is_valid(raise_exception=True)
+#             serializer.save()
+#         except ValidationError:
+#             return Response({"errors": (serializer.errors,)},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             return Response(request.data, status=status.HTTP_200_OK)
 
-      {
-        "vendor": 138,
-        "contact_name": "Sandra B",
-        "phone": 375293333333,
-        "email": "sand3f45r2a1@gmail.com",
+
+class VendorContactsCreateView(generics.CreateAPIView):
+    """
+          {
+        "vendor": 1,
+        "contact_name": "San",
+        "phone": null,
+        "email": "tesdвbxxxxdoxxset@gmail.com",
         "primary": false
       }
 
     """
+
     permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorContactCreateSerializer
 
-    def post(self, request, *args, **kwargs):
-        data = request.data
-        serializer = VendorContactCreateSerializer(data=data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-        except ValidationError:
-            return Response({"errors": (serializer.errors,)},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            return Response(request.data, status=status.HTTP_200_OK)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
 
 class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
@@ -365,7 +390,7 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
 
     permission_classes = [permissions.AllowAny, ]
-    serializer_class = VendorContactSerializer
+    serializer_class = ContactUpdateSerializer
     lookup_field = 'contact_id'
     queryset = VendorContacts.objects.all()
 
