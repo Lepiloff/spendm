@@ -49,8 +49,7 @@ class VendorContactSerializer(serializers.ModelSerializer):
         if exist_contact:
             for contact in exist_contact:
                 if contact.vendor in vendors:
-                    raise serializers.ValidationError({"contacts":
-                                                           [{'email': ['Email {} already exists'.format(value)]}]})
+                    raise serializers.ValidationError({'email': ['Email {} already exists'.format(value)]})
         return value
 
 
@@ -95,16 +94,6 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
             for data in modules:
                 VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
                                                  user=current_user, **data)
-
-        # Filter: only if we decide using modules from VendorModuleName list
-        # if modules:
-        #     for data in modules:
-        #         vmn = VendorModuleNames.objects.create(vendor=vendor, vendor_name=vendor.vendor_name,
-        #                                          user=current_user, **data)
-        #         modules = Modules.objects.get(module_name=vmn.module.module_name)
-        #         RfiParticipation.objects.create(vendor=vendor, user_id=superuser_id,  m=modules)
-
-        # Extra: create RfiParticipation tables with default active status = False
         return vendor
 
 
@@ -189,32 +178,6 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
         for data in contact_data:
             VendorContacts.objects.create(vendor=vendor, primary=True, **data)
         return vendor
-
-
-# class _VendorsCreateSerializer(serializers.ModelSerializer):
-#     contacts = VendorContactSerializer(many=True)
-#     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-#
-#     class Meta:
-#         model = Vendors
-#         fields = ('vendor_name',
-#                   'country',
-#                   'nda',
-#                   'contacts',
-#                   'parent',)
-#
-#     def create(self, validated_data):
-#         contact_data = validated_data.pop('contacts')
-#         # Only for first phase for workin with admin instancess only. Rewrite after !!!
-#         superuser = CustomUser.objects.filter(is_superuser=True)
-#         if superuser:
-#             superuser_id = superuser[0].id
-#             vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
-#         else:
-#             raise ValueError('Create superuser first')
-#         for data in contact_data:
-#             VendorContacts.objects.create(vendor=vendor, primary=True, **data)
-#         return vendor
 
 
 class VendorModulSerializer(serializers.ModelSerializer):
@@ -487,22 +450,28 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
                                                              message='Enter valid email address')])
     vendor = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+    phone = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = VendorContacts
         fields = ('vendor',
                   'contact_name',
+                  'contact_id',
                   'phone',
                   'email',
                   'primary',
                   )
+        read_only_fields = ('contact_id', )
 
-    def create(self, validated_data):
-        phone = validated_data.pop('phone', None)
-        vendor = validated_data.pop('vendor', None)
-        result = re.sub('[^0-9]', '', phone)
-        contact = VendorContacts.objects.create(vendor=vendor, phone=result, **validated_data)
-        return contact
+    # def create(self, validated_data):
+    #     phone = validated_data.pop('phone', None)
+    #     vendor = validated_data.pop('vendor', None)
+    #     result = re.sub('[^0-9]', '', phone)
+    #     contact = VendorContacts.objects.create(vendor=vendor, phone=result, **validated_data)
+    #     return contact
+
+    # def create(self, validated_data):
+    #     return self
 
     def validate_email(self, value):
         exist_contact = VendorContacts.objects.filter(email=value)
@@ -510,6 +479,18 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
         if exist_contact:
             for contact in exist_contact:
                 if contact.vendor in vendors:
-                    raise serializers.ValidationError({"contacts":
-                                                           [{'email': ['Email {} already exists'.format(value)]}]})
+                    raise serializers.ValidationError({'email': ['Email {} already exists'.format(value)]})
         return value
+
+
+class ContactUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = VendorContacts
+        fields = ('contact_id',
+                  'contact_name',
+                  'phone',
+                  'email',
+                  'primary',
+                    )
+        read_only_fields = ('contact_id', )
