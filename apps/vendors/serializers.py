@@ -371,6 +371,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     to_vendor = RfiParticipationSerializer(many=True)
     history = serializers.SerializerMethodField()
     current_round_participate = serializers.SerializerMethodField()
+    office = serializers.CharField(required=False, allow_null=True)
 
     class Meta:
         model = Vendors
@@ -396,7 +397,10 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                 # TODO remove partisipate to round modules
                 pass
             setattr(instance, attr, value)
-        instance.save()
+        if attr == 'vendor_name':
+            instance.save()
+        else:
+            instance.save_without_historical_record()
         return instance
 
     def validate_nda(self, value):
@@ -407,7 +411,6 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def get_history(self, obj):
-        # using slicing to exclude current field values
         h = obj.history.all().order_by('-history_date').values('vendor_name')[1:]
         return h
 

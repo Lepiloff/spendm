@@ -689,6 +689,14 @@ class Vendors(models.Model):
     def __str__(self):
         return self.vendor_name
 
+    def save_without_historical_record(self, *args, **kwargs):
+        self.skip_history_when_saving = True
+        try:
+            ret = self.save(*args, **kwargs)
+        finally:
+            del self.skip_history_when_saving
+        return ret
+
 
 class VpScores(models.Model):
     """View
