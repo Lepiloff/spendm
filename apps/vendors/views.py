@@ -26,7 +26,6 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     ContactUpdateSerializer
 
 
-
 class AdministratorDashboard(APIView):
 
     def get(self, request, format=None):

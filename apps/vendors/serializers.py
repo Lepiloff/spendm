@@ -397,7 +397,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                 # TODO remove partisipate to round modules
                 pass
             setattr(instance, attr, value)
-        if attr == 'vendor_name':
+        if validated_data == 'vendor_name':
             instance.save()
         else:
             instance.save_without_historical_record()
@@ -507,8 +507,11 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        # Check status
-        email = validated_data['email']
-        instance.email = email.lower()
+        # raise_errors_on_nested_writes('update', self, validated_data)
+        for attr, value in validated_data.items():
+            if attr == 'email':
+                value = value.lower()
+            setattr(instance, attr, value)
         instance.save()
+
         return instance
