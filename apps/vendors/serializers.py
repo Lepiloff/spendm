@@ -136,7 +136,6 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Check that response contact is/not parent contact. If not parent contact - raise exception
         parent = data.get('parent', None)
-        # example_dict.get('key1', {}).get('key2')
         email_list = data.get('contacts', None)
         for e in email_list:
             email = e.get('email', None)  # get request email
@@ -149,21 +148,16 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
                 if email in p_contact_email_list:
                     pass
                 else:
-                    exist_contact = VendorContacts.objects.filter(email=email)
-                    vendors = Vendors.objects.filter(active=True)
+                    exist_contact = VendorContacts.objects.filter(email=email).filter(vendor__active=True)
                     if exist_contact:
-                        for contact in exist_contact:
-                            raise serializers.ValidationError({"contacts":
-                                                            [{'email': ['Email {} already exists'.format(email)]}]})
+                        raise serializers.ValidationError({"contacts":
+                                                               [{'email': ['Email {} already exists'.format(email)]}]})
 
         else:
-            exist_contact = VendorContacts.objects.filter(email=email)
-            vendors = Vendors.objects.filter(active=True)
+            exist_contact = VendorContacts.objects.filter(email=email).filter(vendor__active=True)
             if exist_contact:
-                for contact in exist_contact:
-                    if contact.vendor in vendors:
-                        raise serializers.ValidationError({"contacts":
-                                                            [{'email': ['Email {} already exists'.format(email)]}]})
+                raise serializers.ValidationError({"contacts":
+                                                       [{'email': ['Email {} already exists'.format(email)]}]})
         return data
 
     def create(self, validated_data):
@@ -209,11 +203,6 @@ class RfiParticipationCsvSerializer(serializers.ModelSerializer):
             defaults={'active': validated_data.get('active', False)})
         return module
 
-    # def to_representation(self, instance):
-    #     rep = super(RfiParticipationSerializer, self).to_representation(instance)
-    #     rep['m'] = instance.m.module_name
-    #     return rep
-
 
 class RfiParticipationSerializer(serializers.ModelSerializer):
     rfi = serializers.PrimaryKeyRelatedField(queryset=Rfis.objects.all(), required=False, allow_null=True)
@@ -249,11 +238,6 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
             m=validated_data.get('m', None), user_id=superuser_id,
             defaults={'active': validated_data.get('active', False)})
         return module
-
-    # def to_representation(self, instance):
-    #     rep = super(RfiParticipationSerializer, self).to_representation(instance)
-    #     rep['m'] = instance.m.module_name
-    #     return rep
 
 
 class RfiParticipationCsvDownloadSerializer(serializers.ModelSerializer):
@@ -470,9 +454,6 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
     #     contact = VendorContacts.objects.create(vendor=vendor, phone=result, **validated_data)
     #     return contact
 
-    # def create(self, validated_data):
-    #     return self
-
     def validate_email(self, value):
         exist_contact = VendorContacts.objects.filter(email=value)
         vendors = Vendors.objects.filter(active=True)
@@ -510,16 +491,11 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                 if value in p_contact_email_list:
                     pass
                 else:
-                    exist_contact = VendorContacts.objects.filter(email=value)
-                    vendors = Vendors.objects.filter(active=True)
+                    exist_contact = VendorContacts.objects.filter(email=value).filter(vendor__active=True)
                     if exist_contact:
-                        for contact in exist_contact:
-                            raise serializers.ValidationError(['Email {} already exists'.format(value)])
-        else:
-            exist_contact = VendorContacts.objects.filter(email=value)
-            vendors = Vendors.objects.filter(active=True)
-            if exist_contact:
-                for contact in exist_contact:
-                    if contact.vendor in vendors:
                         raise serializers.ValidationError(['Email {} already exists'.format(value)])
+        else:
+            exist_contact = VendorContacts.objects.filter(email=value).filter(vendor__active=True)
+            if exist_contact:
+                raise serializers.ValidationError(['Email {} already exists'.format(value)])
         return value
