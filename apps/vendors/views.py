@@ -607,8 +607,9 @@ class CsvRfiTemplateDownload(APIView):
 
     def get(self, request, format=None, **kwargs):
         rfi = kwargs['rfiid']
-        csv_header_fields = ['Round', 'Vendor', 'Sourcing', 'SA', 'SXM', 'CLM', 'ePRO', 'I2P',
-                             'P2P', 'SPT', 'S2P', 'AP', 'TS', 'SOW', 'ICW']
+        csv_header_fields = ['Round', 'Vendor', 'Strategic Sourcing', 'Supplier Management', 'Spend Analytics',
+                             'Contract Management', 'e-Procurement', 'Invoice-to-Pay', 'Strategic Procurement',
+                             'Technologies', 'Procure-to-Pay', 'Source-to-Pay']
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="export_rfi.csv"'
         writer = csv.DictWriter(response, fieldnames=csv_header_fields)
@@ -623,15 +624,18 @@ class CsvRfiTemplateDownload(APIView):
                 module_dict = serializer.data.copy()  # get dict object
                 module_to_vendor.append(module_dict)
             res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
-            writer.writerow({'Round': rfi, 'Vendor': vendor_name, 'Sourcing': res.get('Sourcing', False),
-                             'SA': res.get('SA', False), 'SXM': res.get('SXM', False),
-                             'CLM': res.get('CLM', False), 'ePRO': res.get('ePRO', False),
-                             'I2P': res.get('I2P', False), 'P2P': res.get('P2P', False),
-                             'SPT': res.get('SPT', False), 'S2P': res.get('S2P', False),
-                             'AP': res.get('AP', False), 'TS': res.get('TS', False),
-                             'SOW': res.get('SOW', False), 'ICW': res.get('ICW', False)})
+            writer.writerow({'Round': rfi, 'Vendor': vendor_name,
+                             'Strategic Sourcing': res.get('Strategic Sourcing', False),
+                             'Supplier Management': res.get('Supplier Management', False),
+                             'Spend Analytics': res.get('Spend Analytics', False),
+                             'Contract Management': res.get('Contract Management', False),
+                             'e-Procurement': res.get('e-Procurement', False),
+                             'Invoice-to-Pay': res.get('Invoice-to-Pay', False),
+                             'Strategic Procurement': res.get('Strategic Procurement', False),
+                             'Technologies': res.get('Technologies', False),
+                             'Procure-to-Pay': res.get('Procure-to-Pay', False),
+                             'Source-to-Pay': res.get('Source-to-Pay', False)})
         return response
-
 
 # EXCELL
 
