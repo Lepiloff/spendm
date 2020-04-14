@@ -671,7 +671,7 @@ class Vendors(models.Model):
     vendorid = models.AutoField(primary_key=True)
     vendor_name = models.CharField(max_length=45, unique=True, error_messages={'unique': "Vendor already exists"})
     country = models.CharField(max_length=145, choices=COUNTRY_CHOICES)
-    office = models.CharField(max_length=145)
+    office = models.CharField(max_length=145, blank=True, null=True)
     abr_date = models.DateField(blank=True, null=True)
     nda = models.DateField(blank=True, null=True)
     consent = models.DateField(blank=True, null=True)
