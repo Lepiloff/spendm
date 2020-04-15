@@ -102,15 +102,6 @@ class VendorContactManualSerializer(serializers.ModelSerializer):
                     )
         read_only_fields = ('contact_id', )
 
-    # def update(self, instance, validated_data):
-    #     phone = validated_data.pop('phone', instance.phone)
-    #     result = re.sub('[^0-9]','', phone)
-    #     instance.phone = result
-    #     instance.email = validated_data.get('email', instance.email)
-    #     instance.contact_name = validated_data.get('contact_name', instance.contact_name)
-    #     instance.save()
-    #     return instance
-
 
 class VendorsCreateSerializer(serializers.ModelSerializer):
     contacts = VendorContactManualSerializer(many=True)
@@ -385,6 +376,9 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
             if attr == 'nda':
                 # TODO remove partisipate to round modules
                 pass
+            if attr == 'office':
+                # TODO remove partisipate to round modules
+                pass
             setattr(instance, attr, value)
         if validated_data.get("vendor_name", None):
             instance.save()
@@ -400,7 +394,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def get_history(self, obj):
-        h = obj.history.all().order_by('-history_date').values('vendor_name')
+        h = obj.history.all().order_by('-history_date').values('vendor_name')[1:]
         return h
 
     def get_current_round_participate(self, obj):
