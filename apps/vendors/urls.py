@@ -26,9 +26,9 @@ urlpatterns = [
     path('<int:vendorid>/modules/', VendorProfileModulesListCreate.as_view(), name='modules_to_vendor'),
     # rfi
     path('rfi_create/', NewRfiRoundCreateView.as_view(), name='rfi_create'),
+    path('rfi/list/', RfiRoundListView.as_view(), name='rfi_list'),
     path('rfi/<str:rfiid>/close/', RfiRoundClose.as_view(), name='rfi_close'),
     path('rfi/<str:rfiid>/', RfiRoundView.as_view(), name='rfi_management'),
-    path('rfi/list/', RfiRoundListView.as_view(), name='rfi_list'),
     path('rfi/<str:rfiid>/vendor_module_to_round_list/', AssociateModulesWithVendorView.as_view(),
          name='vendor_module_to_round'),
     path('rfi_csv_upload/', RfiCsvUploadView.as_view(), name='rfi_csv_upload'),
