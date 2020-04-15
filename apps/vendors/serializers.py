@@ -386,7 +386,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                 # TODO remove partisipate to round modules
                 pass
             setattr(instance, attr, value)
-        if validated_data == 'vendor_name':
+        if validated_data.get("vendor_name", None):
             instance.save()
         else:
             instance.save_without_historical_record()
@@ -400,7 +400,7 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def get_history(self, obj):
-        h = obj.history.all().order_by('-history_date').values('vendor_name')[1:]
+        h = obj.history.all().order_by('-history_date').values('vendor_name')
         return h
 
     def get_current_round_participate(self, obj):
