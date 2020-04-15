@@ -35,24 +35,13 @@ class VendorContactSerializer(serializers.ModelSerializer):
                     )
         read_only_fields = ('contact_id', )
 
-    # def update(self, instance, validated_data):
-    #     phone = validated_data.pop('phone', instance.phone)
-    #     result = re.sub('[^0-9]','', phone)
-    #     instance.phone = result
-    #     instance.email = validated_data.get('email', instance.email)
-    #     instance.contact_name = validated_data.get('contact_name', instance.contact_name)
-    #     instance.save()
-    #     return instance
-
     def validate_email(self, value):
         # Check if email exist in active vendor and raise exception
-        exist_contact = VendorContacts.objects.filter(email=value)
-        vendors = Vendors.objects.filter(active=True)
-        if exist_contact:
-            for contact in exist_contact:
-                if contact.vendor in vendors:
-                    raise serializers.ValidationError(['Email {} already exists'.format(value)])
-        return value
+        if value != "":
+            exist_contact = VendorContacts.objects.filter(email=value).filter(vendor__active=True)
+            if exist_contact:
+                raise serializers.ValidationError(['Email {} already exists'.format(value)])
+            return value
 
 
 class VendorModuleNameSerializer(serializers.ModelSerializer):
