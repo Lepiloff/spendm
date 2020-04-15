@@ -43,11 +43,14 @@ def parse_excel_rfi_sheet(file):
     except:
         raise InvalidFormatException("Error during excel file parsing. Unknown module cell")
     if file_status:
-        for row in sheet.rows:
+        for row in sheet.iter_rows(min_row=519, min_col=3 , max_col=6, max_row=568):
             for cell in row:
-                if cell.value == "COMMON S2P":
-                    sheet['E7'] = 4
-                    workbook.save("sample.xlsx")
-                    print('Yep found in {}'.format(cell.coordinate))
+                print(cell.value)
+            print("______")
+            # for cell in row:
+            #     if cell.value == "COMMON S2P":
+            #         sheet['E7'] = 4
+            #         # workbook.save("sample.xlsx")
+            #         print('Yep found in {}'.format(cell.coordinate))
     return json.dumps(curent_paren_category_coordinate)
 
