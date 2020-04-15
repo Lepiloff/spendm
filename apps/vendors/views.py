@@ -446,9 +446,8 @@ class NewRfiRoundCreateView(generics.ListCreateAPIView):
 
 
 class RfiRoundClose(generics.RetrieveUpdateAPIView):
-    """Close rfi round
-    data = {"active": False}
-
+    """
+    Close rfi round
     """
 
     permission_classes = [permissions.AllowAny, ]
