@@ -46,7 +46,7 @@ class AssignedPcAnalysts(models.Model):
 
 
 class AssignedVendorsAnalysts(models.Model):
-    """Not needed for phase 1a"""
+
     analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     active = models.IntegerField()
@@ -507,7 +507,7 @@ class SelfDescriptions(models.Model):
 
 class SelfScores(models.Model):
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
-    e = models.ForeignKey(Elements, models.DO_NOTHING)
+    e = models.ForeignKey(Elements, models.DO_NOTHING, related_name='self_score')
     self_score = models.DecimalField(max_digits=2, decimal_places=1, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     rfi = models.ForeignKey(Rfis, models.DO_NOTHING)

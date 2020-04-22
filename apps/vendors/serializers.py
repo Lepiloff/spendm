@@ -510,6 +510,7 @@ class ParentcategorySerializer(serializers.ModelSerializer):
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
+    pc = serializers.PrimaryKeyRelatedField(queryset=ParentCategories.objects.all())
     class Meta:
         model = Categories
         fields = (
@@ -519,6 +520,7 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 
 class SubcategoriesSerializer(serializers.ModelSerializer):
+    c = serializers.PrimaryKeyRelatedField(queryset=Categories.objects.all())
     class Meta:
         model = Subcategories
         field = (
@@ -555,11 +557,7 @@ class SelfScoresSerializer(serializers.ModelSerializer):
     class Meta:
         model = SelfScores
         field = (
-            'vendor',
-            'e',
             'self_score',
-            'rfi',
-            'vendor_response',
         )
 
 
@@ -619,3 +617,77 @@ class ElementsAttachment(serializers.ModelSerializer):
             'rfi',
             'vendor_response',
             )
+
+
+class ElementCommonInfoSerializer(serializers.ModelSerializer):
+    s = serializers.CharField(required=False, allow_null=True)
+    self_description = serializers.CharField(required=False, allow_null=True)
+    self_score = serializers.CharField(required=False, allow_null=True)
+    sm_score = serializers.CharField(required=False, allow_null=True)
+    analyst_notes = serializers.CharField(required=False, allow_null=True)
+    attachment = serializers.CharField(required=False, allow_null=True)
+    category = serializers.CharField(required=False, allow_null=True)
+    pc = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = Elements
+        fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
+                  'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
+
+    def create(self, validated_data):
+        # Get data from url context
+        rfiid = self.context.get('rfiid')
+        vendor_id = self.context.get('vendor')
+        analyst_id = self.context.get('analyst')
+        vendor = Vendors.objects.get(vendorid=vendor_id)
+        round = Rfis.objects.get(rfiid=rfiid)
+
+        analyst_response = 1 # hardcode for firs upload
+        vendor_response = 1 # hardcode for firs upload
+
+        # Get data from validated data
+        sc = validated_data.pop('s')
+        cat = validated_data.pop('category')
+        pc = validated_data.pop('pc')
+        self_score = validated_data.pop('self_score')
+        self_description = validated_data.pop('self_description')
+        sm_score = validated_data.pop('sm_score')
+        analyst_notes = validated_data.pop('analyst_notes')
+        attachment = validated_data.pop('attachment')
+
+        parent_category = ParentCategories.objects.filter(parent_category_name=pc)
+        if parent_category:
+             category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
+        else:
+            raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
+        subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
+
+        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
+
+        attachment, _ = Attachments.objects.get_or_create(vendor=vendor, path=attachment, rfi=round)
+
+        element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment, rfi=round)
+
+        self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
+                                                         vendor_response=vendor_response)
+
+        self_description, _ = SelfDescriptions.objects.get_or_create(vendor=vendor, e=element,
+                                                               self_description=self_description, rfi=round,
+                                                               vendor_response=vendor_response)
+
+        analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
+                                                              rfi=round, analyst_response=1)
+
+        sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
+                                                      analyst_response=analyst_response)
+
+        # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
+
+        return element
+
+
+class CommonExcelUploadSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rfis
+        field = ("rfiid", )
