@@ -4,7 +4,7 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
     ModulesListView, VendorManagementListScreen, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
     VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView, AssociateModulesWithVendorCsv,\
-    CsvRfiTemplateDownload, ExcelFileUploadView
+    CsvRfiTemplateDownload, ExcelFileUploadView, UploadElementFromExcelFile
 
 
 urlpatterns = [
@@ -34,4 +34,7 @@ urlpatterns = [
     path('rfi_csv_upload/', RfiCsvUploadView.as_view(), name='rfi_csv_upload'),
     path('rfi_csv_update/', AssociateModulesWithVendorCsv.as_view(), name='rfi_csv_update'),
     path('<str:rfiid>/rfi_csv_template_download/', CsvRfiTemplateDownload.as_view(), name='rfi_csv_download'),
+    # from excell to db upload
+    path('upload_excel_rfi/<str:rfiid>/<int:vendor>/<int:analyst>/', UploadElementFromExcelFile.as_view(),
+                                                                        name='from_excel_element_upload'),
 ]

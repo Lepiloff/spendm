@@ -17,13 +17,13 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
-from service.xml_file_upload_downlod import parse_excel_rfi_sheet, InvalidFormatException
+from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response
 from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
-    ContactUpdateSerializer
+    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -67,7 +67,7 @@ class ExcelFileUploadView(APIView):
         if filename.endswith('.xlsx'):
             try:
                 file = default_storage.save(filename, f)
-                r = parse_excel_rfi_sheet(file)
+                r = get_full_excel_file_response(file)
                 status = 200
             except InvalidFormatException as e:
                 r = {"general_errors": [e.__str__()]}
@@ -475,7 +475,7 @@ class RfiRoundListView(generics.ListAPIView):
 
     permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiRoundSerializer
-    queryset = Rfis.objects.all()
+    queryset = Rfis.objects.filter(active=True)
 
 
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
@@ -635,7 +635,66 @@ class CsvRfiTemplateDownload(APIView):
                              'Source-to-Pay': res.get('Source-to-Pay', False)})
         return response
 
-# EXCELL
+# EXCEL
 
-class CreateElementFromExcellFile(generics.CreateAPIView):
+
+class UploadElementFromExcelFile(APIView):
+
+    """
+    data = {
+        'element_name': 'Out-of-the-Box Risk Reports',
+        'description': 'What is the extent of support for out-of-the-box risk reports?',
+        'scoring_scale': 'scored against peers',
+        'e_order': Decimal('4.0000'), 'self_score': '1',
+        'self_description': None,
+        'sm_score': None,
+        'analyst_notes': None,
+        'attachment': None,
+        's': 'Out-of-the-Box Reporting'
+    }
+    """
+
     permission_classes = (permissions.AllowAny,)
+    serializer_class = ElementCommonInfoSerializer
+
+    def post(self, request, *args, **kwargs):
+        context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
+        data = request.data  # response data is list of dict
+
+        try:
+            # implement transaction  - if exception appear during for loop iteration none data save to DB
+            with transaction.atomic():
+                for pc_data in data:  # from dict get PC and Category participate data
+                    parent_category = pc_data.get('Parent Category')
+                    category_data = pc_data.get('Category')
+                    for data in category_data:
+                        for category, values in data.items():  # Get category name
+                            for subcats in values:
+                                for subcat, element_list in subcats.items():  # Get subcategory name
+                                    for num, element in enumerate(element_list, 1):  # Get element info
+                                        element_name = element.get('Element Name')
+                                        e_order = num
+                                        category = category
+                                        pc = parent_category
+                                        s = subcat
+                                        description = element.get('Description')
+                                        scoring_scale = element.get('Scoring Scale')
+                                        self_score = element.get('Self-Score')
+                                        self_description = element.get('Self-Description')
+                                        sm_score = element.get('SM score')
+                                        analyst_notes = element.get('Analyst notes')
+                                        attachment = element.get('Attachments/Supporting Docs and Location/Link')
+                                        data = {'element_name': element_name, 'e_order': e_order,
+                                                'description': description, 'scoring_scale': scoring_scale,
+                                                'self_score': self_score, 'self_description': self_description,
+                                                'sm_score': sm_score, 'analyst_notes': analyst_notes,
+                                                'attachment': attachment, 's': s, 'category': category, 'pc': pc
+                                                }
+                                        serializer = ElementCommonInfoSerializer(data=data, context=context)
+                                        serializer.is_valid(raise_exception=True)
+                                        serializer.save()
+        except ValidationError:
+            return Response({"errors": (serializer.errors,)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(request.data, status=status.HTTP_200_OK)
