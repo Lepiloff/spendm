@@ -234,5 +234,7 @@ def rfi_csv_file_parser(file):
                     raise ParseError(detail={'general_errors': "Parse file common error"})
             response.append(line_info)
         if len(vendor_error) or len(status_error) or len(round_error):
-            raise ParseError(detail={'general_errors': [vendor_error, status_error, round_error]})
+            error_pre_formatted_list = [vendor_error, status_error, round_error]
+            error_formatted_list = [", ".join(x) for x in error_pre_formatted_list]
+            raise ParseError(detail={'general_errors': error_formatted_list})
         return response
