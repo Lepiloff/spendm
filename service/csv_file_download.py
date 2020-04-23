@@ -236,5 +236,7 @@ def rfi_csv_file_parser(file):
         if len(vendor_error) or len(status_error) or len(round_error):
             error_pre_formatted_list = [vendor_error, status_error, round_error]
             error_formatted_list = [", ".join(x) for x in error_pre_formatted_list]
-            raise ParseError(detail={'general_errors': error_formatted_list})
+            # remove empty string fro error response
+            filter_error = filter(lambda x: x != "", error_formatted_list)
+            raise ParseError(detail={'general_errors': list(filter_error)})
         return response
