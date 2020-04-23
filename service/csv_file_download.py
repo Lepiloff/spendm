@@ -202,6 +202,22 @@ def rfi_csv_file_parser(file):
         if csv_header_modules != modules_list:
             raise ParseError('Unknown Module name:  the system could not find the '
                              'Module with such a name in the database.')
+
+        # Check all row round values? before strting processing because if round is incorrect
+        # rfi variables in code return 500 error (local variable 'rfi' referenced before assignment)
+        for count, rows in enumerate(reader, 1):
+            for key, value in rows.items():
+                if key == 'Round':
+                    round = Rfis.objects.filter(rfiid=value)
+                    if not round:
+                        round_error.append('Inapplicable Round: the system should accept uploaded changes only for the '
+                                           'current round. Check the {} line field {}'.format(count, value))
+        if len(round_error):
+            raise ParseError(
+                detail={'general_errors': round_error})
+        # Next two string allow using opened csv file twice
+        csvfile.seek(0)
+        reader = csv.DictReader(csvfile)
         response = []
         for count, rows in enumerate(reader, 1):
             line_info = []
@@ -210,9 +226,6 @@ def rfi_csv_file_parser(file):
                 if key == 'Round':
                     if Rfis.objects.filter(rfiid=value):
                         rfi = value
-                    else:
-                        round_error.append('Unknown Vendor name: the system could not find the Vendor with such a name'
-                                           'in the database.  Check the {} line field {}'.format(count, value))
                 if key == 'Vendor':
                     if Vendors.objects.filter(vendor_name=value):
                         vendor = value
@@ -224,9 +237,14 @@ def rfi_csv_file_parser(file):
                         status_error.append('Unknown module status. Check the {} line field {}'.format(count, value))
                     line_modules.append([key, value])
             for m in line_modules:
+
                 d = {"rfi": rfi, "vendor": vendor, "m": m[0], "active": m[1]}
                 line_info.append(d)
             response.append(line_info)
-        if len(vendor_error) or len(round_error) or len(status_error):
-            raise ParseError(detail={'The file could not be uploaded': [vendor_error, round_error, status_error]})
+        if len(vendor_error) and len(status_error):
+            raise ParseError(detail={'general_errors': [vendor_error, status_error]})
+        elif len(vendor_error):
+            raise ParseError(detail={'general_errors': vendor_error})
+        elif len(status_error):
+            raise ParseError(detail={'general_errors': status_error})
         return response
