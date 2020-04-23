@@ -1223,37 +1223,3 @@ pc_to_function_name = {
 #         ]
 #     }
 # ]
-
-[
-    [
-        {
-            "rfi": "20R1",
-            "vendor": "Actual2",
-            "m": "Strategic Sourcing",
-            "active": "false"
-        },
-        {
-            "rfi": "20R1",
-            "vendor": "Actual2",
-            "m": "Supplier Management",
-            "active": "true"
-        }
-
-    ],
-    [
-        {
-            "rfi": "20R1",
-            "vendor": "Test",
-            "m": "Strategic Sourcing",
-            "active": "false"
-        },
-        {
-            "rfi": "20R1",
-            "vendor": "Test",
-            "m": "Supplier Management",
-            "active": "true"
-        }
-
-    ]
-
-]
