@@ -195,7 +195,7 @@ def rfi_csv_file_parser(file):
         if headers != csv_fields:
             raise ParseError('Wrong fields in csv file.')
         # check the csv file modules list
-        csv_header_modules=reader.fieldnames[2:]
+        csv_header_modules = reader.fieldnames[2:]
         csv_header_modules.sort()
         modules_list.sort()
 

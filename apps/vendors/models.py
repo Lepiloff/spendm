@@ -280,15 +280,6 @@ class ModulePersonas(models.Model):
 
 
 class Modules(models.Model):
-    # MODULES_NAME = (
-    #                 ("Sourcing", "Sourcing"), ("SA", "SA"),
-    #                 ("SXM", "SXM"), ("CLM", "CLM"),
-    #                 ("ePRO", "ePRO"), ("I2P", "I2P"),
-    #                 ("P2P", "P2P"), ("SPT", "SPT"),
-    #                 ("S2P", "S2P"), ("AP", "AP"),
-    #                 ("TS", "TS"), ("SOW", "SOW"),
-    #                 ("ICW", "ICW"),
-    #                 )
     MODULES_NAME = (
                     ("Strategic Sourcing", "Strategic Sourcing"),
                     ("Supplier Management", "Supplier Management"),
@@ -296,10 +287,10 @@ class Modules(models.Model):
                     ("Contract Management", "Contract Management"),
                     ("e-Procurement", "e-Procurement"),
                     ("Invoice-to-Pay", "Invoice-to-Pay"),
-                    ("Strategic Procurement", "Strategic Procurement"),
-                    ("Technologies", "Technologies"),
+                    ("Strategic Procurement Technologies", "Strategic Procurement Technologies"),
                     ("Procure-to-Pay", "Procure-to-Pay"),
                     ("Source-to-Pay", "Source-to-Pay"),
+                    ("AP Automation", "AP Automation"),
                     )
     mid = models.AutoField(primary_key=True)
     module_name = models.CharField(max_length=50, choices=MODULES_NAME, unique=True)
