@@ -1,8 +1,25 @@
 import json
 from openpyxl import load_workbook
+from apps.vendors.models import RfiParticipation, Vendors, Rfis
 
 
 header_cols_first_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
+
+pc_to_modules_assign = {
+                            "Strategic Sourcing": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'Sourcing'],
+                            "Supplier Management": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'SXM'],
+                            "Spend Analytics": ['Common S2P', 'Services', 'Spend Analytics'],
+                            "Contract Management": ['Common S2P', 'Services', 'CLM'],
+                            "e-Procurement": ['Common S2P', 'Services', 'eProcurement'],
+                            "Invoice-to-Pay": ['Common S2P', 'Services', 'I2P'],
+                            "AP Automation": ['Common S2P', 'Services', 'I2P', 'AP'],
+                            "Strategic Procurement Technologies": ['Common S2P', 'Common Sourcing - SXM', 'Services',
+                                                                   'Sourcing', 'SXM', 'Spend Analytics', 'CLM'],
+                            "Procure-to-Pay": ['Common S2P', 'Services', 'eProcurement', 'I2P'],
+                            "Source-to-Pay": ['Common S2P', 'Common Sourcing - SXM', 'Services',
+                                              'Sourcing', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
+                             }
+
 
 paren_category_row_number = {
                             "COMMON S2P": 4,
@@ -42,35 +59,37 @@ category_to_pc_row_number = {
                             }
 
 
-subcategory_to_category_in_COMMON_S2P = {
-
-     "Analytics": {"Data Schema": 6, "Data Management": 15, "Metric Management": 23, "Reporting": 31},
-
-     "Configurability": {"Globalization": 46, "Organizational Modeling": 56, "Personalization": 65, "Project Management": 73, "Workflow": 81},
-
-     "Supplier Portal": {"Account Management": 92, "Document Management": 100, "Information Management": 105},
-
-     "SXM": {"Supplier Information Management": 112, "Supply Intelligence": 122},
-
-     "Technology": {"Automation": 129, "Core Platform": 139, "Data Management": 159, "Document Management": 177, "Emerging Technology": 185, "Standards and Integrations": 196, "UX Layer": 212 }
-                                         }
-
-
-
 class InvalidFormatException(Exception):
     # do not remove !
     pass
 
 
-def get_full_excel_file_response(file):
-    """ return full response from excel file"""
+def get_excel_file_current_pc_for_parsing(pml=None):
+    modules_with_pc = (dict((option, pc_to_modules_assign[option]) for option in pml if option in pc_to_modules_assign))
+    pc = [value for key, value in modules_with_pc.items()]
+    # Get unique pc depending on the active modules in the round for a particular vendor
+    unique_pc = set(x for element in pc for x in element)
+    return unique_pc
+
+
+def get_full_excel_file_response(file, context):
+    # Get data from url context
+    rfiid = context.get('rfiid')
+    vendor_id = context.get('vendor')
+    vendor = Vendors.objects.get(vendorid=vendor_id)
+    round = Rfis.objects.get(rfiid=rfiid)
+    participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=round, active=True)  # Get vendor active module
+    participate_module_list = [element.m.module_name for element in participate_module]
+    unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing
+    """ return full response from excel file (exclude PC not partisipate to vendor in curent round)"""
     workbook = load_workbook(filename=file)
     response = []
-    pc_participate_list = [common_s2p_category_response_create, common_sourcing_sxm_response_create,
-                           services_response_create, sourcing_response_create, sxm_response_create,
-                           spend_analytics_response_create, clm_response_create]
+    pc_participate_list = []
+    for element in unique_pc:
+        pc_participate_list.append(pc_to_function_name.get(element))
     for pc in pc_participate_list:
-        response.append(pc(file, workbook))
+        if pc:
+            response.append(pc(file, workbook))
     return response
 
 
@@ -775,7 +794,93 @@ def clm_response_create(file, workbook):
         return pc_response
 
 
+def eprocurement_response_create(file, workbook):
+    """
+    Create response from eProcurement parsing
+    :param file:
+    :return:
+    """
+    sheet = workbook["RFI"]
+    if check_excel_rfi_sheet_structure(file):  # Check that excel file structure equal to source template
+        pc_response = {}  # crete response with all element information for each subcat for each category in PC
+        pc_response.update({"Parent Category": sheet["E688"].value})
+        category_list = []  # list of all category in PC with subcat info and element data
 
+        # CATALOG MANAGEMENT CATEGORY
+
+        category_name = sheet["E689"].value
+        info_to_subcat_to_cat = {}
+        to_category_info = []  # list of all subcat wit element info
+
+        # Subcategory Catalog Creation / Onboarding
+        sub_category = sheet["E690"].value
+        subcategory_element_response_create(min_row=691, max_row=700, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Objects
+        sub_category = sheet["E703"].value
+        subcategory_element_response_create(min_row=704, max_row=706, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Data Quality Control
+        sub_category = sheet["E709"].value
+        subcategory_element_response_create(min_row=710, max_row=715, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Approvals  / Validations
+        sub_category = sheet["E718"].value
+        subcategory_element_response_create(min_row=719, max_row=719, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Maintenance
+        sub_category = sheet["E722"].value
+        subcategory_element_response_create(min_row=723, max_row=723, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Mobility
+        sub_category = sheet["E726"].value
+        subcategory_element_response_create(min_row=727, max_row=727, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Analytics
+        sub_category = sheet["E730"].value
+        subcategory_element_response_create(min_row=731, max_row=731, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Internet Shopping / Distributed Content
+        sub_category = sheet["E734"].value
+        subcategory_element_response_create(min_row=735, max_row=735, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+        # Subcategory Catalog Roadmap
+        sub_category = sheet["E738"].value
+        subcategory_element_response_create(min_row=739, max_row=739, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+
+        info_to_subcat_to_cat.update({category_name: to_category_info})  # Aggregate info for each Subcat at CAREGORY
+        category_list.append(info_to_subcat_to_cat)
+
+
+
+
+        pc_response.update({"Category": category_list})
+        return pc_response
+
+
+
+
+pc_to_function_name = {
+                            "Common S2P": common_s2p_category_response_create,
+                            "Common Sourcing - SXM": common_sourcing_sxm_response_create,
+                            "Services": services_response_create,
+                            "Sourcing": sourcing_response_create,
+                            "SXM": sxm_response_create,
+                            "Spend Analytics": spend_analytics_response_create,
+                            "CLM": clm_response_create,
+                            "eProcurement": eprocurement_response_create,
+                            "I2P": None,
+                             }
 # [
 #     {
 #         "Parent Category": "COMMON S2P",
@@ -1118,3 +1223,37 @@ def clm_response_create(file, workbook):
 #         ]
 #     }
 # ]
+
+[
+    [
+        {
+            "rfi": "20R1",
+            "vendor": "Actual2",
+            "m": "Strategic Sourcing",
+            "active": "false"
+        },
+        {
+            "rfi": "20R1",
+            "vendor": "Actual2",
+            "m": "Supplier Management",
+            "active": "true"
+        }
+
+    ],
+    [
+        {
+            "rfi": "20R1",
+            "vendor": "Test",
+            "m": "Strategic Sourcing",
+            "active": "false"
+        },
+        {
+            "rfi": "20R1",
+            "vendor": "Test",
+            "m": "Supplier Management",
+            "active": "true"
+        }
+
+    ]
+
+]

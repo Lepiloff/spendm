@@ -177,6 +177,10 @@ class RfiParticipationCsvSerializer(serializers.ModelSerializer):
         fields = ('pk', 'active', 'm', 'rfi', 'vendor', 'timestamp')
         read_only_fields = ('timestamp', )
 
+    def get_unique_together_validators(self):
+        """Overriding method to disable unique together checks"""
+        return []
+
     def create(self, validated_data):
         module, created = RfiParticipation.objects.update_or_create(
             rfi=validated_data.get('rfi', None),
@@ -432,13 +436,6 @@ class VendorContactCreateSerializer(serializers.ModelSerializer):
                   'primary',
                   )
         read_only_fields = ('contact_id', )
-
-    # def create(self, validated_data):
-    #     phone = validated_data.pop('phone', None)
-    #     vendor = validated_data.pop('vendor', None)
-    #     result = re.sub('[^0-9]', '', phone)
-    #     contact = VendorContacts.objects.create(vendor=vendor, phone=result, **validated_data)
-    #     return contact
 
     def validate_email(self, value):
         if len(value) > 80:

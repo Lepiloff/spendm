@@ -59,7 +59,8 @@ class ExcelFileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = (permissions.AllowAny,)
 
-    def put(self, request, format=None):
+    def put(self, request, format=None, **kwargs):
+        context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor')}  # for avoid full excel file parsing
         if 'file' not in request.data:
             raise ParseError("Empty content")
         f = request.data['file']
@@ -67,7 +68,7 @@ class ExcelFileUploadView(APIView):
         if filename.endswith('.xlsx'):
             try:
                 file = default_storage.save(filename, f)
-                r = get_full_excel_file_response(file)
+                r = get_full_excel_file_response(file, context)
                 status = 200
             except InvalidFormatException as e:
                 r = {"general_errors": [e.__str__()]}
@@ -522,7 +523,7 @@ class RfiCsvUploadView(APIView):
                 default_storage.delete(file)
         else:
             status = 406
-            r = { "general_errors": ["Please upload only CSV files"] }
+            r = {"general_errors": ["Please upload only CSV files"]}
         return Response(r, status=status)
 
 
@@ -531,66 +532,63 @@ class AssociateModulesWithVendorCsv(APIView):
     """
     Create or update modules to rfi
 
-    data = [
-        {
-            "rfi": "20R1",
-            "module": [
-                {
-                    "Sourcing": "false"
-                },
-                {
-                    "SA": "true"
-                },
-                {
-                    "SXM": "false"
-                }
+    data =
+            [
+                [
+                    {
+                        "rfi": "20R1",
+                        "vendor": "Actual2",
+                        "m": "Strategic Sourcing",
+                        "active": "false"
+                    },
+                    {
+                        "rfi": "20R1",
+                        "vendor": "Actual2",
+                        "m": "Supplier Management",
+                        "active": "true"
+                    }
 
-            ],
-            "vendor": "Arny3"
-        },
-        {
-            "rfi": "20R1",
-            "module": [
-                {
-                    "S2P": "false"
-                },
-                {
-                    "AP": "false"
-                },
-                {
-                    "TS": "false"
-                },
-                {
-                    "SOW": "false"
-                },
-                {
-                    "ICW": "true"
-                }
-            ],
-            "vendor": "Mark Shagal"
-        }
-    ]
+                ],
+                [
+                    {
+                        "rfi": "20R1",
+                        "vendor": "Test",
+                        "m": "Strategic Sourcing",
+                        "active": "false"
+                    },
+                    {
+                        "rfi": "20R1",
+                        "vendor": "Test",
+                        "m": "Supplier Management",
+                        "active": "true"
+                    }
+
+                ]
+
+            ]
     """
     permission_classes = (permissions.AllowAny,)
     serializer_class = RfiParticipationCsvSerializer
 
     def post(self, request, format=None):
         r_data = request.data
-        for data in r_data:
-            for data in data:
-                v = data.get('vendor', None)
-                vendor = get_object_or_404(Vendors, vendor_name=v)
-                data['vendor'] = vendor.vendorid
-                m = data.get('m', None)
-                module = get_object_or_404(Modules, module_name=m)
-                data['m'] = module.mid
-                serializer = RfiParticipationCsvSerializer(data=data)
-                try:
-                    serializer.is_valid(raise_exception=True)
-                    serializer.save()
-                except ValidationError:
-                    return Response({"errors": (serializer.errors,)},
-                                    status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # implement transaction  - if exception appear during for loop iteration none data save to DB
+            with transaction.atomic():
+                for data in r_data:
+                    for data in data:
+                        v = data.get('vendor', None)
+                        vendor = get_object_or_404(Vendors, vendor_name=v)
+                        data['vendor'] = vendor.vendorid
+                        m = data.get('m', None)
+                        module = get_object_or_404(Modules, module_name=m)
+                        data['m'] = module.mid
+                        serializer = RfiParticipationCsvSerializer(data=data)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+        except ValidationError:
+            return Response({"errors": (serializer.errors,)},
+                            status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
 
@@ -612,8 +610,9 @@ class CsvRfiTemplateDownload(APIView):
         response['Content-Disposition'] = 'attachment; filename="export_rfi.csv"'
         writer = csv.DictWriter(response, fieldnames=csv_header_fields)
         writer.writeheader()
-        vendor = Vendors.objects.all()
+        vendor = Vendors.objects.filter(active=True)
         for v in vendor:
+            print(v)
             vendor_name = v.vendor_name
             module = RfiParticipation.objects.filter(rfi=rfi, vendor=v)
             module_to_vendor = []
@@ -621,18 +620,19 @@ class CsvRfiTemplateDownload(APIView):
                 serializer = RfiParticipationCsvDownloadSerializer(m)
                 module_dict = serializer.data.copy()  # get dict object
                 module_to_vendor.append(module_dict)
-            res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
+            res = {i['m']: str(i['active']).lower() for i in module_to_vendor if i.keys() == {'active', 'm'}}
+            print(res)
             writer.writerow({'Round': rfi, 'Vendor': vendor_name,
-                             'Strategic Sourcing': res.get('Strategic Sourcing', False),
-                             'Supplier Management': res.get('Supplier Management', False),
-                             'Spend Analytics': res.get('Spend Analytics', False),
-                             'Contract Management': res.get('Contract Management', False),
-                             'e-Procurement': res.get('e-Procurement', False),
-                             'Invoice-to-Pay': res.get('Invoice-to-Pay', False),
-                             'Strategic Procurement': res.get('Strategic Procurement', False),
-                             'Technologies': res.get('Technologies', False),
-                             'Procure-to-Pay': res.get('Procure-to-Pay', False),
-                             'Source-to-Pay': res.get('Source-to-Pay', False)})
+                             'Strategic Sourcing': res.get('Strategic Sourcing', 'false'),
+                             'Supplier Management': res.get('Supplier Management', 'false'),
+                             'Spend Analytics': res.get('Spend Analytics', 'false'),
+                             'Contract Management': res.get('Contract Management', 'false'),
+                             'e-Procurement': res.get('e-Procurement', 'false'),
+                             'Invoice-to-Pay': res.get('Invoice-to-Pay', 'false'),
+                             'Strategic Procurement': res.get('Strategic Procurement', 'false'),
+                             'Technologies': res.get('Technologies', 'false'),
+                             'Procure-to-Pay': res.get('Procure-to-Pay', 'false'),
+                             'Source-to-Pay': res.get('Source-to-Pay', 'false')})
         return response
 
 # EXCEL
@@ -659,8 +659,7 @@ class UploadElementFromExcelFile(APIView):
 
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
-        data = request.data  # response data is list of dict
-
+        data = request.data  # data is list of dict
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
