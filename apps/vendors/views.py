@@ -539,13 +539,13 @@ class AssociateModulesWithVendorCsv(APIView):
                         "rfi": "20R1",
                         "vendor": "Actual2",
                         "m": "Strategic Sourcing",
-                        "active": "false"
+                        "active": "False"
                     },
                     {
                         "rfi": "20R1",
                         "vendor": "Actual2",
                         "m": "Supplier Management",
-                        "active": "true"
+                        "active": "True"
                     }
 
                 ],
@@ -554,13 +554,13 @@ class AssociateModulesWithVendorCsv(APIView):
                         "rfi": "20R1",
                         "vendor": "Test",
                         "m": "Strategic Sourcing",
-                        "active": "false"
+                        "active": "False"
                     },
                     {
                         "rfi": "20R1",
                         "vendor": "Test",
                         "m": "Supplier Management",
-                        "active": "true"
+                        "active": "True"
                     }
 
                 ]
@@ -604,15 +604,14 @@ class CsvRfiTemplateDownload(APIView):
     def get(self, request, format=None, **kwargs):
         rfi = kwargs['rfiid']
         csv_header_fields = ['Round', 'Vendor', 'Strategic Sourcing', 'Supplier Management', 'Spend Analytics',
-                             'Contract Management', 'e-Procurement', 'Invoice-to-Pay', 'Strategic Procurement',
-                             'Technologies', 'Procure-to-Pay', 'Source-to-Pay']
+                             'Contract Management', 'e-Procurement', 'Invoice-to-Pay', 'AP Automation',
+                             'Strategic Procurement Technologies', 'Procure-to-Pay', 'Source-to-Pay']
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="export_rfi.csv"'
         writer = csv.DictWriter(response, fieldnames=csv_header_fields)
         writer.writeheader()
-        vendor = Vendors.objects.filter(active=True)
+        vendor = Vendors.objects.filter()
         for v in vendor:
-            print(v)
             vendor_name = v.vendor_name
             module = RfiParticipation.objects.filter(rfi=rfi, vendor=v)
             module_to_vendor = []
@@ -620,19 +619,18 @@ class CsvRfiTemplateDownload(APIView):
                 serializer = RfiParticipationCsvDownloadSerializer(m)
                 module_dict = serializer.data.copy()  # get dict object
                 module_to_vendor.append(module_dict)
-            res = {i['m']: str(i['active']).lower() for i in module_to_vendor if i.keys() == {'active', 'm'}}
-            print(res)
+            res = {i['m']: i['active'] for i in module_to_vendor if i.keys() == {'active', 'm'}}
             writer.writerow({'Round': rfi, 'Vendor': vendor_name,
-                             'Strategic Sourcing': res.get('Strategic Sourcing', 'false'),
-                             'Supplier Management': res.get('Supplier Management', 'false'),
-                             'Spend Analytics': res.get('Spend Analytics', 'false'),
-                             'Contract Management': res.get('Contract Management', 'false'),
-                             'e-Procurement': res.get('e-Procurement', 'false'),
-                             'Invoice-to-Pay': res.get('Invoice-to-Pay', 'false'),
-                             'Strategic Procurement': res.get('Strategic Procurement', 'false'),
-                             'Technologies': res.get('Technologies', 'false'),
-                             'Procure-to-Pay': res.get('Procure-to-Pay', 'false'),
-                             'Source-to-Pay': res.get('Source-to-Pay', 'false')})
+                             'Strategic Sourcing': res.get('Strategic Sourcing', False),
+                             'Supplier Management': res.get('Supplier Management', False),
+                             'Spend Analytics': res.get('Spend Analytics', False),
+                             'Contract Management': res.get('Contract Management', False),
+                             'e-Procurement': res.get('e-Procurement', False),
+                             'Invoice-to-Pay': res.get('Invoice-to-Pay', False),
+                             'AP Automation': res.get('AP Automation', False),
+                             'Strategic Procurement Technologies': res.get('Strategic Procurement Technologies', False),
+                             'Procure-to-Pay': res.get('Procure-to-Pay', False),
+                             'Source-to-Pay': res.get('Source-to-Pay', False)})
         return response
 
 # EXCEL
