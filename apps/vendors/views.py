@@ -344,36 +344,6 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
         return self.partial_update(request, *args, **kwargs)
 
 
-# class VendorContactsCreateView(APIView):
-#     """
-#     Create new vendor from Vendor Manager screen
-#
-#       {
-#         "vendor": 138,
-#         "contact_name": "Sandra B",
-#         "phone": 375293333333,
-#         "email": "sand3f45r2a1@gmail.com",
-#         "primary": false
-#       }
-#
-#     """
-#     permission_classes = [permissions.AllowAny, ]
-#     serializer_class = VendorContactCreateSerializer
-#
-#     def post(self, request, *args, **kwargs):
-#         data = request.data
-#         serializer = VendorContactCreateSerializer(data=data)
-#         try:
-#             serializer.is_valid(raise_exception=True)
-#             serializer.save()
-#         except ValidationError:
-#             return Response({"errors": (serializer.errors,)},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#
-#         else:
-#             return Response(request.data, status=status.HTTP_200_OK)
-
-
 class VendorContactsCreateView(generics.CreateAPIView):
     """
           {
@@ -628,7 +598,13 @@ class CsvRfiTemplateDownload(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request, format=None, **kwargs):
+        # Get list of exist round in db
         rfi = kwargs['rfiid']
+        rounds = list(Rfis.objects.filter(active=True).values('rfiid', ))
+        round_list = [d.get('rfiid') for d in rounds]
+        if rfi not in round_list:
+            raise ParseError(detail={"general_errors": ["Round {} is not exist".format(rfi)]}, code=406)
+
         csv_header_fields = ['Round', 'Vendor', 'Strategic Sourcing', 'Supplier Management', 'Spend Analytics',
                              'Contract Management', 'e-Procurement', 'Invoice-to-Pay', 'AP Automation',
                              'Strategic Procurement Technologies', 'Procure-to-Pay', 'Source-to-Pay']
