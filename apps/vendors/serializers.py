@@ -11,8 +11,9 @@ from rest_framework import serializers
 
 from apps.c_users.models import CustomUser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, RfiParticipation, \
-    RfiParticipationStatus, Elements, Subcategories, Categories, ParentCategories, SelfDescriptions, SelfScores, \
-    AnalystNotes, SmScores, ModuleElements, Attachments, ElementsAttachments
+    Elements, Subcategories, Categories, ParentCategories, SelfDescriptions, SelfScores, \
+    AnalystNotes, SmScores, ModuleElements, Attachments, ElementsAttachments, RfiParticipationStatus , \
+    CompanyGeneralInfoQuestion, CompanyGeneralInfoAnswers
 
 
 class VendorToFrontSerializer(serializers.ModelSerializer):
@@ -616,12 +617,37 @@ class ElementsAttachment(serializers.ModelSerializer):
             )
 
 
+class CompanyInfoQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyGeneralInfoQuestion
+
+
+class CompanyInfoAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyGeneralInfoAnswers
+
+
 class ElementCommonInfoSerializer(serializers.ModelSerializer):
+
     s = serializers.CharField(required=False, allow_null=True)
-    self_description = serializers.CharField(required=False, allow_null=True)
-    self_score = serializers.CharField(required=False, allow_null=True)
-    sm_score = serializers.CharField(required=False, allow_null=True)
-    analyst_notes = serializers.CharField(required=False, allow_null=True)
+    self_description = serializers.CharField(required=False, allow_null=True,
+                                             validators=[RegexValidator(regex=r'^[a-zA-Z0-9,.!? -/*()]*$',
+                                                                        message='The system detected that the data is not in English. '
+                                                                                'Please correct the error and try again.')]
+                                             )
+    self_score = serializers.CharField(required=False, allow_null=True,
+                                       validators=[RegexValidator(regex=r'^[0-5]',
+                                                                  message='Self_score invalid value. Mast be between 0 and 5')]
+                                       )
+    sm_score = serializers.CharField(required=False, allow_null=True,
+                                     validators=[RegexValidator(regex=r'^[0-5]',
+                                                                message='Sm_score invalid value. Mast be between 0 and 5')]
+                                     )
+    analyst_notes = serializers.CharField(required=False, allow_null=True,
+                                          validators=[RegexValidator(regex=r'^[a-zA-Z0-9,.!? -/*()]*$',
+                                                                     message='The system detected that the data is not in English. '
+                                                                             'Please correct the error and try again.')]
+                                          )
     attachment = serializers.CharField(required=False, allow_null=True)
     category = serializers.CharField(required=False, allow_null=True)
     pc = serializers.CharField(required=False, allow_null=True)
@@ -639,8 +665,12 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         vendor = Vendors.objects.get(vendorid=vendor_id)
         round = Rfis.objects.get(rfiid=rfiid)
 
-        analyst_response = 1 # hardcode for firs upload
-        vendor_response = 1 # hardcode for firs upload
+        # save CI
+        company_information = self.context.get('Company_info')
+        for ci in company_information:
+            ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
+            cia, _ = CompanyGeneralInfoAnswers.objects.get_or_create(vendor=vendor, question=ciq,
+                                                                     answer=ci.get('answer'))
 
         # Get data from validated data
         sc = validated_data.pop('s')
@@ -654,31 +684,53 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
         parent_category = ParentCategories.objects.filter(parent_category_name=pc)
         if parent_category:
-             category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
+            category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
         else:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
 
+        # rfi participation status
+        status_name = {"Received": "Received", "Scored": "Scored"}
+        pc_status = status_name.get("Received")
+        lar = None
+        lvr = 1
+        if analyst_id:
+            pc_status = status_name.get("Scored")
+            lar = 1
+            lvr = None
         element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
 
-        attachment, _ = Attachments.objects.get_or_create(vendor=vendor, path=attachment, rfi=round)
+        if analyst_id:
+            analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
+                                                                  rfi=round, analyst_response=lar)
 
-        element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment, rfi=round)
+            sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
+                                                          analyst_response=lar)
+            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                                 pc=parent_category.first(),
+                                                                                 defaults={'status': pc_status,
+                                                                                           'last_analyst_response': lar}
+                                                                                 )
+        else:
+            self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
+                                                             vendor_response=lvr)
 
-        self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
-                                                         vendor_response=vendor_response)
+            self_description, _ = SelfDescriptions.objects.get_or_create(vendor=vendor, e=element,
+                                                                         self_description=self_description, rfi=round,
+                                                                         vendor_response=lvr)
 
-        self_description, _ = SelfDescriptions.objects.get_or_create(vendor=vendor, e=element,
-                                                               self_description=self_description, rfi=round,
-                                                               vendor_response=vendor_response)
+            attachment, _ = Attachments.objects.get_or_create(vendor=vendor, path=attachment, rfi=round)
 
-        analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
-                                                              rfi=round, analyst_response=1)
+            element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment,
+                                                                              rfi=round, vendor_response=lvr)
 
-        sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
-                                                      analyst_response=analyst_response)
+            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                                 pc=parent_category.first(),
+                                                                                 defaults={'status': pc_status,
+                                                                                           'last_vendor_response': lvr}
+                                                                                 )
 
-        # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
+        # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
 
         return element
 
