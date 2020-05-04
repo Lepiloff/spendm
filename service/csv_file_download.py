@@ -222,6 +222,7 @@ def rfi_csv_file_parser(file):
                         vendor_error.append('Unknown Vendor name: the system could not find the Vendor with such a '
                                             'name in the database.  Check the {} line field {}'.format(count, value))
                 if key in csv_header_modules:
+                    value = value.title()  # Capitalize first letter because mac save Boolean as BOOLEAN(True->TRUE etc.)
                     if value not in status:
                         status_error.append('Unknown module status. Check the {} line field {}'.format(count, value))
                     line_modules.append([key, value])
