@@ -1,4 +1,3 @@
-import json
 from openpyxl import load_workbook
 from apps.vendors.models import RfiParticipation, Vendors, Rfis
 
@@ -64,6 +63,27 @@ class InvalidFormatException(Exception):
     pass
 
 
+def company_info_parser(file):
+    """
+    Get Company information response
+    :param file:
+    :return:
+    """
+    workbook = load_workbook(filename=file)
+    sheet = workbook["Company Information"]
+    company_general_info = []
+    for row in sheet.iter_rows(min_row=5, max_row=34, values_only=False):
+        company_info = {}
+        for cell in row:
+            if cell.column_letter == "B":
+                company_info['question'] = cell.value
+            if cell.column_letter == "C":
+                company_info['answer'] = cell.value
+        company_info.update(company_info)
+        company_general_info.append(company_info)
+    return company_general_info
+
+
 def get_excel_file_current_pc_for_parsing(pml=None):
     modules_with_pc = (dict((option, pc_to_modules_assign[option]) for option in pml if option in pc_to_modules_assign))
     pc = [value for key, value in modules_with_pc.items()]
@@ -73,6 +93,7 @@ def get_excel_file_current_pc_for_parsing(pml=None):
 
 
 def get_full_excel_file_response(file, context):
+    """ return full response from excel file (exclude PC not participate to vendor in current round)"""
     # Get data from url context
     rfiid = context.get('rfiid')
     vendor_id = context.get('vendor')
@@ -81,9 +102,12 @@ def get_full_excel_file_response(file, context):
     participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=round, active=True)  # Get vendor active module
     participate_module_list = [element.m.module_name for element in participate_module]
     unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing
-    """ return full response from excel file (exclude PC not partisipate to vendor in curent round)"""
-    workbook = load_workbook(filename=file)
     response = []
+    # Get Company information response
+    company_info = company_info_parser(file=file)
+    response.append({"Company_info": company_info})
+
+    workbook = load_workbook(filename=file)
     pc_participate_list = []
     for element in unique_pc:
         pc_participate_list.append(pc_to_function_name.get(element))
@@ -133,13 +157,13 @@ def check_excel_rfi_sheet_structure(file):
     return file_status
 
 
-def subcategory_element_response_create(min_row, max_row, sheet=None,to_category_info=None, sub_category = None):
+def subcategory_element_response_create(min_row, max_row, sheet=None, to_category_info=None, sub_category=None):
     to_sub_category_info = []
     for row in sheet.iter_rows(min_row=min_row, max_row=max_row, values_only=False):
         element_info = {}
         for cell in row:
             if cell.column_letter in header_cols_first_scoring_round:
-                element_info[sheet[str(cell.column_letter + '2')].value] = cell.value
+                element_info[sheet[f'{cell.column_letter}2'].value] = cell.value
         to_sub_category_info.append(element_info)
     to_category_info.append({sub_category: to_sub_category_info})
 

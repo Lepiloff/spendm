@@ -448,9 +448,9 @@ class RfiParticipationStatus(models.Model):
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor_status')
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfis_status')
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
-    m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status')
-    user_id = models.IntegerField()
-    timestamp = models.DateTimeField()
+    # m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status')
+    user_id = models.IntegerField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now=True)
     last_vendor_response = models.IntegerField(blank=True, null=True)
     last_analyst_response = models.IntegerField(blank=True, null=True)
 
@@ -763,3 +763,32 @@ class FinalOutputData(models.Model):
     class Meta:
         db_table = 'final_output_data'
         unique_together = (('m', 'persona', 'vendor', 'rfi'),)
+
+
+class CompanyGeneralInfoQuestion(models.Model):
+    questionid = models.AutoField(primary_key=True)
+    question = models.CharField(max_length=512)
+    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
+    rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
+    timestamp = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        db_table = 'company_info__questions'
+
+
+class CompanyGeneralInfoAnswers(models.Model):
+    answerid = models.AutoField(primary_key=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
+    question = models.ForeignKey('CompanyGeneralInfoQuestion', models.DO_NOTHING, related_name='answer_to_question')
+    answer = models.CharField(max_length=4096, blank=True, null=True)
+    user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        db_table = 'company_info_answers'
+
+
+
+

@@ -1,5 +1,5 @@
 import csv
-import json
+import os
 
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
@@ -18,7 +18,8 @@ from rest_framework import status
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
 from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response
-from .models import Vendors, VendorContacts, Modules, VendorModuleNames, Rfis, RfiParticipation
+from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
+    CompanyGeneralInfoQuestion
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
@@ -60,15 +61,20 @@ class ExcelFileUploadView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def put(self, request, format=None, **kwargs):
-        context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor')}  # for avoid full excel file parsing
+        # context need for avoid full excel file parsing during rfi sheet perform, not implemented if parse Company Info
+        context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor')}
+
         if 'file' not in request.data:
             raise ParseError("Empty content")
         f = request.data['file']
         filename = f.name
-        if filename.endswith('.xlsx'):
+        if filename.endswith('.xlsx') or filename.endswith('.xls'):
             try:
                 file = default_storage.save(filename, f)
+                split_name = self.split_file_name(filename)
+                context.update(split_name)
                 r = get_full_excel_file_response(file, context)
+                r = None
                 status = 200
             except InvalidFormatException as e:
                 r = {"general_errors": [e.__str__()]}
@@ -82,6 +88,18 @@ class ExcelFileUploadView(APIView):
             status = 406
             r = {"general_errors": ["Please upload only xlsx files"]}
         return Response(r, status=status)
+
+    @staticmethod
+    def split_file_name(filename):
+        """
+        Processing a file name and obtaining variables from it
+        :param filename:
+        :return:
+        """
+        name = os.path.splitext(filename)[0]
+        _, year_quart, vendor_name, round, scoring_version = tuple(name.split('_'))
+        split_name = {'f_vendor_name': vendor_name, 'f_round': round, 'f_scoring_version': scoring_version}
+        return split_name
 
 
 class CsvToDatabase(APIView):
@@ -638,30 +656,28 @@ class CsvRfiTemplateDownload(APIView):
 
 class UploadElementFromExcelFile(APIView):
 
-    """
-    data = {
-        'element_name': 'Out-of-the-Box Risk Reports',
-        'description': 'What is the extent of support for out-of-the-box risk reports?',
-        'scoring_scale': 'scored against peers',
-        'e_order': Decimal('4.0000'), 'self_score': '1',
-        'self_description': None,
-        'sm_score': None,
-        'analyst_notes': None,
-        'attachment': None,
-        's': 'Out-of-the-Box Reporting'
-    }
-    """
-
     permission_classes = (permissions.AllowAny,)
     serializer_class = ElementCommonInfoSerializer
 
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
+        company_information = next(iter(data))
+        context.update(company_information)
+        if not kwargs.get('analyst'):  # Check that file send by vendor
+            # Check that CI answer stored in DB yet (at list one)
+            ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'))
+
+            # Check company info from excel file
+            ci_file = self.get_ci_from_excel_file(data=data)
+            if not ci_db and not ci_file:
+                r = {"general_errors": ["The company information is blank"]}
+                return Response(r, status=406)
+
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
-                for pc_data in data:  # from dict get PC and Category participate data
+                for pc_data in data[1:]:  # from dict get PC and Category participate data, exclude firs element - CI
                     parent_category = pc_data.get('Parent Category')
                     category_data = pc_data.get('Category')
                     for data in category_data:
@@ -695,3 +711,42 @@ class UploadElementFromExcelFile(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def check_ci_exist_in_db(round):
+        """Check that CI answer stored in DB yet (at list one)"""
+        round = round
+        exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
+        ci_exist = False
+        if exist_company_question:
+            for q in exist_company_question:
+                if q.answer_to_question.filter():
+                    if q.answer_to_question.get().answer:  # check if answer is exist and not None
+                        ci_exist = True
+        return ci_exist
+
+    @staticmethod
+    def get_ci_from_excel_file(data):
+        """"Check company info from excel file"""
+        company_information = next(iter(data))  # company information as a dict
+        information = company_information.get('Company_info')
+        ci_exist = False
+        for i in information:
+            if i.get('answer'):
+                ci_exist = True
+        return ci_exist
+
+    @staticmethod
+    def not_all_element_is_bull(data):
+        """
+        Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
+        That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
+        :param data:
+        :return:
+        """
+        from_vendor = tuple(data.get('self_score'), data.get('self_description'))
+        from_analytic = tuple(data.get('sm_score', data.get('analyst_notes')))
+        if not all(from_vendor) and not all(from_analytic):
+            return True
+        else:
+            return False

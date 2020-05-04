@@ -9,7 +9,8 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
 
 urlpatterns = [
     # file parsing
-    path('excel_upload/<str:rfiid>/<int:vendor>/', ExcelFileUploadView.as_view(), name='excel_upload'),
+    path('excel_upload/<str:rfiid>/<int:vendor>/', ExcelFileUploadView.as_view(), name='excel_rfi_upload'),
+    # path('excel_upload/<str:ci>/', ExcelFileUploadView.as_view(), name='excel_ci_upload'),
     path('csv_upload/', FileUploadView.as_view(), name='csv_upload'),
     #
     path('from_csv_create/', CsvToDatabase.as_view(), name='csv_vendor_create'),
