@@ -519,6 +519,14 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
             return RfiParticipationSerializer
         return VendorModulesListManagementSerializer
 
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        """
+        context = super().get_serializer_context()
+        context.update({"rfiid": self.kwargs['rfiid']})
+        return context
+
 
 # Rfi Csv
 class RfiCsvUploadView(APIView):
@@ -737,7 +745,7 @@ class UploadElementFromExcelFile(APIView):
         return ci_exist
 
     @staticmethod
-    def not_all_element_is_bull(data):
+    def not_all_element_is_null(data):
         """
         Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
         That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)

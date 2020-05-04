@@ -306,12 +306,25 @@ class RfiRoundCloseSerializer(serializers.ModelSerializer):
 # RFI MANAGEMENT
 
 class VendorModulesListManagementSerializer(serializers.ModelSerializer):
-    to_vendor = RfiParticipationSerializer(many=True)
+    # to_vendor = RfiParticipationSerializer(many=True)
+    to_vendor = serializers.SerializerMethodField()
 
     class Meta:
         model = Vendors
         fields = ('vendorid', 'vendor_name', 'to_vendor',)
         read_only_fields = ('vendorid', 'vendor_name', )
+
+    def get_to_vendor(self, obj):
+        """
+        Return only rfi for current round (get from url)
+        :param obj:
+        :return:
+        """
+        rfiid = self.context.get('rfiid')
+        r = RfiParticipation.objects.filter(vendor=obj, rfi=rfiid)
+        serializer = RfiParticipationSerializer(r, many=True)
+        return serializer.data
+
 
 
 # VENDOR PROFILE
