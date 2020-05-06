@@ -448,7 +448,6 @@ class RfiParticipationStatus(models.Model):
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor_status')
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfis_status')
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
-    # m = models.ForeignKey('Modules', models.DO_NOTHING, related_name='to_modules_status')
     user_id = models.IntegerField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
     last_vendor_response = models.IntegerField(blank=True, null=True)

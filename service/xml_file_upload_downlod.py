@@ -1,5 +1,6 @@
 from openpyxl import load_workbook
-from apps.vendors.models import RfiParticipation, Vendors, Rfis
+from apps.vendors.models import RfiParticipation, Vendors, Rfis, SelfScores, Elements, ParentCategories, \
+    RfiParticipationStatus
 
 
 header_cols_first_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
@@ -95,6 +96,7 @@ def get_excel_file_current_pc_for_parsing(pml=None):
 def get_full_excel_file_response(file, context):
     """ return full response from excel file (exclude PC not participate to vendor in current round)"""
     # Get data from url context
+    scoring_round = int(context.get('f_scoring_round'))
     rfiid = context.get('rfiid')
     vendor_id = context.get('vendor')
     vendor = Vendors.objects.get(vendorid=vendor_id)
@@ -106,15 +108,105 @@ def get_full_excel_file_response(file, context):
     # Get Company information response
     company_info = company_info_parser(file=file)
     response.append({"Company_info": company_info})
-
+    # Calculate pc status
+    pc_status = []
     workbook = load_workbook(filename=file)
     pc_participate_list = []
     for element in unique_pc:
         pc_participate_list.append(pc_to_function_name.get(element))
     for pc in pc_participate_list:
         if pc:
-            response.append(pc(file, workbook))
+            data = pc(file, workbook)
+            response.append(data)
+            if scoring_round == 1:
+                # check PC contain not null value (for frontend status visualization )
+                pc_st = first_score_not_all_element_is_null(data)
+                pc_status.append(pc_st)
+            else:
+                pc_st = any_score_not_all_element_is_null(data, vendor, round)
+                pc_status.append(pc_st)
+
+    # For previous scoring round
+    scoring_round_info = {}
+    if scoring_round != 1:
+        previews_scoring_status = []
+        for pc in unique_pc:
+            s_r_n = scoring_round - 1
+            pc_obj = ParentCategories.objects.get(parent_category_name=pc)
+            status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=round, pc=pc_obj).values("last_vendor_response", "last_analyst_response"))
+            for s in status:
+                if s.get('last_vendor_response') != 0:
+                    if s.get('last_analyst_response') != 0:
+                        previews_scoring_status.append({pc: True})
+                else:
+                    previews_scoring_status.append({pc: False})
+        # TODO check why return True in any case
+        scoring_round_info.update({'status': previews_scoring_status})
+        scoring_round_info.update({'scoring_round': s_r_n})
+
+    s = {"status": pc_status, 'scoring_round': scoring_round}
+    response.append({'Scoring_round_info': [s, scoring_round_info]})
     return response
+
+
+def first_score_not_all_element_is_null(data):
+
+    """
+    Only for first scoring round
+    Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
+    That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
+    :param data:
+    :return:
+    """
+    pc = data.get('Parent Category')
+    pc_status = {pc: False}
+    category_data = data.get('Category')
+    for data in category_data:
+        for category, values in data.items():  # Get category name
+            for subcats in values:
+                for subcat, element_list in subcats.items():  # Get subcategory name
+                    for element in element_list:  # Get element info
+                        self_score = element.get('Self-Score')
+                        self_description = element.get('Self-Description')
+                        sm_score = element.get('SM score')
+                        analyst_notes = element.get('Analyst notes')
+                        from_vendor = (self_score, self_description)
+                        from_analytic = (sm_score, analyst_notes)
+                        if all(from_vendor) and all(from_analytic):
+                            pc_status[pc] = True
+                            return pc_status
+    return pc_status
+
+
+def any_score_not_all_element_is_null(data, vendor, round):
+
+    """
+    For non firs scoring round
+    Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
+    That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
+    :param data:
+    :return:
+    """
+    # TODO check difference between previous round and current data
+
+    pc = data.get('Parent Category')
+    pc_status = {pc: False}
+    category_data = data.get('Category')
+    for data in category_data:
+        for category, values in data.items():  # Get category name
+            for subcats in values:
+                for subcat, element_list in subcats.items():  # Get subcategory name
+                    for element in element_list:  # Get element info
+                        self_score = element.get('Self-Score')
+                        self_description = element.get('Self-Description')
+                        sm_score = element.get('SM score')
+                        analyst_notes = element.get('Analyst notes')
+                        from_vendor = (self_score, self_description)
+                        from_analytic = (sm_score, analyst_notes)
+                        if all(from_vendor) and all(from_analytic):
+                            pc_status[pc] = True
+                            return pc_status
+    return pc_status
 
 
 def check_exel_rfi_template_structure(structure):

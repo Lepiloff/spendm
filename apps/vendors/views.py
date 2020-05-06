@@ -1,5 +1,6 @@
 import csv
 import os
+import time
 
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
@@ -19,12 +20,12 @@ from rest_framework import status
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
 from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response
 from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
-    CompanyGeneralInfoQuestion
+    CompanyGeneralInfoQuestion, AssignedVendorsAnalysts
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
-    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer
+    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer, AnalystSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -32,6 +33,12 @@ class AdministratorDashboard(APIView):
     def get(self, request, format=None):
         vendors = [vendor.vendor_name for vendor in Vendors.objects.all()]
         return Response(vendors)
+
+
+class AnalystListView(generics.ListAPIView):
+    queryset = AssignedVendorsAnalysts.objects.all()
+    serializer_class = AnalystSerializer
+    permission_classes = [permissions.AllowAny, ]
 
 
 class FileUploadView(APIView):
@@ -74,7 +81,6 @@ class ExcelFileUploadView(APIView):
                 split_name = self.split_file_name(filename)
                 context.update(split_name)
                 r = get_full_excel_file_response(file, context)
-                r = None
                 status = 200
             except InvalidFormatException as e:
                 r = {"general_errors": [e.__str__()]}
@@ -97,8 +103,12 @@ class ExcelFileUploadView(APIView):
         :return:
         """
         name = os.path.splitext(filename)[0]
-        _, year_quart, vendor_name, round, scoring_version = tuple(name.split('_'))
-        split_name = {'f_vendor_name': vendor_name, 'f_round': round, 'f_scoring_version': scoring_version}
+        _, year_quart, vendor_name, round, scoring_round = tuple(name.split('_'))
+        split_name = {'f_vendor_name': vendor_name, 'f_round': round, 'f_scoring_round': scoring_round}
+        if not scoring_round.isdigit():
+            raise ParseError("Error file name. Scoring round incorrect")
+        if int(scoring_round) not in range(1, 9):
+            raise ParseError("Error file name. Scoring round incorrect")
         return split_name
 
 
@@ -643,6 +653,10 @@ class UploadElementFromExcelFile(APIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = ElementCommonInfoSerializer
 
+    def put(self, request, *args, **kwargs):
+        return Response(request.data, status=status.HTTP_200_OK)
+
+
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
@@ -658,6 +672,11 @@ class UploadElementFromExcelFile(APIView):
                 r = {"general_errors": ["The company information is blank"]}
                 return Response(r, status=406)
 
+        # Get and remove last element from data -> pc_status info from response
+        # Need for calculate condition for update RfipartisipationStatus last vendor/analytic response
+        pc_status = data.pop().get('Scoring_round_info')
+        context.update(pc_status)
+
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
@@ -670,6 +689,9 @@ class UploadElementFromExcelFile(APIView):
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
                                         element_name = element.get('Element Name')
+                                        # TODO except empty row in excel file for some category
+                                        # if not element_name:
+                                        #     print(parent_category, category, num)
                                         e_order = num
                                         category = category
                                         pc = parent_category
@@ -720,17 +742,17 @@ class UploadElementFromExcelFile(APIView):
                 ci_exist = True
         return ci_exist
 
-    @staticmethod
-    def not_all_element_is_null(data):
-        """
-        Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
-        That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
-        :param data:
-        :return:
-        """
-        from_vendor = tuple(data.get('self_score'), data.get('self_description'))
-        from_analytic = tuple(data.get('sm_score', data.get('analyst_notes')))
-        if not all(from_vendor) and not all(from_analytic):
-            return True
-        else:
-            return False
+    # @staticmethod
+    # def not_all_element_is_null(data):
+    #     """
+    #     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
+    #     That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
+    #     :param data:
+    #     :return:
+    #     """
+    #     from_vendor = tuple(data.get('self_score'), data.get('self_description'))
+    #     from_analytic = tuple(data.get('sm_score', data.get('analyst_notes')))
+    #     if not all(from_vendor) and not all(from_analytic):
+    #         return True
+    #     else:
+    #         return False

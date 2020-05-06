@@ -13,7 +13,13 @@ from apps.c_users.models import CustomUser
 from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, RfiParticipation, \
     Elements, Subcategories, Categories, ParentCategories, SelfDescriptions, SelfScores, \
     AnalystNotes, SmScores, ModuleElements, Attachments, ElementsAttachments, RfiParticipationStatus , \
-    CompanyGeneralInfoQuestion, CompanyGeneralInfoAnswers
+    CompanyGeneralInfoQuestion, CompanyGeneralInfoAnswers, AssignedVendorsAnalysts
+
+
+class AnalystSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignedVendorsAnalysts
+        fields = ('pk', )
 
 
 class VendorToFrontSerializer(serializers.ModelSerializer):
@@ -677,6 +683,11 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         analyst_id = self.context.get('analyst')
         vendor = Vendors.objects.get(vendorid=vendor_id)
         round = Rfis.objects.get(rfiid=rfiid)
+
+        #Get pc status from context
+        pc_status = self.context.get('status')
+        scoring_round = self.context.get('scoring_round')
+        # TODO add logic for update rfipartisipatiostatus analyst/vendor response
 
         # save CI
         company_information = self.context.get('Company_info')
