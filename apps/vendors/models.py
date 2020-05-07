@@ -335,10 +335,10 @@ class NormEWeights(models.Model):
 
 class ParentCategories(models.Model):
     PC = (
-        ("Common S2P", "Common S2P"),
-        ("Common Sourcing - SXM", "Common Sourcing - SXM"),
-        ("Services", "Services"),
-        ("Sourcing", "Sourcing"),
+        ("COMMON S2P", "COMMON S2P"),
+        ("COMMON SOURCING - SXM", "COMMON SOURCING - SXM"),
+        ("SERVICES", "SERVICES"),
+        ("SOURCING", "SOURCING"),
         ("SXM", "SXM"),
         ("Spend Analytics", "Spend Analytics"),
         ("CLM", "CLM"),
