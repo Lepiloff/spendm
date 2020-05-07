@@ -5,20 +5,6 @@ from apps.vendors.models import RfiParticipation, Vendors, Rfis, SelfScores, Ele
 
 header_cols_first_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
 
-# pc_to_modules_assign = {
-#                             "Strategic Sourcing": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'Sourcing'],
-#                             "Supplier Management": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'SXM'],
-#                             "Spend Analytics": ['Common S2P', 'Services', 'Spend Analytics'],
-#                             "Contract Management": ['Common S2P', 'Services', 'CLM'],
-#                             "e-Procurement": ['Common S2P', 'Services', 'eProcurement'],
-#                             "Invoice-to-Pay": ['Common S2P', 'Services', 'I2P'],
-#                             "AP Automation": ['Common S2P', 'Services', 'I2P', 'AP'],
-#                             "Strategic Procurement Technologies": ['Common S2P', 'Common Sourcing - SXM', 'Services',
-#                                                                    'Sourcing', 'SXM', 'Spend Analytics', 'CLM'],
-#                             "Procure-to-Pay": ['Common S2P', 'Services', 'eProcurement', 'I2P'],
-#                             "Source-to-Pay": ['Common S2P', 'Common Sourcing - SXM', 'Services',
-#                                               'Sourcing', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
-#                              }
 pc_to_modules_assign = {
                             "Strategic Sourcing": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SOURCING'],
                             "Supplier Management": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SXM'],
@@ -77,6 +63,10 @@ class InvalidFormatException(Exception):
     # do not remove !
     pass
 
+class InvalidRoundException(Exception):
+    # do not remove !
+    pass
+
 
 def company_info_parser(file):
     """
@@ -115,6 +105,12 @@ def get_full_excel_file_response(file, context):
     vendor_id = context.get('vendor')
     vendor = Vendors.objects.get(vendorid=vendor_id)
     round = Rfis.objects.get(rfiid=rfiid)
+
+    # Check that round name in file name match with active round
+    file_name_round = Rfis.objects.get(rfiid=context.get('f_round'))
+    if not file_name_round.active:
+        raise InvalidRoundException("Round from file name is not active")
+
     participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=round, active=True)  # Get vendor active module
     participate_module_list = [element.m.module_name for element in participate_module]
     unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing
@@ -129,6 +125,7 @@ def get_full_excel_file_response(file, context):
     for element in unique_pc:
         pc_participate_list.append(pc_to_function_name.get(element))
     for pc in pc_participate_list:
+        print(pc)
         if pc:
             data = pc(file, workbook)
             response.append(data)
@@ -835,7 +832,7 @@ def clm_response_create(file, workbook):
     sheet = workbook["RFI"]
     if check_excel_rfi_sheet_structure(file):  # Check that excel file structure equal to source template
         pc_response = {}  # crete response with all element information for each subcat for each category in PC
-        pc_response.update({"Parent Category": sheet["E568"].value})
+        pc_response.update({"Parent Category": sheet["E617"].value})
         category_list = []  # list of all category in PC with subcat info and element data
 
         # CONTACT INFORMATION MANAGEMENT CATEGORY
