@@ -1,6 +1,6 @@
 import csv
 import os
-import time
+import re
 
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
@@ -18,7 +18,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
-from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response
+from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response, InvalidRoundException
 from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
     CompanyGeneralInfoQuestion, AssignedVendorsAnalysts
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
@@ -76,26 +76,33 @@ class ExcelFileUploadView(APIView):
         f = request.data['file']
         filename = f.name
         if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            try:
-                file = default_storage.save(filename, f)
-                if filename.endswith('.xls'):
-                    import pyexcel
-                    _f, _ = filename.split('.')
-                    pyexcel.save_book_as(file_name=file, dest_file_name=f'{_f}.xlsx')
-                    file = default_storage.url(f'{_f}.xlsx')
-                split_name = self.split_file_name(filename)
-                context.update(split_name)
-                r = get_full_excel_file_response(file, context)
-                status = 200
-            except InvalidFormatException as e:
-                r = {"general_errors": [e.__str__()]}
+            if re.match(r'^SM_\d{4}Q\d_.*?_\d\d[A-Z]\d_\d\.[a-zA-Z]+$', filename):
+                try:
+                    file = default_storage.save(filename, f)
+                    if filename.endswith('.xls'):
+                        import pyexcel
+                        _f, _ = filename.split('.')
+                        pyexcel.save_book_as(file_name=file, dest_file_name=f'{_f}.xlsx')
+                        file = default_storage.url(f'{_f}.xlsx')
+                    split_name = self.split_file_name(filename)
+                    context.update(split_name)
+                    r = get_full_excel_file_response(file, context)
+                    status = 200
+                except InvalidFormatException as e:
+                    r = {"general_errors": [e.__str__()]}
+                    status = 406
+                except InvalidRoundException as e:
+                    r = {"general_errors": [e.__str__()]}
+                    status = 406
+                except Exception as e:
+                    r = {"general_errors": [e.__str__()]}
+                    status = 406
+                finally:
+                    default_storage.delete(file)
+                    # TODO delete .xls file too (for now delete only converted file .xlsx)
+            else:
                 status = 406
-            except Exception as e:
-                r = {"general_errors": [e.__str__()]}
-                status = 406
-            finally:
-                default_storage.delete(file)
-                # TODO delete .xls file too (for now delete only converted file .xlsx)
+                r = {"general_errors": ["File name incorrect. Use this template SM_2020Q1_Vendor_20R1_1.xlsx"]}
         else:
             status = 406
             r = {"general_errors": ["Please upload only xlsx files"]}
