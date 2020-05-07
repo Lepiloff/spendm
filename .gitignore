@@ -8,4 +8,5 @@ uwsgi.log
 .env
 *.csv
 *.xlsx
+*.xls
 !sample_vendors_test.csv
