@@ -444,7 +444,7 @@ class RfiParticipationStatus(models.Model):
                     ("RFI Outstanding", "RFI Outstanding"), ("Received", "Received"),
                     ("Scored", "Scored"), ("Closed", "Closed"),)
 
-    status = models.CharField(max_length=50, choices=STATUS_NAME)
+    status = models.CharField(max_length=50, choices=STATUS_NAME, default='Invited')
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING, related_name='to_vendor_status')
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING, related_name='to_rfis_status')
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
