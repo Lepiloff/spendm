@@ -19,6 +19,20 @@ pc_to_modules_assign = {
                             "Source-to-Pay": ['Common S2P', 'Common Sourcing - SXM', 'Services',
                                               'Sourcing', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
                              }
+# pc_to_modules_assign = {
+#                             "Strategic Sourcing": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SOURCING'],
+#                             "Supplier Management": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SXM'],
+#                             "Spend Analytics": ['COMMON S2P', 'SERVICES', 'Spend Analytics'],
+#                             "Contract Management": ['COMMON S2P', 'SERVICES', 'CLM'],
+#                             "e-Procurement": ['COMMON S2P', 'SERVICES', 'eProcurement'],
+#                             "Invoice-to-Pay": ['COMMON S2P', 'SERVICES', 'I2P'],
+#                             "AP Automation": ['COMMON S2P', 'SERVICES', 'I2P', 'AP'],
+#                             "Strategic Procurement Technologies": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
+#                                                                    'SOURCING', 'SXM', 'Spend Analytics', 'CLM'],
+#                             "Procure-to-Pay": ['COMMON S2P', 'SERVICES', 'eProcurement', 'I2P'],
+#                             "Source-to-Pay": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
+#                                               'SOURCING', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
+#                              }
 
 
 paren_category_row_number = {
@@ -88,6 +102,7 @@ def company_info_parser(file):
 def get_excel_file_current_pc_for_parsing(pml=None):
     modules_with_pc = (dict((option, pc_to_modules_assign[option]) for option in pml if option in pc_to_modules_assign))
     pc = [value for key, value in modules_with_pc.items()]
+    print(pc)
     # Get unique pc depending on the active modules in the round for a particular vendor
     unique_pc = set(x for element in pc for x in element)
     return unique_pc
@@ -118,48 +133,33 @@ def get_full_excel_file_response(file, context):
         if pc:
             data = pc(file, workbook)
             response.append(data)
-            if scoring_round == 1:
-                # check PC contain not null value (for frontend status visualization )
-                pc_st = first_score_not_all_element_is_null(data)
-                pc_status.append(pc_st)
-            else:
-                pc_st = any_score_not_all_element_is_null(data, vendor, round)
-                pc_status.append(pc_st)
-
-    # For previous scoring round
-    scoring_round_info = {}
-    if scoring_round != 1:
-        previews_scoring_status = []
-        for pc in unique_pc:
-            s_r_n = scoring_round - 1
-            pc_obj = ParentCategories.objects.get(parent_category_name=pc)
-            status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=round, pc=pc_obj).values("last_vendor_response", "last_analyst_response"))
-            for s in status:
-                if s.get('last_vendor_response') != 0:
-                    if s.get('last_analyst_response') != 0:
-                        previews_scoring_status.append({pc: True})
-                else:
-                    previews_scoring_status.append({pc: False})
-        # TODO check why return True in any case
-        scoring_round_info.update({'status': previews_scoring_status})
-        scoring_round_info.update({'scoring_round': s_r_n})
-
+            # check PC contain not null value (curent status)
+            pc_st = score_not_all_element_is_null(data)
+            pc_status.append(pc_st)
     s = {"status": pc_status, 'scoring_round': scoring_round}
-    response.append({'Scoring_round_info': [s, scoring_round_info]})
+    old_pc_st = {}
+    if scoring_round != 1:
+        old_pc_st = any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc)
+    # Check if last round isnt exist in db skip old_pc_st in response
+    if len(old_pc_st) == 0:
+        response.append({'Scoring_round_info': [s]})
+    else:
+        response.append({'Scoring_round_info': [s, old_pc_st]})
+
     return response
 
 
-def first_score_not_all_element_is_null(data):
+def score_not_all_element_is_null(data):
 
     """
-    Only for first scoring round
+    For curent round
     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
     That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
     :param data:
     :return:
     """
     pc = data.get('Parent Category')
-    pc_status = {pc: False}
+    pc_status = {pc: "No data"}
     category_data = data.get('Category')
     for data in category_data:
         for category, values in data.items():  # Get category name
@@ -175,38 +175,38 @@ def first_score_not_all_element_is_null(data):
                         if all(from_vendor) and all(from_analytic):
                             pc_status[pc] = True
                             return pc_status
+                        elif all(from_vendor) and not all(from_analytic):
+                            pc_status[pc] = "-"
+                            return pc_status
+
+
     return pc_status
 
 
-def any_score_not_all_element_is_null(data, vendor, round):
-
+def any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
     """
-    For non firs scoring round
+    For previous scoring round
     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
-    That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
     :param data:
     :return:
     """
     # TODO check difference between previous round and current data
-
-    pc = data.get('Parent Category')
-    pc_status = {pc: False}
-    category_data = data.get('Category')
-    for data in category_data:
-        for category, values in data.items():  # Get category name
-            for subcats in values:
-                for subcat, element_list in subcats.items():  # Get subcategory name
-                    for element in element_list:  # Get element info
-                        self_score = element.get('Self-Score')
-                        self_description = element.get('Self-Description')
-                        sm_score = element.get('SM score')
-                        analyst_notes = element.get('Analyst notes')
-                        from_vendor = (self_score, self_description)
-                        from_analytic = (sm_score, analyst_notes)
-                        if all(from_vendor) and all(from_analytic):
-                            pc_status[pc] = True
-                            return pc_status
-    return pc_status
+    scoring_round_info = {}
+    previews_scoring_status = []
+    for pc in unique_pc:
+        s_r_n = scoring_round - 1
+        pc_obj = ParentCategories.objects.get(parent_category_name=pc)
+        status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=round, pc=pc_obj).values("last_vendor_response", "last_analyst_response"))
+        for s in status:
+            if s.get('last_vendor_response') != 0:
+                if s.get('last_analyst_response') != 0:
+                    previews_scoring_status.append({pc: True})
+            else:
+                previews_scoring_status.append({pc: False})
+    # TODO check why return True in any case
+    scoring_round_info.update({'status': previews_scoring_status})
+    scoring_round_info.update({'scoring_round': s_r_n})
+    return scoring_round_info
 
 
 def check_exel_rfi_template_structure(structure):

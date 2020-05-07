@@ -78,6 +78,11 @@ class ExcelFileUploadView(APIView):
         if filename.endswith('.xlsx') or filename.endswith('.xls'):
             try:
                 file = default_storage.save(filename, f)
+                if filename.endswith('.xls'):
+                    import pyexcel
+                    _f, _ = filename.split('.')
+                    pyexcel.save_book_as(file_name=file, dest_file_name=f'{_f}.xlsx')
+                    file = default_storage.url(f'{_f}.xlsx')
                 split_name = self.split_file_name(filename)
                 context.update(split_name)
                 r = get_full_excel_file_response(file, context)
@@ -90,6 +95,7 @@ class ExcelFileUploadView(APIView):
                 status = 406
             finally:
                 default_storage.delete(file)
+                # TODO delete .xls file too (for now delete only converted file .xlsx)
         else:
             status = 406
             r = {"general_errors": ["Please upload only xlsx files"]}
@@ -689,9 +695,9 @@ class UploadElementFromExcelFile(APIView):
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
                                         element_name = element.get('Element Name')
-                                        # TODO except empty row in excel file for some category
-                                        # if not element_name:
-                                        #     print(parent_category, category, num)
+                                        # skip empty row in excel file for some category
+                                        if not element_name:
+                                            continue
                                         e_order = num
                                         category = category
                                         pc = parent_category
