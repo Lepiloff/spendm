@@ -5,34 +5,34 @@ from apps.vendors.models import RfiParticipation, Vendors, Rfis, SelfScores, Ele
 
 header_cols_first_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
 
-pc_to_modules_assign = {
-                            "Strategic Sourcing": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'Sourcing'],
-                            "Supplier Management": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'SXM'],
-                            "Spend Analytics": ['Common S2P', 'Services', 'Spend Analytics'],
-                            "Contract Management": ['Common S2P', 'Services', 'CLM'],
-                            "e-Procurement": ['Common S2P', 'Services', 'eProcurement'],
-                            "Invoice-to-Pay": ['Common S2P', 'Services', 'I2P'],
-                            "AP Automation": ['Common S2P', 'Services', 'I2P', 'AP'],
-                            "Strategic Procurement Technologies": ['Common S2P', 'Common Sourcing - SXM', 'Services',
-                                                                   'Sourcing', 'SXM', 'Spend Analytics', 'CLM'],
-                            "Procure-to-Pay": ['Common S2P', 'Services', 'eProcurement', 'I2P'],
-                            "Source-to-Pay": ['Common S2P', 'Common Sourcing - SXM', 'Services',
-                                              'Sourcing', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
-                             }
 # pc_to_modules_assign = {
-#                             "Strategic Sourcing": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SOURCING'],
-#                             "Supplier Management": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SXM'],
-#                             "Spend Analytics": ['COMMON S2P', 'SERVICES', 'Spend Analytics'],
-#                             "Contract Management": ['COMMON S2P', 'SERVICES', 'CLM'],
-#                             "e-Procurement": ['COMMON S2P', 'SERVICES', 'eProcurement'],
-#                             "Invoice-to-Pay": ['COMMON S2P', 'SERVICES', 'I2P'],
-#                             "AP Automation": ['COMMON S2P', 'SERVICES', 'I2P', 'AP'],
-#                             "Strategic Procurement Technologies": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
-#                                                                    'SOURCING', 'SXM', 'Spend Analytics', 'CLM'],
-#                             "Procure-to-Pay": ['COMMON S2P', 'SERVICES', 'eProcurement', 'I2P'],
-#                             "Source-to-Pay": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
-#                                               'SOURCING', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
+#                             "Strategic Sourcing": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'Sourcing'],
+#                             "Supplier Management": ['Common S2P', 'Common Sourcing - SXM', 'Services', 'SXM'],
+#                             "Spend Analytics": ['Common S2P', 'Services', 'Spend Analytics'],
+#                             "Contract Management": ['Common S2P', 'Services', 'CLM'],
+#                             "e-Procurement": ['Common S2P', 'Services', 'eProcurement'],
+#                             "Invoice-to-Pay": ['Common S2P', 'Services', 'I2P'],
+#                             "AP Automation": ['Common S2P', 'Services', 'I2P', 'AP'],
+#                             "Strategic Procurement Technologies": ['Common S2P', 'Common Sourcing - SXM', 'Services',
+#                                                                    'Sourcing', 'SXM', 'Spend Analytics', 'CLM'],
+#                             "Procure-to-Pay": ['Common S2P', 'Services', 'eProcurement', 'I2P'],
+#                             "Source-to-Pay": ['Common S2P', 'Common Sourcing - SXM', 'Services',
+#                                               'Sourcing', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
 #                              }
+pc_to_modules_assign = {
+                            "Strategic Sourcing": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SOURCING'],
+                            "Supplier Management": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES', 'SXM'],
+                            "Spend Analytics": ['COMMON S2P', 'SERVICES', 'Spend Analytics'],
+                            "Contract Management": ['COMMON S2P', 'SERVICES', 'CLM'],
+                            "e-Procurement": ['COMMON S2P', 'SERVICES', 'eProcurement'],
+                            "Invoice-to-Pay": ['COMMON S2P', 'SERVICES', 'I2P'],
+                            "AP Automation": ['COMMON S2P', 'SERVICES', 'I2P', 'AP'],
+                            "Strategic Procurement Technologies": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
+                                                                   'SOURCING', 'SXM', 'Spend Analytics', 'CLM'],
+                            "Procure-to-Pay": ['COMMON S2P', 'SERVICES', 'eProcurement', 'I2P'],
+                            "Source-to-Pay": ['COMMON S2P', 'COMMON SOURCING - SXM', 'SERVICES',
+                                              'SOURCING', 'SXM', 'Spend Analytics', 'CLM', 'eProcurement', 'I2P']
+                             }
 
 
 paren_category_row_number = {
@@ -102,7 +102,6 @@ def company_info_parser(file):
 def get_excel_file_current_pc_for_parsing(pml=None):
     modules_with_pc = (dict((option, pc_to_modules_assign[option]) for option in pml if option in pc_to_modules_assign))
     pc = [value for key, value in modules_with_pc.items()]
-    print(pc)
     # Get unique pc depending on the active modules in the round for a particular vendor
     unique_pc = set(x for element in pc for x in element)
     return unique_pc
@@ -140,7 +139,7 @@ def get_full_excel_file_response(file, context):
     old_pc_st = {}
     if scoring_round != 1:
         old_pc_st = any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc)
-    # Check if last round isnt exist in db skip old_pc_st in response
+    # Check if last round isn't exist in db skip old_pc_st in response
     if len(old_pc_st) == 0:
         response.append({'Scoring_round_info': [s]})
     else:
@@ -987,10 +986,10 @@ def eprocurement_response_create(file, workbook):
 
 
 pc_to_function_name = {
-                            "Common S2P": common_s2p_category_response_create,
-                            "Common Sourcing - SXM": common_sourcing_sxm_response_create,
-                            "Services": services_response_create,
-                            "Sourcing": sourcing_response_create,
+                            "COMMON S2P": common_s2p_category_response_create,
+                            "COMMON SOURCING - SXM": common_sourcing_sxm_response_create,
+                            "SERVICES": services_response_create,
+                            "SOURCING": sourcing_response_create,
                             "SXM": sxm_response_create,
                             "Spend Analytics": spend_analytics_response_create,
                             "CLM": clm_response_create,
