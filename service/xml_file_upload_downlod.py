@@ -104,14 +104,14 @@ def get_full_excel_file_response(file, context):
     rfiid = context.get('rfiid')
     vendor_id = context.get('vendor')
     vendor = Vendors.objects.get(vendorid=vendor_id)
-    round = Rfis.objects.get(rfiid=rfiid)
+    _round = Rfis.objects.get(rfiid=rfiid)
 
     # Check that round name in file name match with active round
     file_name_round = Rfis.objects.get(rfiid=context.get('f_round'))
     if not file_name_round.active:
         raise InvalidRoundException("Round from file name is not active")
 
-    participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=round, active=True)  # Get vendor active module
+    participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=_round, active=True)  # Get vendor active module
     participate_module_list = [element.m.module_name for element in participate_module]
     unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing
     response = []
@@ -122,20 +122,24 @@ def get_full_excel_file_response(file, context):
     pc_status = []
     workbook = load_workbook(filename=file)
     pc_participate_list = []
+    status_info = {}
     for element in unique_pc:
         pc_participate_list.append(pc_to_function_name.get(element))
     for pc in pc_participate_list:
-        print(pc)
         if pc:
             data = pc(file, workbook)
             response.append(data)
             # check PC contain not null value (curent status)
-            pc_st = score_not_all_element_is_null(data)
+            pc_st = current_score_data(data, vendor, _round)
             pc_status.append(pc_st)
+            # get info on who filled in the information in the element
+            _status_info = from_vendor_analyst(data)
+            status_info.update(_status_info)
+    response.append({'Status_info': status_info})
     s = {"status": pc_status, 'scoring_round': scoring_round}
     old_pc_st = {}
     if scoring_round != 1:
-        old_pc_st = any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc)
+        old_pc_st = past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc)
     # Check if last round isn't exist in db skip old_pc_st in response
     if len(old_pc_st) == 0:
         response.append({'Scoring_round_info': [s]})
@@ -145,7 +149,32 @@ def get_full_excel_file_response(file, context):
     return response
 
 
-def score_not_all_element_is_null(data):
+def from_vendor_analyst(data):
+    # get info on who filled in the information in the element
+    pc = data.get('Parent Category')
+    category_data = data.get('Category')
+    _status_info = {"vendor": False, "analyst": False}
+    for data in category_data:
+        for category, values in data.items():  # Get category name
+            for subcats in values:
+                for subcat, element_list in subcats.items():  # Get subcategory name
+                    for element in element_list:  # Get element info
+                        self_score = element.get('Self-Score')
+                        self_description = element.get('Self-Description')
+                        sm_score = element.get('SM score')
+                        analyst_notes = element.get('Analyst notes')
+                        from_vendor = (self_score, self_description)
+                        from_analytic = (sm_score, analyst_notes)
+
+                        if all(from_vendor):
+                            _status_info['vendor'] = True
+                        elif all(from_analytic):
+                            _status_info['analyst'] = True
+    status_info = {pc: _status_info}
+    return status_info
+
+
+def current_score_data(data, vendor, _round):
 
     """
     For curent round
@@ -155,7 +184,7 @@ def score_not_all_element_is_null(data):
     :return:
     """
     pc = data.get('Parent Category')
-    pc_status = {pc: "No data"}
+    pc_status = {pc: 'No data'}
     category_data = data.get('Category')
     for data in category_data:
         for category, values in data.items():  # Get category name
@@ -168,18 +197,38 @@ def score_not_all_element_is_null(data):
                         analyst_notes = element.get('Analyst notes')
                         from_vendor = (self_score, self_description)
                         from_analytic = (sm_score, analyst_notes)
+
+                        # If current scoring round exist in db and data consist new information return False
+                        # that mean possibility to update old data in DB
+                        s_r_e = scoring_round_exist(pc, vendor, _round)
+                        if s_r_e:
+                            if all(from_vendor) or all(from_analytic):
+                                pc_status[pc] = False
+                                return pc_status
+
                         if all(from_vendor) and all(from_analytic):
                             pc_status[pc] = True
                             return pc_status
-                        elif all(from_vendor) and not all(from_analytic):
+                        elif (all(from_vendor) and not all(from_analytic)) \
+                                or (all(from_analytic) and not all(from_vendor)):
                             pc_status[pc] = "-"
                             return pc_status
-
-
     return pc_status
 
 
-def any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
+def scoring_round_exist(pc, vendor, _round):
+    # Check that scoring round yet in DB
+    pc_obj = ParentCategories.objects.get(parent_category_name=pc)
+    status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=_round, pc=pc_obj).values(
+        "last_vendor_response", "last_analyst_response"))
+    for s in status:
+        if s.get('last_vendor_response') != 0:
+            if s.get('last_analyst_response') != 0:
+                return True
+        else:
+            return False
+
+def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
     """
     For previous scoring round
     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
@@ -199,7 +248,6 @@ def any_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
                     previews_scoring_status.append({pc: True})
             else:
                 previews_scoring_status.append({pc: False})
-    # TODO check why return True in any case
     scoring_round_info.update({'status': previews_scoring_status})
     scoring_round_info.update({'scoring_round': s_r_n})
     return scoring_round_info
@@ -970,7 +1018,7 @@ def eprocurement_response_create(file, workbook):
                                             sub_category=sub_category)
 
 
-        info_to_subcat_to_cat.update({category_name: to_category_info})  # Aggregate info for each Subcat at CAREGORY
+        info_to_subcat_to_cat.update({category_name: to_category_info})
         category_list.append(info_to_subcat_to_cat)
 
 
@@ -979,6 +1027,38 @@ def eprocurement_response_create(file, workbook):
         pc_response.update({"Category": category_list})
         return pc_response
 
+
+def i2p_response_create(file, workbook):
+    """
+    Create response from I2P parsing
+    :param file:
+    :return:
+    """
+    sheet = workbook["RFI"]
+    # TODO
+    if check_excel_rfi_sheet_structure(file):  # Check that excel file structure equal to source template
+        pc_response = {}  # crete response with all element information for each subcat for each category in PC
+        pc_response.update({"Parent Category": sheet["E688"].value})
+        category_list = []  # list of all category in PC with subcat info and element data
+
+        # CATALOG MANAGEMENT CATEGORY
+
+        category_name = sheet["E689"].value
+        info_to_subcat_to_cat = {}
+        to_category_info = []  # list of all subcat wit element info
+
+        # Subcategory Catalog Creation / Onboarding
+        sub_category = sheet["E690"].value
+        subcategory_element_response_create(min_row=691, max_row=700, sheet=sheet, to_category_info=to_category_info,
+                                            sub_category=sub_category)
+
+
+        info_to_subcat_to_cat.update({category_name: to_category_info})  # Aggregate info for each Subcat at CAREGORY
+        category_list.append(info_to_subcat_to_cat)
+
+
+        pc_response.update({"Category": category_list})
+        return pc_response
 
 
 

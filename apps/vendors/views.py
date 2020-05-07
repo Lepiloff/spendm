@@ -685,10 +685,13 @@ class UploadElementFromExcelFile(APIView):
                 r = {"general_errors": ["The company information is blank"]}
                 return Response(r, status=406)
 
-        # Get and remove last element from data -> pc_status info from response
-        # Need for calculate condition for update RfipartisipationStatus last vendor/analytic response
+        # TODO update
         pc_status = data.pop().get('Scoring_round_info')
-        context.update(pc_status)
+        context['pc_status_info'] = pc_status
+
+        # Need for calculate condition for update RfipartisipationStatus last vendor/analytic response field
+        status_info = data.pop().get('Status_info')
+        context['status_info'] = status_info
 
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB

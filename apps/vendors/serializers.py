@@ -684,10 +684,14 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         vendor = Vendors.objects.get(vendorid=vendor_id)
         round = Rfis.objects.get(rfiid=rfiid)
 
-        #Get pc status from context
-        pc_status = self.context.get('status')
-        scoring_round = self.context.get('scoring_round')
-        # TODO add logic for update rfipartisipatiostatus analyst/vendor response
+
+        #TODO Get pc status from context for update
+        pc_status_info = self.context.get('pc_status_info')
+        last_s_r_info = pc_status_info[0]
+
+
+        # for update rfipartisipatiostatus analyst/vendor response (1 or 0)
+        status_info = self.context.get('status_info')
 
         # save CI
         company_information = self.context.get('Company_info')
@@ -713,15 +717,14 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
 
-        # rfi participation status
-        status_name = {"Received": "Received", "Scored": "Scored"}
-        pc_status = status_name.get("Received")
-        lar = None
-        lvr = 1
-        if analyst_id:
-            pc_status = status_name.get("Scored")
-            lar = 1
-            lvr = None
+        lar = status_info.get(pc, {}).get('analyst')
+        lvr = status_info.get(pc, {}).get('vendor')
+        rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                             pc=parent_category.first(),
+                                                                             defaults={'last_analyst_response': lar,
+                                                                                       'last_vendor_response': lvr}
+                                                                             )
+
         element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
 
         if analyst_id:
@@ -730,11 +733,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
                                                           analyst_response=lar)
-            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-                                                                                 pc=parent_category.first(),
-                                                                                 defaults={'status': pc_status,
-                                                                                           'last_analyst_response': lar}
-                                                                                 )
+
         else:
             self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
                                                              vendor_response=lvr)
@@ -748,15 +747,9 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
             element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment,
                                                                               rfi=round, vendor_response=lvr)
 
-            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-                                                                                 pc=parent_category.first(),
-                                                                                 defaults={'status': pc_status,
-                                                                                           'last_vendor_response': lvr}
-                                                                                 )
+        # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
 
-        # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
-
-        return element
+        return self
 
 
 class CommonExcelUploadSerializer(serializers.ModelSerializer):
