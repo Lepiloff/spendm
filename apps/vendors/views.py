@@ -673,8 +673,7 @@ class UploadElementFromExcelFile(APIView):
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
-        company_information = next(iter(data))
-        context.update(company_information)
+
         if not kwargs.get('analyst'):  # Check that file send by vendor
             # Check that CI answer stored in DB yet (at list one)
             ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'))
@@ -685,18 +684,31 @@ class UploadElementFromExcelFile(APIView):
                 r = {"general_errors": ["The company information is blank"]}
                 return Response(r, status=406)
 
-        # TODO update
-        pc_status = data.pop().get('Scoring_round_info')
-        context['pc_status_info'] = pc_status
+        for num, _d in enumerate(data):
+            if 'Company_info' in _d:
+                company_information = _d['Company_info']
+                context['Company_info'] = company_information
+                del data[num]
+                break
 
-        # Need for calculate condition for update RfipartisipationStatus last vendor/analytic response field
-        status_info = data.pop().get('Status_info')
-        context['status_info'] = status_info
+        for num, _d in enumerate(data):
+            if 'Scoring_round_info' in _d:
+                pc_status = _d['Scoring_round_info']
+                context['pc_status_info'] = pc_status
+                del data[num]
+                break
 
+        for num, _d in enumerate(data):
+            if 'Status_info' in _d:
+                status_info = _d['Status_info']
+                context['status_info'] = status_info
+                del data[num]
+                break
+        print(context.get('status_info'))
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
-                for pc_data in data[1:]:  # from dict get PC and Category participate data, exclude firs element - CI
+                for pc_data in data:  # from dict get PC and Category participate data, exclude firs element - CI
                     parent_category = pc_data.get('Parent Category')
                     category_data = pc_data.get('Category')
                     for data in category_data:
@@ -740,6 +752,7 @@ class UploadElementFromExcelFile(APIView):
         round = round
         exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
         ci_exist = False
+
         if exist_company_question:
             for q in exist_company_question:
                 if q.answer_to_question.filter():
