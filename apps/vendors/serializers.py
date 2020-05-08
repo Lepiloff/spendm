@@ -686,8 +686,8 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
 
         #TODO Get pc status from context for update
-        pc_status_info = self.context.get('pc_status_info')
-        last_s_r_info = pc_status_info[0]
+        # pc_status_info = self.context.get('pc_status_info')
+        # last_s_r_info = pc_status_info[0]
 
 
         # for update rfipartisipatiostatus analyst/vendor response (1 or 0)
