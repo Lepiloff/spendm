@@ -25,7 +25,8 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
-    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer, AnalystSerializer
+    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer, AnalystSerializer, \
+    VendorActiveToFrontSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -269,6 +270,15 @@ class VendorsToFrontView(generics.ListAPIView):
     """
     queryset = Vendors.objects.all()
     serializer_class = VendorToFrontSerializer
+    permission_classes = [permissions.AllowAny, ]
+
+
+class VendorsActiveToFrontView(generics.ListAPIView):
+    """
+    Get Vendors list for frontend validation
+    """
+    queryset = Vendors.objects.filter(active=True)
+    serializer_class = VendorActiveToFrontSerializer
     permission_classes = [permissions.AllowAny, ]
 
 
@@ -704,7 +714,6 @@ class UploadElementFromExcelFile(APIView):
                 context['status_info'] = status_info
                 del data[num]
                 break
-        print(context.get('status_info'))
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():

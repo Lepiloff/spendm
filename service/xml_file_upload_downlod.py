@@ -111,6 +111,14 @@ def get_full_excel_file_response(file, context):
     if not file_name_round.active:
         raise InvalidRoundException("Round from file name is not active")
 
+    # check vendor have partisipated modele in current round
+    participation = RfiParticipation.objects.filter(rfi=_round, vendor=vendor)
+    if participation:
+        for module in participation:
+            if not module.active:
+                raise InvalidRoundException("Vendor have't active participated module in current round")
+    else:
+        raise InvalidRoundException("Vendor have't active participated module in current round")
     participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=_round, active=True)  # Get vendor active module
     participate_module_list = [element.m.module_name for element in participate_module]
     unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing

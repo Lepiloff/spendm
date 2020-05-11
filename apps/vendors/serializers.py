@@ -28,6 +28,12 @@ class VendorToFrontSerializer(serializers.ModelSerializer):
         fields = ('pk', 'vendor_name')
 
 
+class VendorActiveToFrontSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vendors
+        fields = ('pk', 'vendor_name')
+
+
 class VendorContactSerializer(serializers.ModelSerializer):
     email = serializers.CharField(validators=[RegexValidator(regex=r'[^@]+@[^\.]+\..+',
                                                              message='Enter valid email address')], allow_blank=True)
@@ -696,8 +702,8 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         company_information = self.context.get('Company_info')
         for ci in company_information:
             ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
-            cia, _ = CompanyGeneralInfoAnswers.objects.get_or_create(vendor=vendor, question=ciq,
-                                                                     answer=ci.get('answer'))
+            cia, _ = CompanyGeneralInfoAnswers.objects.update_or_create(vendor=vendor, question=ciq,
+                                                                        defaults={'answer': ci.get('answer')})
 
         # Get data from validated data
         sc = validated_data.pop('s')
