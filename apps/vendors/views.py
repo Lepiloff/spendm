@@ -684,22 +684,23 @@ class UploadElementFromExcelFile(APIView):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
 
-        if not kwargs.get('analyst'):  # Check that file send by vendor
-            # Check that CI answer stored in DB yet (at list one)
-            ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'))
-
-            # Check company info from excel file
-            ci_file = self.get_ci_from_excel_file(data=data)
-            if not ci_db and not ci_file:
-                r = {"general_errors": ["The company information is blank"]}
-                return Response(r, status=406)
-
         for num, _d in enumerate(data):
             if 'Company_info' in _d:
                 company_information = _d['Company_info']
                 context['Company_info'] = company_information
                 del data[num]
                 break
+
+        if not kwargs.get('analyst'):  # Check that file send by vendor
+            # Check that CI answer stored in DB yet (at list one)
+            ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'),
+                                              vendor= Vendors.objects.get(vendorid=kwargs.get('vendor')))
+
+            # Check company info from excel file
+            ci_file = self.get_ci_from_excel_file(company_information)
+            if not ci_db and not ci_file:
+                r = {"general_errors": ["The company information is blank"]}
+                return Response(r, status=406)
 
         for num, _d in enumerate(data):
             if 'Scoring_round_info' in _d:
@@ -756,7 +757,7 @@ class UploadElementFromExcelFile(APIView):
             return Response(request.data, status=status.HTTP_200_OK)
 
     @staticmethod
-    def check_ci_exist_in_db(round):
+    def check_ci_exist_in_db(round, vendor):
         """Check that CI answer stored in DB yet (at list one)"""
         round = round
         exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
@@ -764,18 +765,19 @@ class UploadElementFromExcelFile(APIView):
 
         if exist_company_question:
             for q in exist_company_question:
-                if q.answer_to_question.filter():
-                    if q.answer_to_question.get().answer:  # check if answer is exist and not None
+                if q.answer_to_question.filter(vendor=vendor):  # check if answer is exist and not None
+                    _a = (q.answer_to_question.filter(vendor=vendor).first())
+                    if _a.answer:
                         ci_exist = True
         return ci_exist
 
     @staticmethod
-    def get_ci_from_excel_file(data):
+    def get_ci_from_excel_file(company_information):
         """"Check company info from excel file"""
-        company_information = next(iter(data))  # company information as a dict
-        information = company_information.get('Company_info')
+        # company_information = next(iter(data))  # company information as a dict
+        # information = company_information.get('Company_info')
         ci_exist = False
-        for i in information:
+        for i in company_information:
             if i.get('answer'):
                 ci_exist = True
         return ci_exist
