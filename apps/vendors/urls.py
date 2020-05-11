@@ -4,7 +4,7 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
     ModulesListView, VendorManagementListScreen, VendorProfileUpdateView, VendorContactsCreateView, ContactsUpdateView, \
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
     VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView, AssociateModulesWithVendorCsv,\
-    CsvRfiTemplateDownload, ExcelFileUploadView, UploadElementFromExcelFile, AnalystListView
+    CsvRfiTemplateDownload, ExcelFileUploadView, UploadElementFromExcelFile, AnalystListView, VendorsActiveToFrontView
 
 
 urlpatterns = [
@@ -17,6 +17,7 @@ urlpatterns = [
     path('create/', VendorsCreateView.as_view(), name='vendor_create'),
     path('administrator_dashboard/', AdministratorDashboard.as_view(), name='administartor_dashboard'),
     path('vendors_list/', VendorsToFrontView.as_view(), name='vendors_list'),
+    path('active_vendors_list/', VendorsActiveToFrontView.as_view(), name='active_vendors_list'),
     path('analyst_list/', AnalystListView.as_view(), name='analyst_list'),
     path('modules_list/', ModulesListView.as_view()),
     path('vendor_management_screen/', VendorManagementListScreen.as_view(), name='vendor_management_screen'),
