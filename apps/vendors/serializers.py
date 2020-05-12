@@ -655,24 +655,10 @@ class CompanyInfoAnswerSerializer(serializers.ModelSerializer):
 class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
     s = serializers.CharField(required=False, allow_null=True)
-    self_description = serializers.CharField(required=False, allow_null=True,
-                                             validators=[RegexValidator(regex=r'^[a-zA-Z0-9,.!? -/*()]*$',
-                                                                        message='The system detected that the data is not in English. '
-                                                                                'Please correct the error and try again.')]
-                                             )
-    self_score = serializers.CharField(required=False, allow_null=True,
-                                       validators=[RegexValidator(regex=r'^[0-5]',
-                                                                  message='Self_score invalid value. Mast be between 0 and 5')]
-                                       )
-    sm_score = serializers.CharField(required=False, allow_null=True,
-                                     validators=[RegexValidator(regex=r'^[0-5]',
-                                                                message='Sm_score invalid value. Mast be between 0 and 5')]
-                                     )
-    analyst_notes = serializers.CharField(required=False, allow_null=True,
-                                          validators=[RegexValidator(regex=r'^[a-zA-Z0-9,.!? -/*()]*$',
-                                                                     message='The system detected that the data is not in English. '
-                                                                             'Please correct the error and try again.')]
-                                          )
+    self_description = serializers.CharField(required=False, allow_null=True)
+    self_score = serializers.CharField(required=False, allow_null=True)
+    sm_score = serializers.CharField(required=False, allow_null=True)
+    analyst_notes = serializers.CharField(required=False, allow_null=True)
     attachment = serializers.CharField(required=False, allow_null=True)
     category = serializers.CharField(required=False, allow_null=True)
     pc = serializers.CharField(required=False, allow_null=True)
@@ -682,6 +668,18 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
+    def validate(self, data):
+        self_description = str((data['self_description']))
+        analyst_notes = str((data['analyst_notes']))
+        if re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
+            raise serializers.ValidationError({
+                    "general_errors": [
+                        "The system detected that the data is not in English. Please correct the error and try again."
+                    ]
+                })
+        return data
+
+
     def create(self, validated_data):
         # Get data from url context
         rfiid = self.context.get('rfiid')
@@ -689,7 +687,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         analyst_id = self.context.get('analyst')
         vendor = Vendors.objects.get(vendorid=vendor_id)
         round = Rfis.objects.get(rfiid=rfiid)
-
+        current_scoring_round = self.context.get('current_scoring_round')
 
         #TODO Get pc status from context for update
         # pc_status_info = self.context.get('pc_status_info')
@@ -735,25 +733,26 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
         if analyst_id:
             analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
-                                                                  rfi=round, analyst_response=lar)
+                                                                  rfi=round, analyst_response=current_scoring_round)
 
             sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
-                                                          analyst_response=lar)
+                                                          analyst_response=current_scoring_round)
 
         else:
             self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
-                                                             vendor_response=lvr)
+                                                             vendor_response=current_scoring_round)
 
             self_description, _ = SelfDescriptions.objects.get_or_create(vendor=vendor, e=element,
                                                                          self_description=self_description, rfi=round,
-                                                                         vendor_response=lvr)
+                                                                         vendor_response=current_scoring_round)
 
             attachment, _ = Attachments.objects.get_or_create(vendor=vendor, path=attachment, rfi=round)
 
             element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment,
-                                                                              rfi=round, vendor_response=lvr)
+                                                                              rfi=round,
+                                                                              vendor_response=current_scoring_round)
 
-        # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
+        # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
 
         return self
 
