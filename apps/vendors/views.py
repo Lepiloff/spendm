@@ -106,7 +106,7 @@ class ExcelFileUploadView(APIView):
                 r = {"general_errors": ["File name incorrect. Use this template SM_2020Q1_Vendor_20R1_1.xlsx"]}
         else:
             status = 406
-            r = {"general_errors": ["Please upload only xlsx files"]}
+            r = {"general_errors": ["Please upload only xlsx or xls files"]}
         return Response(r, status=status)
 
     @staticmethod
@@ -683,6 +683,13 @@ class UploadElementFromExcelFile(APIView):
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
+
+        for num, _d in enumerate(data):
+            if 'Scoring_round_current' in _d:
+                current_scoring_round = _d['Scoring_round_current']
+                context['current_scoring_round'] = current_scoring_round
+                del data[num]
+                break
 
         for num, _d in enumerate(data):
             if 'Company_info' in _d:
