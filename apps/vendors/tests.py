@@ -26,6 +26,9 @@ class VendorManualCreateTest(APITestCase):
         vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", active=True)
         VendorContacts.objects.create(contact_name="Mrk", phone="2373823", email="test1@rgmail.com", vendor=vendor)
         CustomUser.objects.create_superuser('myemail@test.com', password)
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
+
 
     def test_vendors_created_success(self):
         vendors_count = Vendors.objects.all().count()
@@ -91,6 +94,9 @@ class VendorCsvCreateTest(APITestCase):
         Modules.objects.create(module_name='Strategic Sourcing')
         Modules.objects.create(module_name='Supplier Management')
 
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
+
     def test_vendor_from_csv_create_api(self):
         data = [
     {
@@ -149,6 +155,10 @@ class VendorCsvCreateTest(APITestCase):
 
 
 class VendorContactsCreateViewTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_create_new_contact_api(self):
         vendor = Vendors.objects.create(vendor_name="U1", country="Belarus", nda="2020-12-12", )
@@ -182,6 +192,10 @@ class VendorContactsCreateViewTest(APITestCase):
 
 
 class VendorProfileUpdateViewTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_check_partial_update_api(self):
         data = {"vendor_name": "UN"}
@@ -196,6 +210,10 @@ class VendorProfileUpdateViewTest(APITestCase):
 
 
 class ContactsUpdateViewTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_contact_partial_update_api(self):
         data = {"email": "jac12k1@gmail.com"}
@@ -211,6 +229,10 @@ class ContactsUpdateViewTest(APITestCase):
 
 
 class VendorProfileModulesListCreateTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_associate_module_to_round(self):
         password = 'mypassword'
@@ -231,6 +253,10 @@ class VendorProfileModulesListCreateTest(APITestCase):
 
 
 class NewRfiRoundCreateViewTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_create_new_rfi(self):
         data = {
@@ -260,6 +286,10 @@ class NewRfiRoundCreateViewTest(APITestCase):
 
 
 class RfiRoundCloseTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_rfi_round_close_api(self):
         data = {
@@ -294,6 +324,10 @@ class RfiRoundCloseTest(APITestCase):
 
 
 class VendorManagementScreenTest(APITestCase):
+    def setUp(self):
+        password = 'mypassword'
+        self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
+        self.client.force_authenticate(self.user)
 
     def test_url_get_success_response(self):
         url = reverse('vendor_management_screen')
