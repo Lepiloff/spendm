@@ -39,8 +39,6 @@ class AdministratorDashboard(APIView):
 class AnalystListView(generics.ListAPIView):
     queryset = AssignedVendorsAnalysts.objects.all()
     serializer_class = AnalystSerializer
-    permission_classes = [permissions.AllowAny, ]
-
 
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -66,7 +64,6 @@ class FileUploadView(APIView):
 
 class ExcelFileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = (permissions.AllowAny,)
 
     def put(self, request, format=None, **kwargs):
         # context need for avoid full excel file parsing during rfi sheet perform, not implemented if parse Company Info
@@ -179,7 +176,6 @@ class CsvToDatabase(APIView):
 ]
     """
 
-    permission_classes = (permissions.AllowAny,)
     serializer_class = VendorsCsvSerializer
 
     def post(self, request, format=None):
@@ -240,7 +236,7 @@ class VendorsCreateView(APIView):
                     ]
                 }
     """
-    permission_classes = (permissions.AllowAny,)
+
     serializer_class = VendorsCreateSerializer
 
     def post(self, request, *args, **kwargs):
@@ -270,7 +266,6 @@ class VendorsToFrontView(generics.ListAPIView):
     """
     queryset = Vendors.objects.all()
     serializer_class = VendorToFrontSerializer
-    permission_classes = [permissions.AllowAny, ]
 
 
 class VendorsActiveToFrontView(generics.ListAPIView):
@@ -279,7 +274,6 @@ class VendorsActiveToFrontView(generics.ListAPIView):
     """
     queryset = Vendors.objects.filter(active=True)
     serializer_class = VendorActiveToFrontSerializer
-    permission_classes = [permissions.AllowAny, ]
 
 
 class ModulesListView(generics.ListAPIView):
@@ -288,7 +282,6 @@ class ModulesListView(generics.ListAPIView):
     """
     queryset = Modules.objects.all()
     serializer_class = ModulesSerializer
-    permission_classes = [permissions.AllowAny, ]
 
 
 # <--VENDOR PROFILE-->
@@ -296,7 +289,6 @@ class VendorProfilePageView(generics.RetrieveAPIView):
     """ Get vendor Profile personal data"""
 
     serializer_class = VendorContactSerializer
-    permission_classes = [permissions.AllowAny, ]
     lookup_field = "vendorid"
 
     def get_object(self):
@@ -310,7 +302,6 @@ class VendorManagementListScreen(generics.ListAPIView):
     """
     serializer_class = VendorsManagementListSerializer
     queryset = Vendors.objects.all()
-    permission_classes = [permissions.AllowAny, ]
 
 
 class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
@@ -365,7 +356,7 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
            }
     """
 
-    permission_classes = [permissions.AllowAny, ]
+    # permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorManagementUpdateSerializer
     lookup_field = 'vendorid'
 
@@ -389,7 +380,6 @@ class VendorContactsCreateView(generics.CreateAPIView):
 
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorContactCreateSerializer
 
     def create(self, request, *args, **kwargs):
@@ -410,7 +400,6 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
 
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = ContactUpdateSerializer
     lookup_field = 'contact_id'
     queryset = VendorContacts.objects.all()
@@ -430,7 +419,6 @@ class VendorProfileModulesListCreate(generics.ListCreateAPIView):
             }
         """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiParticipationSerializer
 
     # Implement just to rewrite status code from 201(default) to 200
@@ -462,7 +450,6 @@ class NewRfiRoundCreateView(generics.ListCreateAPIView):
 
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiRoundSerializer
     queryset = Rfis.objects.filter(active=True)
 
@@ -472,7 +459,6 @@ class RfiRoundClose(generics.RetrieveUpdateAPIView):
     Close rfi round
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiRoundCloseSerializer
     queryset = Rfis.objects.all()
     lookup_field = 'rfiid'
@@ -485,7 +471,6 @@ class RfiRoundView(generics.RetrieveAPIView):
     """ Rfi round info
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiRoundSerializer
     queryset = Rfis.objects.all()
     lookup_field = 'rfiid'
@@ -495,7 +480,6 @@ class RfiRoundListView(generics.ListAPIView):
     """ Rfi round info
     """
 
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = RfiRoundSerializer
     queryset = Rfis.objects.filter(active=True)
 
@@ -513,7 +497,6 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
              }
 
     """
-    permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorModulesListManagementSerializer
     queryset = Vendors.objects.all()
 
@@ -535,7 +518,6 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
 class RfiCsvUploadView(APIView):
     """ Upload rfi csv file"""
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = (permissions.AllowAny,)
     serializer_class = VendorsCsvSerializer
 
     def put(self, request, format=None):
@@ -596,7 +578,6 @@ class AssociateModulesWithVendorCsv(APIView):
 
             ]
     """
-    permission_classes = (permissions.AllowAny,)
     serializer_class = RfiParticipationCsvSerializer
 
     def post(self, request, format=None):
@@ -623,12 +604,6 @@ class AssociateModulesWithVendorCsv(APIView):
 
 
 class CsvRfiTemplateDownload(APIView):
-
-
-    # TODO filter vendor by round partisipation
-    """ Download rfi modules .csv file """
-
-    permission_classes = (permissions.AllowAny,)
 
     def get(self, request, format=None, **kwargs):
         # Get list of exist round in db
@@ -673,7 +648,6 @@ class CsvRfiTemplateDownload(APIView):
 
 class UploadElementFromExcelFile(APIView):
 
-    permission_classes = (permissions.AllowAny,)
     serializer_class = ElementCommonInfoSerializer
 
     def put(self, request, *args, **kwargs):
