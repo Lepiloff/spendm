@@ -46,7 +46,7 @@ class AssignedPcAnalysts(models.Model):
 
 
 class AssignedVendorsAnalysts(models.Model):
-
+    name = models.CharField(max_length=50, blank=True, null=True)
     analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     active = models.IntegerField()

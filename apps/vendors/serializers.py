@@ -4,7 +4,6 @@ import datetime
 
 from django.db.models import F
 from django.db import DataError
-from django.shortcuts import get_object_or_404
 from django.core.validators import RegexValidator
 
 from rest_framework import serializers
@@ -671,7 +670,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
     def validate(self, data):
         self_description = str((data['self_description']))
         analyst_notes = str((data['analyst_notes']))
-        if re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
+        if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
             raise serializers.ValidationError({
                     "general_errors": [
                         "The system detected that the data is not in English. Please correct the error and try again."
@@ -720,14 +719,21 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
 
-        if status_info:
-            lar = status_info.get(pc, {}).get('analyst')
-            lvr = status_info.get(pc, {}).get('vendor')
-            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-                                                                                 pc=parent_category.first(),
-                                                                                 defaults={'last_analyst_response': lar,
-                                                                                           'last_vendor_response': lvr}
-                                                                                 )
+        # Deprecated, status changes depending on the scoring number of the round and not on the filling of the file.
+        # if status_info:
+        #     lar = status_info.get(pc, {}).get('analyst')
+        #     lvr = status_info.get(pc, {}).get('vendor')
+        #     rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+        #                                                                          pc=parent_category.first(),
+        #                                                                          defaults={'last_analyst_response': lar,
+        #                                                                                    'last_vendor_response': lvr}
+        #                                                                          )
+
+        rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                             pc=parent_category.first(),
+                                                                             defaults={'last_analyst_response': current_scoring_round,
+                                                                                       'last_vendor_response': current_scoring_round}
+                                                                             )
 
         element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
 
@@ -737,6 +743,12 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
                                                           analyst_response=current_scoring_round)
+
+            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                                 pc=parent_category.first(),
+                                                                                 defaults={
+                                                                                     'last_analyst_response': current_scoring_round}
+                                                                                 )
 
         else:
             self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
@@ -751,6 +763,12 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
             element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment,
                                                                               rfi=round,
                                                                               vendor_response=current_scoring_round)
+
+            rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+                                                                                 pc=parent_category.first(),
+                                                                                 defaults={
+                                                                                     'last_vendor_response': current_scoring_round}
+                                                                                 )
 
         # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
 
