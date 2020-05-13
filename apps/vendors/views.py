@@ -25,8 +25,8 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
-    ContactUpdateSerializer, ElementCommonInfoSerializer, SubcategoriesSerializer, AnalystSerializer, \
-    VendorActiveToFrontSerializer
+    ContactUpdateSerializer, ElementCommonInfoSerializer, AnalystSerializer, \
+    VendorActiveToFrontSerializer, DownloadExcelSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -37,12 +37,13 @@ class AdministratorDashboard(APIView):
 
 
 class AnalystListView(generics.ListAPIView):
+
     queryset = AssignedVendorsAnalysts.objects.all()
     serializer_class = AnalystSerializer
 
+
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = (permissions.AllowAny,)
 
     def put(self, request, format=None):
         if 'file' not in request.data:
@@ -777,3 +778,25 @@ class UploadElementFromExcelFile(APIView):
     #         return True
     #     else:
     #         return False
+
+
+class DownloadRfiExcelFile(generics.ListAPIView):
+    """
+    GET:
+       return list of active vendor with last scoring round
+    """
+
+    serializer_class = DownloadExcelSerializer
+    model = serializer_class.Meta.model
+
+    def get_queryset(self):
+        queryset = self.model.objects.filter(active=True)
+        return queryset
+
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        """
+        context = super().get_serializer_context()
+        context.update({"rfiid": self.kwargs['rfiid']})
+        return context

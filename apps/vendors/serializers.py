@@ -5,6 +5,7 @@ import datetime
 from django.db.models import F
 from django.db import DataError
 from django.core.validators import RegexValidator
+from django.db.models import Max
 
 from rest_framework import serializers
 
@@ -18,7 +19,7 @@ from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, R
 class AnalystSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssignedVendorsAnalysts
-        fields = ('pk', )
+        fields = ('pk', 'name')
 
 
 class VendorToFrontSerializer(serializers.ModelSerializer):
@@ -523,122 +524,122 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
 
 # EXCEL
-class ParentcategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ParentCategories
-        fields = (
-            'parent_category_name',
-        )
-
-
-class CategoriesSerializer(serializers.ModelSerializer):
-    pc = serializers.PrimaryKeyRelatedField(queryset=ParentCategories.objects.all())
-    class Meta:
-        model = Categories
-        fields = (
-            'pc',
-            'category_name',
-        )
-
-
-class SubcategoriesSerializer(serializers.ModelSerializer):
-    c = serializers.PrimaryKeyRelatedField(queryset=Categories.objects.all())
-    class Meta:
-        model = Subcategories
-        field = (
-            'c',
-            'subcategory_name',
-            )
-
-
-class ElementsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Elements
-        field = (
-            's',
-            'element_name',
-            'description',
-            'scoring_scale',
-            'e_order',
-            )
-
-
-class SelfDescriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SelfDescriptions
-        fields = (
-            'vendor',
-            'e',
-            'self_description',
-            'rfi',
-            'vendor_response',
-            )
-
-
-class SelfScoresSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SelfScores
-        field = (
-            'self_score',
-        )
-
-
-class AnalistNotesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AnalystNotes
-        field = (
-            'vendor',
-            'e',
-            'analyst_notes',
-            'rfi',
-            'analyst_response',
-            )
-
-
-class SmScoresSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SmScores
-        field = (
-            'vendor',
-            'e',
-            'sm_score',
-            'rfi',
-            'analyst_response',
-            )
-
-
-class ModuleElementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ModuleElements
-        field = (
-            'm',
-            'e',
-            'rfi',
-            )
-
-
-class AttachmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Attachments
-        field = (
-            'vendor',
-            'filename',
-            'extension',
-            'path',
-            'notes',
-            'rfi',
-            )
-
-
-class ElementsAttachment(serializers.ModelSerializer):
-    class Meta:
-        model = ElementsAttachments
-        field = (
-            'e',
-            'attachment',
-            'rfi',
-            'vendor_response',
-            )
+# class ParentcategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ParentCategories
+#         fields = (
+#             'parent_category_name',
+#         )
+#
+#
+# class CategoriesSerializer(serializers.ModelSerializer):
+#     pc = serializers.PrimaryKeyRelatedField(queryset=ParentCategories.objects.all())
+#     class Meta:
+#         model = Categories
+#         fields = (
+#             'pc',
+#             'category_name',
+#         )
+#
+#
+# class SubcategoriesSerializer(serializers.ModelSerializer):
+#     c = serializers.PrimaryKeyRelatedField(queryset=Categories.objects.all())
+#     class Meta:
+#         model = Subcategories
+#         field = (
+#             'c',
+#             'subcategory_name',
+#             )
+#
+#
+# class ElementsSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Elements
+#         field = (
+#             's',
+#             'element_name',
+#             'description',
+#             'scoring_scale',
+#             'e_order',
+#             )
+#
+#
+# class SelfDescriptionSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SelfDescriptions
+#         fields = (
+#             'vendor',
+#             'e',
+#             'self_description',
+#             'rfi',
+#             'vendor_response',
+#             )
+#
+#
+# class SelfScoresSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SelfScores
+#         field = (
+#             'self_score',
+#         )
+#
+#
+# class AnalistNotesSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = AnalystNotes
+#         field = (
+#             'vendor',
+#             'e',
+#             'analyst_notes',
+#             'rfi',
+#             'analyst_response',
+#             )
+#
+#
+# class SmScoresSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = SmScores
+#         field = (
+#             'vendor',
+#             'e',
+#             'sm_score',
+#             'rfi',
+#             'analyst_response',
+#             )
+#
+#
+# class ModuleElementSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ModuleElements
+#         field = (
+#             'm',
+#             'e',
+#             'rfi',
+#             )
+#
+#
+# class AttachmentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Attachments
+#         field = (
+#             'vendor',
+#             'filename',
+#             'extension',
+#             'path',
+#             'notes',
+#             'rfi',
+#             )
+#
+#
+# class ElementsAttachment(serializers.ModelSerializer):
+#     class Meta:
+#         model = ElementsAttachments
+#         field = (
+#             'e',
+#             'attachment',
+#             'rfi',
+#             'vendor_response',
+#             )
 
 
 class CompanyInfoQuestionSerializer(serializers.ModelSerializer):
@@ -775,8 +776,25 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         return self
 
 
-class CommonExcelUploadSerializer(serializers.ModelSerializer):
-
+class DownloadExcelSerializer(serializers.ModelSerializer):
+    scoring_status = serializers.SerializerMethodField()
     class Meta:
-        model = Rfis
-        field = ("rfiid", )
+        model = Vendors
+        fields = ('vendorid', 'vendor_name', 'scoring_status',)
+
+    def get_scoring_status(self, obj):
+        rfiid = self.context.get('rfiid')
+        r = None
+        # Check that vendor have roundstatus object in round
+        if RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid):
+            max_score = RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid).aggregate(Max('last_vendor_response'),
+                                                                                               Max('last_analyst_response'))
+            print(max_score.get('last_analyst_response__max'))
+            print(max_score.get('last_analyst_response__max'))
+            if max_score.get('last_vendor_response__max') != 0 and max_score.get('last_analyst_response__max') != 0:
+                r = (max_score.get('last_analyst_response__max')) + 1
+            elif max_score.get('last_vendor_response__max') != 0 or max_score.get('last_analyst_response__max') != 0:
+                r = max(max_score.get('last_vendor_response__max'), max_score.get('last_analyst_response__max'))
+            elif max_score.get('last_vendor_response__max') == 0 or max_score.get('last_analyst_response__max') == 0:
+                r = 1
+        return r
