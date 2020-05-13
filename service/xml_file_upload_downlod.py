@@ -101,6 +101,7 @@ def get_full_excel_file_response(file, context):
     """ return full response from excel file (exclude PC not participate to vendor in current round)"""
     # Get data from url context
     scoring_round = int(context.get('f_scoring_round'))
+    analyst = context.get('analyst')
     rfiid = context.get('rfiid')
     vendor_id = context.get('vendor')
     vendor = Vendors.objects.get(vendorid=vendor_id)
@@ -111,7 +112,7 @@ def get_full_excel_file_response(file, context):
     if not file_name_round.active:
         raise InvalidRoundException("Round from file name is not active")
 
-    # check vendor have partisipated modele in current round
+    # check vendor have participated module in current round
     participation = RfiParticipation.objects.filter(rfi=_round, vendor=vendor)
     if participation:
         for module in participation:
@@ -138,7 +139,7 @@ def get_full_excel_file_response(file, context):
             data = pc(file, workbook)
             response.append(data)
             # check PC contain not null value (curent status)
-            pc_st = current_score_data(data, vendor, _round)
+            pc_st = current_score_data(data, vendor, _round, scoring_round, analyst)
             pc_status.append(pc_st)
             # get info on who filled in the information in the element
             _status_info = from_vendor_analyst(data)
@@ -184,7 +185,7 @@ def from_vendor_analyst(data):
     return status_info
 
 
-def current_score_data(data, vendor, _round):
+def current_score_data(data, vendor, _round, scoring_round, analyst):
 
     """
     For curent round
@@ -194,8 +195,8 @@ def current_score_data(data, vendor, _round):
     :return:
     """
     pc = data.get('Parent Category')
-    pc_status = {pc: 'No data'}
     category_data = data.get('Category')
+    pc_status = {}
     for data in category_data:
         for category, values in data.items():  # Get category name
             for subcats in values:
@@ -209,21 +210,41 @@ def current_score_data(data, vendor, _round):
                         from_analytic = (sm_score, analyst_notes)
 
                         # If current scoring round exist in db and data consist new information return False
-                        # that mean possibility to update old data in DB
+                        # that mean possibility to update old data in DB then change switcher status
                         s_r_e = scoring_round_exist(pc, vendor, _round)
                         if s_r_e:
                             if all(from_vendor) or all(from_analytic):
-                                pc_status[pc] = False
+                                pc_status[pc] = True
                                 return pc_status
+                        # For first scoring round and if upload from vendor status  should be Active (True)
+                        elif scoring_round == 1 and not analyst:
+                            pc_status[pc] = False
+                            return pc_status
+                        # If mailer is vendor and element not empty
+                        elif not analyst and all(from_vendor):
+                            pc_status[pc] = False
+                            return pc_status
+                        # If mailer is analyst and element not empty
+                        elif analyst and all(from_analytic):
+                            pc_status[pc] = False
+                            return pc_status
 
-                        if all(from_vendor) and all(from_analytic):
+                        elif all(from_vendor) and all(from_analytic):
                             pc_status[pc] = True
                             return pc_status
+
                         elif (all(from_vendor) and not all(from_analytic)) \
                                 or (all(from_analytic) and not all(from_vendor)):
                             pc_status[pc] = "-"
                             return pc_status
+                        else:
+                            pc_status[pc] = "No data"
+                            return pc_status
+
     return pc_status
+
+def check_previous_analyst_status(pc, vendor, _round):
+    pass
 
 
 def scoring_round_exist(pc, vendor, _round):
