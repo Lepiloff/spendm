@@ -450,8 +450,8 @@ class RfiParticipationStatus(models.Model):
     pc = models.ForeignKey(ParentCategories, models.DO_NOTHING, blank=True, null=True)
     user_id = models.IntegerField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
-    last_vendor_response = models.IntegerField(blank=True, null=True)
-    last_analyst_response = models.IntegerField(blank=True, null=True)
+    last_vendor_response = models.IntegerField(default = 0)
+    last_analyst_response = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'rfi_participation_status'
