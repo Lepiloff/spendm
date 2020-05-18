@@ -8,14 +8,13 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db import transaction
 
-
-from rest_framework import permissions
 from rest_framework.exceptions import ParseError
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
+from rest_framework import permissions
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
 from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response, InvalidRoundException
@@ -64,6 +63,7 @@ class FileUploadView(APIView):
 
 
 class ExcelFileUploadView(APIView):
+    permission_classes = [permissions.AllowAny]
     parser_classes = (MultiPartParser, FormParser)
 
     def put(self, request, format=None, **kwargs):
@@ -701,7 +701,8 @@ class UploadElementFromExcelFile(APIView):
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
                 for pc_data in data:  # from dict get PC and Category participate data, exclude firs element - CI
-                    parent_category = pc_data.get('Parent Category')
+                    # TODO remember that category name get with space
+                    parent_category = pc_data.get('Parent Category').rstrip()
                     category_data = pc_data.get('Category')
                     for data in category_data:
                         for category, values in data.items():  # Get category name
@@ -709,7 +710,7 @@ class UploadElementFromExcelFile(APIView):
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
                                         element_name = element.get('Element Name')
-                                        # skip empty row in excel file for some category
+                                        # TODO skip empty row in excel file for some category row 622
                                         if not element_name:
                                             continue
                                         e_order = num
