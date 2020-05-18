@@ -336,7 +336,7 @@ class NormEWeights(models.Model):
 class ParentCategories(models.Model):
     PC = (
         ("COMMON S2P", "COMMON S2P"),
-        ("COMMON SOURCING - SXM", "COMMON SOURCING - SXM"),
+        ("COMMON SOURCING – SXM", "COMMON SOURCING – SXM"),
         ("SERVICES", "SERVICES"),
         ("SOURCING", "SOURCING"),
         ("SXM", "SXM"),
