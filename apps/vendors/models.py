@@ -770,7 +770,6 @@ class CompanyGeneralInfoQuestion(models.Model):
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     rfi = models.ForeignKey(Rfis, models.DO_NOTHING)
     timestamp = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
 
     class Meta:
         db_table = 'company_info__questions'
@@ -783,7 +782,7 @@ class CompanyGeneralInfoAnswers(models.Model):
     answer = models.CharField(max_length=4096, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
+    scoring = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'company_info_answers'
