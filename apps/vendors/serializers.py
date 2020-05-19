@@ -697,11 +697,11 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         status_info = self.context.get('status_info')
 
         # save CI
-        company_information = self.context.get('Company_info')
-        for ci in company_information:
-            ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
-            cia, _ = CompanyGeneralInfoAnswers.objects.update_or_create(vendor=vendor, question=ciq,
-                                                                        defaults={'answer': ci.get('answer')})
+        # company_information = self.context.get('Company_info')
+        # for ci in company_information:
+        #     ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
+        #     cia, _ = CompanyGeneralInfoAnswers.objects.update_or_create(vendor=vendor, question=ciq,
+        #                                                                 defaults={'answer': ci.get('answer')})
 
         # Get data from validated data
         sc = validated_data.pop('s')

@@ -648,7 +648,7 @@ class CsvRfiTemplateDownload(APIView):
 
 
 class UploadElementFromExcelFile(APIView):
-
+    permission_classes = [permissions.AllowAny]
     serializer_class = ElementCommonInfoSerializer
 
     def put(self, request, *args, **kwargs):
@@ -676,7 +676,7 @@ class UploadElementFromExcelFile(APIView):
         if not kwargs.get('analyst'):  # Check that file send by vendor
             # Check that CI answer stored in DB yet (at list one)
             ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'),
-                                              vendor= Vendors.objects.get(vendorid=kwargs.get('vendor')))
+                                              vendor=Vendors.objects.get(vendorid=kwargs.get('vendor')))
 
             # Check company info from excel file
             ci_file = self.get_ci_from_excel_file(company_information)
@@ -697,12 +697,22 @@ class UploadElementFromExcelFile(APIView):
                 context['status_info'] = status_info
                 del data[num]
                 break
+        # For CI creation
+        round = Rfis.objects.get(rfiid=kwargs.get('rfiid'))
+        vendor = Vendors.objects.get(vendorid=kwargs.get('vendor'))
+
         try:
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
-                for pc_data in data:  # from dict get PC and Category participate data, exclude firs element - CI
-                    # TODO remember that category name get with space
-                    parent_category = pc_data.get('Parent Category').rstrip()
+                # CI creations
+                for ci in company_information:
+                    ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
+                    cia, _ = CompanyGeneralInfoAnswers.objects.update_or_create(vendor=vendor, question=ciq,
+                                                                                scoring=current_scoring_round,
+                                                                                defaults={'answer': ci.get('answer')})
+                for pc_data in data:
+                    parent_category = pc_data.get('Parent Category')
+                    parent_category = parent_category.rstrip()
                     category_data = pc_data.get('Category')
                     for data in category_data:
                         for category, values in data.items():  # Get category name
