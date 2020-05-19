@@ -18,7 +18,7 @@ from rest_framework import permissions
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
 from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response, InvalidRoundException, \
-    InvalidCharactersException
+    InvalidCharactersException, CIEmptyException
 from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
     CompanyGeneralInfoQuestion, AssignedVendorsAnalysts
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
@@ -95,6 +95,9 @@ class ExcelFileUploadView(APIView):
                     r = {"general_errors": [e.__str__()]}
                     status = 406
                 except InvalidCharactersException as e:
+                    r = {"general_errors": [e.__str__()]}
+                    status = 406
+                except CIEmptyException as e:
                     r = {"general_errors": [e.__str__()]}
                     status = 406
                 except Exception as e:
@@ -677,16 +680,16 @@ class UploadElementFromExcelFile(APIView):
                 del data[num]
                 break
 
-        if not kwargs.get('analyst'):  # Check that file send by vendor
-            # Check that CI answer stored in DB yet (at list one)
-            ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'),
-                                              vendor=Vendors.objects.get(vendorid=kwargs.get('vendor')))
-
-            # Check company info from excel file
-            ci_file = self.get_ci_from_excel_file(company_information)
-            if not ci_db and not ci_file:
-                r = {"general_errors": ["The company information is blank"]}
-                return Response(r, status=406)
+        # if not kwargs.get('analyst'):  # Check that file send by vendor
+        #     # Check that CI answer stored in DB yet (at list one)
+        #     ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'),
+        #                                       vendor=Vendors.objects.get(vendorid=kwargs.get('vendor')))
+        #
+        #     # Check company info from excel file
+        #     ci_file = self.get_ci_from_excel_file(company_information)
+        #     if not ci_db and not ci_file:
+        #         r = {"general_errors": ["The company information is blank"]}
+        #         return Response(r, status=406)
 
         for num, _d in enumerate(data):
             if 'Scoring_round_info' in _d:
@@ -753,31 +756,31 @@ class UploadElementFromExcelFile(APIView):
         else:
             return Response(request.data, status=status.HTTP_200_OK)
 
-    @staticmethod
-    def check_ci_exist_in_db(round, vendor):
-        """Check that CI answer stored in DB yet (at list one)"""
-        round = round
-        exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
-        ci_exist = False
-
-        if exist_company_question:
-            for q in exist_company_question:
-                if q.answer_to_question.filter(vendor=vendor):  # check if answer is exist and not None
-                    _a = (q.answer_to_question.filter(vendor=vendor).first())
-                    if _a.answer:
-                        ci_exist = True
-        return ci_exist
-
-    @staticmethod
-    def get_ci_from_excel_file(company_information):
-        """"Check company info from excel file"""
-        # company_information = next(iter(data))  # company information as a dict
-        # information = company_information.get('Company_info')
-        ci_exist = False
-        for i in company_information:
-            if i.get('answer'):
-                ci_exist = True
-        return ci_exist
+    # @staticmethod
+    # def check_ci_exist_in_db(round, vendor):
+    #     """Check that CI answer stored in DB yet (at list one)"""
+    #     round = round
+    #     exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
+    #     ci_exist = False
+    #
+    #     if exist_company_question:
+    #         for q in exist_company_question:
+    #             if q.answer_to_question.filter(vendor=vendor):  # check if answer is exist and not None
+    #                 _a = (q.answer_to_question.filter(vendor=vendor).first())
+    #                 if _a.answer:
+    #                     ci_exist = True
+    #     return ci_exist
+    #
+    # @staticmethod
+    # def get_ci_from_excel_file(company_information):
+    #     """"Check company info from excel file"""
+    #     # company_information = next(iter(data))  # company information as a dict
+    #     # information = company_information.get('Company_info')
+    #     ci_exist = False
+    #     for i in company_information:
+    #         if i.get('answer'):
+    #             ci_exist = True
+    #     return ci_exist
 
     # @staticmethod
     # def not_all_element_is_null(data):
