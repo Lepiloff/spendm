@@ -1,14 +1,11 @@
 import re
 from openpyxl import load_workbook
 
-from apps.vendors.models import RfiParticipation, Vendors, Rfis, SelfScores, Elements, ParentCategories, \
-    RfiParticipationStatus
+from apps.vendors.models import RfiParticipation, Vendors, Rfis, ParentCategories, RfiParticipationStatus, \
+    CompanyGeneralInfoQuestion
 
-from rest_framework.exceptions import ParseError
-from rest_framework import serializers
+from rest_framework.response import Response
 
-# header_cols_n_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
-# header_cols_second_scoring_round = ["E", "F", "G", "U", "V", "W", "X", "Y"]
 
 header_cols_n_scoring_round = {
                                '1': ["E", "F", "G", "P", "Q", "R", "S", "T"],
@@ -52,7 +49,12 @@ class InvalidCharactersException(Exception):
     pass
 
 
-def company_info_parser(file):
+class CIEmptyException(Exception):
+    # do not remove !
+    pass
+
+
+def company_info_parser(file, analyst, _round, vendor):
     """
     Get Company information response
     :param file:
@@ -70,7 +72,37 @@ def company_info_parser(file):
                 company_info['answer'] = cell.value
         company_info.update(company_info)
         company_general_info.append(company_info)
+
+    if not analyst:  # Check that file send by vendor
+        # Check that CI answer stored in DB yet (at list one)
+        ci_db = check_ci_exist_in_db(_round, vendor)
+        # Check company info from excel file
+        ci_file = get_ci_from_excel_file(company_general_info)
+        if not ci_db and not ci_file:
+            raise CIEmptyException("The company information can't be empty.")
     return company_general_info
+
+
+def check_ci_exist_in_db(_round, vendor):
+    """Check that CI answer stored in DB yet (at list one)"""
+    exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=_round)
+    ci_exist = False
+
+    if exist_company_question:
+        for q in exist_company_question:
+            if q.answer_to_question.filter(vendor=vendor):  # check if answer is exist and not None
+                _a = (q.answer_to_question.filter(vendor=vendor).first())
+                if _a.answer:
+                    ci_exist = True
+    return ci_exist
+
+def get_ci_from_excel_file(company_general_info):
+    """"Check company info from excel file"""
+    ci_exist = False
+    for i in company_general_info:
+        if i.get('answer'):
+            ci_exist = True
+    return ci_exist
 
 
 def get_excel_file_current_pc_for_parsing(pml=None):
@@ -132,7 +164,7 @@ def get_full_excel_file_response(file, context):
     unique_pc = get_excel_file_current_pc_for_parsing(pml=participate_module_list)  # Get unique PC for future processing
     response = []
     # Get Company information response
-    company_info = company_info_parser(file=file)
+    company_info = company_info_parser(file, analyst, _round, vendor)
     response.append({"Company_info": company_info})
     # Calculate pc status
     pc_status = []
@@ -161,11 +193,14 @@ def get_full_excel_file_response(file, context):
                 _status_info = from_vendor_analyst(data)
                 status_info.update(_status_info)
     response.append({'Status_info': status_info})
+    # s - current round
     s = {"status": pc_status, 'scoring_round': scoring_round}
+    s.update({"Company info": True})
+    #  old_pc_st - previous round (s-1)
     old_pc_st = {}
     if scoring_round != 1:
         old_pc_st = past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc)
-    old_pc_st.update({"Company info": True})
+        old_pc_st.update({"Company info": True})
     # Check if last round isn't exist in db skip old_pc_st in response
     # if len(old_pc_st) == 0:
     #     response.append({'Scoring_round_info': [s]})
@@ -259,9 +294,6 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
 
     return pc_status
 
-def check_previous_analyst_status(pc, vendor, _round):
-    pass
-
 
 def scoring_round_exist(pc, vendor, _round):
     # Check that scoring round yet in DB
@@ -301,46 +333,6 @@ def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
     return scoring_round_info
 
 
-# def check_exel_rfi_template_structure(structure):
-#     p_category_coordinate = ["COMMON S2P",
-#                             "COMMON SOURCING - SXM",
-#                             "SERVICES",
-#                             "SOURCING",
-#                             "SXM",
-#                             "Spend Analytics",
-#                             "CLM",
-#                             "eProcurement",
-#                             "I2P",
-#                           ]
-#     if structure == p_category_coordinate:
-#         return True
-#     else:
-#         return False
-
-
-# def check_excel_rfi_sheet_structure(file):
-#     workbook = load_workbook(filename=file)
-#     sheet = workbook["RFI"]
-#     curent_paren_category_coordinate = []
-#     try:
-#         curent_paren_category_coordinate.append(sheet['E4'].value)  # COMMON S2P
-#         curent_paren_category_coordinate.append(sheet['E222'].value)  # COMMON SOURCING - SXM
-#         curent_paren_category_coordinate.append(sheet['E348'].value)  # SERVICES
-#         curent_paren_category_coordinate.append(sheet['E381'].value)  # SOURCING
-#         curent_paren_category_coordinate.append(sheet['E519'].value)  # SXM
-#         curent_paren_category_coordinate.append(sheet['E568'].value)  # Spend Analytics
-#         curent_paren_category_coordinate.append(sheet['E617'].value)  # CLM
-#         curent_paren_category_coordinate.append(sheet['E688'].value)  # eProcurement
-#         curent_paren_category_coordinate.append(sheet['E950'].value)  # I2P
-#         if check_exel_rfi_template_structure(structure=curent_paren_category_coordinate):
-#             file_status = True
-#         else:
-#             file_status = False
-#     except:
-#         raise InvalidFormatException("Error during excel file parsing. Unknown module cell")
-#     return file_status
-
-
 def subcategory_element_response_create(scoring_round, min_row, max_row, sheet=None, to_category_info=None, sub_category=None):
     to_sub_category_info = []
     header_cols = header_cols_for_scoring_round(str(scoring_round))
@@ -348,10 +340,6 @@ def subcategory_element_response_create(scoring_round, min_row, max_row, sheet=N
         element_info = {}
         for cell in row:
             if cell.column_letter in header_cols:
-                # Non latin text validation
-                # if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', cell.value):
-                #     print("Not")
-                    # raise ParseError
                 # if if is used to change the name of the element in the not first scoring round,
                 # as the file columns for the second round have a different name as a first round
                 epn = sheet[f'{cell.column_letter}2'].value  # 2 - because second row with  row name
@@ -364,9 +352,6 @@ def subcategory_element_response_create(scoring_round, min_row, max_row, sheet=N
                 elif epn == "Analyst notes (2)":
                     epn = "Analyst notes"
                 element_info[epn] = cell.value
-                # Non latin text validation
-                # if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', cell.value):
-                #     raise ParseError
         to_sub_category_info.append(element_info)
         non_latin_characters(to_sub_category_info)
     to_category_info.append({sub_category: to_sub_category_info})
