@@ -202,10 +202,10 @@ def get_full_excel_file_response(file, context):
         old_pc_st = past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc)
         old_pc_st.update({"Company info": True})
     # Check if last round isn't exist in db skip old_pc_st in response
-    # if len(old_pc_st) == 0:
-    #     response.append({'Scoring_round_info': [s]})
-    # else:
-    response.append({'Scoring_round_info': [s, old_pc_st]})
+    if len(old_pc_st) == 0:
+        response.append({'Scoring_round_info': [s]})
+    else:
+        response.append({'Scoring_round_info': [s, old_pc_st]})
     # add to response current scoring round from file name
     response.append({"Scoring_round_current": scoring_round})
     return response
