@@ -17,7 +17,8 @@ from rest_framework import status
 from rest_framework import permissions
 
 from service.csv_file_download import csv_file_parser, rfi_csv_file_parser
-from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response, InvalidRoundException
+from service.xml_file_upload_downlod import InvalidFormatException, get_full_excel_file_response, InvalidRoundException, \
+    InvalidCharactersException
 from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
     CompanyGeneralInfoQuestion, AssignedVendorsAnalysts
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
@@ -91,6 +92,9 @@ class ExcelFileUploadView(APIView):
                     r = {"general_errors": [e.__str__()]}
                     status = 406
                 except InvalidRoundException as e:
+                    r = {"general_errors": [e.__str__()]}
+                    status = 406
+                except InvalidCharactersException as e:
                     r = {"general_errors": [e.__str__()]}
                     status = 406
                 except Exception as e:

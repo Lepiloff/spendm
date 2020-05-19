@@ -1,7 +1,11 @@
+import re
 from openpyxl import load_workbook
+
 from apps.vendors.models import RfiParticipation, Vendors, Rfis, SelfScores, Elements, ParentCategories, \
     RfiParticipationStatus
 
+from rest_framework.exceptions import ParseError
+from rest_framework import serializers
 
 # header_cols_n_scoring_round = ["E", "F", "G", "P", "Q", "R", "S", "T"]
 # header_cols_second_scoring_round = ["E", "F", "G", "U", "V", "W", "X", "Y"]
@@ -39,6 +43,11 @@ class InvalidFormatException(Exception):
 
 
 class InvalidRoundException(Exception):
+    # do not remove !
+    pass
+
+
+class InvalidCharactersException(Exception):
     # do not remove !
     pass
 
@@ -156,12 +165,12 @@ def get_full_excel_file_response(file, context):
     old_pc_st = {}
     if scoring_round != 1:
         old_pc_st = past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc)
-        old_pc_st.update({"Company info": True})
+    old_pc_st.update({"Company info": True})
     # Check if last round isn't exist in db skip old_pc_st in response
-    if len(old_pc_st) == 0:
-        response.append({'Scoring_round_info': [s]})
-    else:
-        response.append({'Scoring_round_info': [s, old_pc_st]})
+    # if len(old_pc_st) == 0:
+    #     response.append({'Scoring_round_info': [s]})
+    # else:
+    response.append({'Scoring_round_info': [s, old_pc_st]})
     # add to response current scoring round from file name
     response.append({"Scoring_round_current": scoring_round})
     return response
@@ -224,7 +233,7 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
                                 pc_status[pc] = True
                                 return pc_status
                         # For first scoring round and if upload from vendor status  should be Active (True)
-                        elif scoring_round == 1 and not analyst:
+                        if scoring_round == 1 and not analyst:
                             pc_status[pc] = False
                             return pc_status
                         # If mailer is vendor and element not empty
@@ -339,6 +348,10 @@ def subcategory_element_response_create(scoring_round, min_row, max_row, sheet=N
         element_info = {}
         for cell in row:
             if cell.column_letter in header_cols:
+                # Non latin text validation
+                # if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', cell.value):
+                #     print("Not")
+                    # raise ParseError
                 # if if is used to change the name of the element in the not first scoring round,
                 # as the file columns for the second round have a different name as a first round
                 epn = sheet[f'{cell.column_letter}2'].value  # 2 - because second row with  row name
@@ -351,8 +364,23 @@ def subcategory_element_response_create(scoring_round, min_row, max_row, sheet=N
                 elif epn == "Analyst notes (2)":
                     epn = "Analyst notes"
                 element_info[epn] = cell.value
+                # Non latin text validation
+                # if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', cell.value):
+                #     raise ParseError
         to_sub_category_info.append(element_info)
+        non_latin_characters(to_sub_category_info)
     to_category_info.append({sub_category: to_sub_category_info})
+
+
+def non_latin_characters(list_):
+    key_fields = ['Self-Description', 'Analyst notes']
+    for dict_ in list_:
+        for key in dict_:
+            if key in key_fields:
+                if dict_[key] is not None:
+                    if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', dict_[key]):
+                        raise InvalidCharactersException("The system detected that the data is not in English. "
+                                                         "Please correct the error and try again.")
 
 
 def get_split_coordinate(coordinate, bias):

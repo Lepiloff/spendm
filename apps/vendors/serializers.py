@@ -668,16 +668,16 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
-    def validate(self, data):
-        self_description = str((data['self_description']))
-        analyst_notes = str((data['analyst_notes']))
-        if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
-            raise serializers.ValidationError({
-                    "general_errors": [
-                        "The system detected that the data is not in English. Please correct the error and try again."
-                    ]
-                })
-        return data
+    # def validate(self, data):
+    #     self_description = str((data['self_description']))
+    #     analyst_notes = str((data['analyst_notes']))
+    #     if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
+    #         raise serializers.ValidationError({
+    #                 "general_errors": [
+    #                     "The system detected that the data is not in English. Please correct the error and try again."
+    #                 ]
+    #             })
+    #     return data
 
 
     def create(self, validated_data):
