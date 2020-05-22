@@ -728,7 +728,6 @@ class UploadElementFromExcelFile(APIView):
                     parent_category = parent_category.rstrip()
                     category_data = pc_data.get('Category')
                     for data in category_data:
-                        print(data)
                         for category, values in data.items():  # Get category name
                             for subcats in values:
                                 for subcat, element_list in subcats.items():  # Get subcategory name
@@ -868,7 +867,7 @@ class DownloadRfiExcelFile(APIView):
     #             num = num * 26 + (ord(c.upper()) - ord('A')) + 1
     #     return num
 
-    def get(self, request, format=None, **kwargs):
+    def post(self, request, format=None, **kwargs):
 
         """
         :param request:
@@ -1222,9 +1221,6 @@ class ElementInitializeFromExcelFile(APIView):
                 break
 
         try:
-            element = Elements.objects.filter(initialize=True)
-            for e in element:
-                print(e.element_name)
             # implement transaction  - if exception appear during for loop iteration none data save to DB
             with transaction.atomic():
 
