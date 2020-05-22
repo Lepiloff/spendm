@@ -524,123 +524,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
 
 # EXCEL
-# class ParentcategorySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = ParentCategories
-#         fields = (
-#             'parent_category_name',
-#         )
-#
-#
-# class CategoriesSerializer(serializers.ModelSerializer):
-#     pc = serializers.PrimaryKeyRelatedField(queryset=ParentCategories.objects.all())
-#     class Meta:
-#         model = Categories
-#         fields = (
-#             'pc',
-#             'category_name',
-#         )
-#
-#
-# class SubcategoriesSerializer(serializers.ModelSerializer):
-#     c = serializers.PrimaryKeyRelatedField(queryset=Categories.objects.all())
-#     class Meta:
-#         model = Subcategories
-#         field = (
-#             'c',
-#             'subcategory_name',
-#             )
-#
-#
-# class ElementsSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Elements
-#         field = (
-#             's',
-#             'element_name',
-#             'description',
-#             'scoring_scale',
-#             'e_order',
-#             )
-#
-#
-# class SelfDescriptionSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SelfDescriptions
-#         fields = (
-#             'vendor',
-#             'e',
-#             'self_description',
-#             'rfi',
-#             'vendor_response',
-#             )
-#
-#
-# class SelfScoresSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SelfScores
-#         field = (
-#             'self_score',
-#         )
-#
-#
-# class AnalistNotesSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = AnalystNotes
-#         field = (
-#             'vendor',
-#             'e',
-#             'analyst_notes',
-#             'rfi',
-#             'analyst_response',
-#             )
-#
-#
-# class SmScoresSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = SmScores
-#         field = (
-#             'vendor',
-#             'e',
-#             'sm_score',
-#             'rfi',
-#             'analyst_response',
-#             )
-#
-#
-# class ModuleElementSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = ModuleElements
-#         field = (
-#             'm',
-#             'e',
-#             'rfi',
-#             )
-#
-#
-# class AttachmentSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Attachments
-#         field = (
-#             'vendor',
-#             'filename',
-#             'extension',
-#             'path',
-#             'notes',
-#             'rfi',
-#             )
-#
-#
-# class ElementsAttachment(serializers.ModelSerializer):
-#     class Meta:
-#         model = ElementsAttachments
-#         field = (
-#             'e',
-#             'attachment',
-#             'rfi',
-#             'vendor_response',
-#             )
-
 
 class CompanyInfoQuestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -667,18 +550,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         model = Elements
         fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
-
-    # def validate(self, data):
-    #     self_description = str((data['self_description']))
-    #     analyst_notes = str((data['analyst_notes']))
-    #     if not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', self_description) or not re.match(r'^[a-zA-Z0-9,.!? -/*()]*$', analyst_notes):
-    #         raise serializers.ValidationError({
-    #                 "general_errors": [
-    #                     "The system detected that the data is not in English. Please correct the error and try again."
-    #                 ]
-    #             })
-    #     return data
-
 
     def create(self, validated_data):
         # Get data from url context
@@ -712,7 +583,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         sm_score = validated_data.pop('sm_score')
         analyst_notes = validated_data.pop('analyst_notes')
         attachment = validated_data.pop('attachment')
-
         parent_category = ParentCategories.objects.filter(parent_category_name=pc)
         if parent_category:
             category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
@@ -759,10 +629,10 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
                                                                          self_description=self_description, rfi=round,
                                                                          vendor_response=current_scoring_round)
 
-            attachment, _ = Attachments.objects.get_or_create(vendor=vendor, path=attachment, rfi=round)
+            # attachment= Attachments.objects.create(vendor=vendor, path=attachment, rfi=round)
 
-            element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment=attachment,
-                                                                              rfi=round,
+            element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment_info=attachment,
+                                                                              rfi=round, vendor=vendor,
                                                                               vendor_response=current_scoring_round)
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
@@ -784,13 +654,16 @@ class DownloadExcelSerializer(serializers.ModelSerializer):
 
     def get_scoring_status(self, obj):
         rfiid = self.context.get('rfiid')
-        r = None
+
+        # Check active module participate to vendor at round
+        if not RfiParticipation.objects.filter(vendor=obj, rfi=rfiid, active=True):
+            return None
+        r = 1
+
         # Check that vendor have roundstatus object in round
         if RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid):
             max_score = RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid).aggregate(Max('last_vendor_response'),
                                                                                                Max('last_analyst_response'))
-            print(max_score.get('last_analyst_response__max'))
-            print(max_score.get('last_analyst_response__max'))
             if max_score.get('last_vendor_response__max') != 0 and max_score.get('last_analyst_response__max') != 0:
                 r = (max_score.get('last_analyst_response__max')) + 1
             elif max_score.get('last_vendor_response__max') != 0 or max_score.get('last_analyst_response__max') != 0:
@@ -798,3 +671,33 @@ class DownloadExcelSerializer(serializers.ModelSerializer):
             elif max_score.get('last_vendor_response__max') == 0 or max_score.get('last_analyst_response__max') == 0:
                 r = 1
         return r
+
+
+# Initialization of the zero template creation (only description of elements) for the first vendor upload
+
+class ElementInitializeInfoSerializer(serializers.ModelSerializer):
+
+    s = serializers.CharField(required=False, allow_null=True)
+    category = serializers.CharField(required=False, allow_null=True)
+    pc = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = Elements
+        fields = ('element_name', 'description', 'scoring_scale', 'e_order', 's', 'category', 'pc')
+
+    def create(self, validated_data):
+
+        # Get data from validated data
+        sc = validated_data.pop('s')
+        cat = validated_data.pop('category')
+        pc = validated_data.pop('pc')
+        parent_category = ParentCategories.objects.filter(parent_category_name=pc)
+        if parent_category:
+            category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
+        else:
+            raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
+        subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
+
+        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory, initialize=True)
+
+        return self
