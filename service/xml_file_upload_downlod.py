@@ -435,7 +435,6 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
-
     # Subcategory Globalization
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
@@ -570,11 +569,11 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
                                         sub_category=sub_category)
 
     # Subcategory Document Management
-    cl, rn = get_split_coordinate(category_coordinate, 31)
+    cl, rn = get_split_coordinate(category_coordinate, 49)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 14), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # Subcategory Emerging Technology
@@ -1601,7 +1600,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(min_row=min_row, max_row=min_row, sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=min_row, sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # PO Roadmap
@@ -1891,3 +1890,14 @@ pc_to_function_name = {
                             "eProcurement ": eprocurement_response_create,
                             "I2P ": i2p_response_create,
                              }
+# pc_to_function_name = {
+#                             "COMMON S2P ": common_s2p_category_response_create,
+#                             "COMMON SOURCING – SXM ": None,
+#                             "SERVICES ": None,
+#                             "SOURCING ": None,
+#                             "SXM ": None,
+#                             "Spend Analytics ": None,
+#                             "CLM ": None,
+#                             "eProcurement ": None,
+#                             "I2P ": None,
+#                              }

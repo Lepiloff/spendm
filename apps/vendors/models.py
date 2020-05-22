@@ -153,6 +153,9 @@ class Categories(models.Model):
         db_table = 'categories'
         unique_together = (('cid', 'timestamp'),)
 
+    def __str__(self):
+        return self.category_name
+
 
 class ChartsParticipation(models.Model):
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
@@ -179,7 +182,8 @@ class CheckCWeights100(models.Model):
     persona_id = models.IntegerField(blank=True, null=True)
     sum_c_weight = models.IntegerField(blank=True, null=True)
     price_score_weight = models.IntegerField(blank=True, null=True)
-    sum_c_weight_price_score_weight = models.IntegerField(db_column='sum_c_weight + price_score_weight', blank=True, null=True)  # Field renamed to remove unsuitable characters.
+    sum_c_weight_price_score_weight = models.IntegerField(db_column='sum_c_weight + price_score_weight',
+                                                          blank=True, null=True)  # Field renamed to remove unsuitable characters.
 
     class Meta:
         db_table = 'check_c_weights_100'
@@ -221,23 +225,29 @@ class Elements(models.Model):
     e_order = models.DecimalField(max_digits=9, decimal_places=4)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
+    initialize = models.BooleanField(default=False)  # For create initialize element info at first file download
 
     class Meta:
         db_table = 'elements'
         unique_together = (('eid', 'timestamp'),)
 
+    def __str__(self):
+        return self.element_name
+
 
 class ElementsAttachments(models.Model):
     e = models.ForeignKey('Elements', models.DO_NOTHING)
-    attachment = models.ForeignKey('Attachments', models.DO_NOTHING)
+    # attachment = models.ForeignKey('Attachments', models.DO_NOTHING, related_name='attachment')
+    attachment_info = models.CharField(max_length=500, blank=True, null=True)
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
     timestamp = models.DateTimeField(auto_now=True)
     active = models.IntegerField(blank=True, null=True)
+    vendor = models.ForeignKey('Vendors', models.DO_NOTHING, blank=True, null=True)
     vendor_response = models.IntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'elements_attachments'
-        unique_together = (('e', 'attachment', 'rfi', 'timestamp'),)
+        unique_together = (('e', 'vendor', 'rfi', 'timestamp'),)
 
 
 class LogTrail(models.Model):
@@ -457,6 +467,9 @@ class RfiParticipationStatus(models.Model):
         db_table = 'rfi_participation_status'
         unique_together = (('vendor', 'rfi', 'timestamp', 'pc'),)
 
+    def __str__(self):
+        return f"{self.vendor} - {self.rfi} - {self.pc}"
+
 
 class Rfis(models.Model):
     RFI_STATUS = (
@@ -560,6 +573,9 @@ class Subcategories(models.Model):
     class Meta:
         db_table = 'subcategories'
         unique_together = (('sid', 'timestamp'),)
+
+    def __str__(self):
+        return self.subcategory_name
 
 
 class SumVpScores(models.Model):
