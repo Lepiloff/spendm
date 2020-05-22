@@ -1106,11 +1106,15 @@ class DownloadRfiExcelFile(APIView):
         # response = HttpResponse(content_type='application/vnd.rar')
         # response['Content-Disposition'] = 'attachment; filename="test.rar"'
         if os.path.exists(to_download):
-            with open(to_download, 'rb') as fh:
-                response = HttpResponse(fh.read(),
-                                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                response['Content-Disposition'] = 'attachment; filename=mywebsitename.xlsx'
-                return response
+            try:
+                with open(to_download, 'rb') as fh:
+                    response = HttpResponse(fh.read(),
+                                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    response['Content-Disposition'] = 'attachment; filename=mywebsitename.xlsx'
+                    return response
+            finally:
+                default_storage.delete(to_download)
+
         else:
             raise ParseError
 
