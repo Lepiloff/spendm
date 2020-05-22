@@ -1095,20 +1095,20 @@ class DownloadRfiExcelFile(APIView):
         #     print(to_rar)
         #     os.system(f'rar a result.rar {to_rar}')
 
-        to_download = default_storage.url("result_rfi_file.xlsx")
-        # patoolib.create_archive('test.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
-        #
-        # response = HttpResponse(content_type='application/vnd.rar')
-        # response['Content-Disposition'] = 'attachment; filename="test.rar"'
+        to_rar = default_storage.url("result_rfi_file.xlsx")
+
+        patoolib.create_archive('result_rfi_file.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
+        to_download = default_storage.url("result_rfi_file.rar")
         if os.path.exists(to_download):
             try:
                 with open(to_download, 'rb') as fh:
                     response = HttpResponse(fh.read(),
-                                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                    response['Content-Disposition'] = 'attachment; filename=mywebsitename.xlsx'
+                                            content_type="content_type='application/vnd.rar'")
+                    response['Content-Disposition'] = 'attachment; filename=result_rfi_file.rar'
                     return response
             finally:
                 default_storage.delete(to_download)
+                default_storage.delete(to_rar)
 
         else:
             raise ParseError
