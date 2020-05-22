@@ -670,6 +670,7 @@ class UploadElementFromExcelFile(APIView):
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
+        print('start post')
 
         for num, _d in enumerate(data):
             if 'Scoring_round_current' in _d:
@@ -727,14 +728,15 @@ class UploadElementFromExcelFile(APIView):
                     parent_category = parent_category.rstrip()
                     category_data = pc_data.get('Category')
                     for data in category_data:
+                        print(data)
                         for category, values in data.items():  # Get category name
                             for subcats in values:
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
                                         element_name = element.get('Element Name')
                                         # TODO skip empty row in excel file for some category row 622
-                                        if not element_name:
-                                            continue
+                                        # if not element_name:
+                                        #     continue
                                         e_order = num
                                         category = category
                                         pc = parent_category
@@ -880,12 +882,16 @@ class DownloadRfiExcelFile(APIView):
         :return:
         """
 
-        # TODO check that element and self_score, self_description ...  are not empty (exist in DB)
-        # {	"rfiid": "20R1", 'vendorid': 122, 'vendor_name': 'Actual2', 'scoring_status': 3}
-
-        rfi = Rfis.objects.get(rfiid=request.data.get('rfiid'))
-        vendor = Vendors.objects.get(vendorid=request.data.get('vendorid'))
-        current_scoring_round = request.data.get('scoring_status')
+        # TODO check that element and self_score, self_description ...  are not empty (exist in DB) ???
+        # list{	"rfiid": "20R1", 'vendorid': 122, 'vendor_name': 'Actual2', 'scoring_status': 3}
+        for request in request.data:
+            r = request
+        # rfi = Rfis.objects.get(rfiid=request.data.get('rfiid'))
+        # vendor = Vendors.objects.get(vendorid=request.data.get('vendorid'))
+        # current_scoring_round = request.data.get('scoring_status')
+        rfi = Rfis.objects.get(rfiid=r.get('rfiid'))
+        vendor = Vendors.objects.get(vendorid=r.get('vendorid'))
+        current_scoring_round = r.get('scoring_status')
 
         if current_scoring_round is None:
             status = 406
@@ -1094,12 +1100,19 @@ class DownloadRfiExcelFile(APIView):
         #     print(to_rar)
         #     os.system(f'rar a result.rar {to_rar}')
 
-        to_rar = default_storage.url("result.xlsx")
-        patoolib.create_archive('test.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
-
-        response = HttpResponse(content_type='application/vnd.rar')
-        response['Content-Disposition'] = 'attachment; filename="test.rar"'
-        return response
+        to_download = default_storage.url("result.xlsx")
+        # patoolib.create_archive('test.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
+        #
+        # response = HttpResponse(content_type='application/vnd.rar')
+        # response['Content-Disposition'] = 'attachment; filename="test.rar"'
+        if os.path.exists(to_download):
+            with open(to_download, 'rb') as fh:
+                response = HttpResponse(fh.read(),
+                                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                response['Content-Disposition'] = 'attachment; filename=mywebsitename.xlsx'
+                return response
+        else:
+            raise ParseError
 
     @staticmethod
     def initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment):

@@ -552,6 +552,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
     def create(self, validated_data):
+        print('Create')
         # Get data from url context
         rfiid = self.context.get('rfiid')
         vendor_id = self.context.get('vendor')
