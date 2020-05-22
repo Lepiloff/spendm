@@ -850,7 +850,7 @@ def services_response_create(workbook, coordinate, scoring_round):
     # Subcategory General
     sub_category = 'General'
     _, min_row = get_split_coordinate(category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 17), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 18), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     info_to_subcat_to_cat.update({category_name: to_category_info})  # Aggregate info for each Subcat at CAREGORY
@@ -1152,12 +1152,12 @@ def spend_analytics_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    _, min_row = get_split_coordinate(sub_category_coordinate, 2)  # TODO row 591 description in sub_category row ?
+    _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 7), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # Subcategory Out of the Box
-    cl, rn = get_split_coordinate(category_coordinate, 13)
+    cl, rn = get_split_coordinate(category_coordinate, 12)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
@@ -1195,11 +1195,11 @@ def clm_response_create(workbook, coordinate, scoring_round):
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 10), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 8), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # # Subcategory Extended Contract Modeling and Analytics
-    cl, rn = get_split_coordinate(category_coordinate, 15)
+    cl, rn = get_split_coordinate(category_coordinate, 13)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
@@ -1211,7 +1211,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
 
     # CONTACT PROCESS MANAGEMENT CATEGORY
 
-    cl, rn = get_split_coordinate(coordinate, 28)
+    cl, rn = get_split_coordinate(coordinate, 26)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
     info_to_subcat_to_cat = {}
@@ -1231,27 +1231,19 @@ def clm_response_create(workbook, coordinate, scoring_round):
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 5), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # Subcategory Contract Collaboration
-    cl, rn = get_split_coordinate(category_coordinate, 17)
+    cl, rn = get_split_coordinate(category_coordinate, 16)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 3), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # Subcategory Contract Performance Management
-    cl, rn = get_split_coordinate(category_coordinate, 25)
-    sub_category = sheet[f"{cl}{rn}"].value
-    sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
-                                        sub_category=sub_category)
-
-    # Subcategory Contract Performance Management
-    cl, rn = get_split_coordinate(category_coordinate, 25)
+    cl, rn = get_split_coordinate(category_coordinate, 23)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
@@ -1263,7 +1255,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
 
     # ANALYTICS CATEGORY
 
-    cl, rn = get_split_coordinate(coordinate, 59)
+    cl, rn = get_split_coordinate(coordinate, 55)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
     info_to_subcat_to_cat = {}
@@ -1417,6 +1409,14 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
+    # Subcategory Search Engine
+    cl, rn = get_split_coordinate(category_coordinate, 19)
+    sub_category = sheet[f"{cl}{rn}"].value
+    sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    _, min_row = get_split_coordinate(sub_category_coordinate, 1)
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
+                                        sub_category=sub_category)
+
     # Subcategory Third-Party Content
     cl, rn = get_split_coordinate(category_coordinate, 29)
     sub_category = sheet[f"{cl}{rn}"].value
@@ -1458,7 +1458,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
                                         sub_category=sub_category)
 
     # Subcategory Requisitioning Help & Support
-    cl, rn = get_split_coordinate(category_coordinate, 78)
+    cl, rn = get_split_coordinate(category_coordinate, 77)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
@@ -1486,7 +1486,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
-    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row +1), sheet=sheet, to_category_info=to_category_info,
+    subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 1), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
 
     # Approval Process / Approval Engine

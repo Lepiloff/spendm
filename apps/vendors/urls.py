@@ -42,6 +42,6 @@ urlpatterns = [
     path('upload_excel_rfi/<str:rfiid>/<int:vendor>/<int:analyst>/', UploadElementFromExcelFile.as_view(),
                                                                         name='from_excel_element_upload'),
     path('get_info_for_download_excel/<str:rfiid>/', InfoToDownloadRfiExcelFile.as_view(), name='before_download_excel'),
-    path('download_rfi_excel_file/', DownloadRfiExcelFile.as_view(), name='download_excel'),
+    path('download_rfi_archive/', DownloadRfiExcelFile.as_view(), name='download_excel'),
     path('initialize_default_rfi_element/', ElementInitializeFromExcelFile.as_view(), name='default_rfi_element')
 ]
