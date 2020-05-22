@@ -10,3 +10,4 @@ uwsgi.log
 *.xlsx
 *.xls
 !sample_vendors_test.csv
+!blank_template.xlsx

@@ -670,7 +670,6 @@ class UploadElementFromExcelFile(APIView):
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
         data = request.data  # data is list of dict
-        print('start post')
 
         for num, _d in enumerate(data):
             if 'Scoring_round_current' in _d:
@@ -732,10 +731,7 @@ class UploadElementFromExcelFile(APIView):
                             for subcats in values:
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
-                                        element_name = element.get('Element Name')
-                                        # TODO skip empty row in excel file for some category row 622
-                                        # if not element_name:
-                                        #     continue
+                                        element_name = element.get('Element name')
                                         e_order = num
                                         category = category
                                         pc = parent_category
@@ -901,7 +897,7 @@ class DownloadRfiExcelFile(APIView):
         participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True)
         participate_module_list = [element.m.module_name for element in participate_module]
         unique_pc = list(get_excel_file_current_pc_for_parsing(pml=participate_module_list))  # Get unique PC for future processing
-        file = default_storage.url('test.xlsx')
+        file = default_storage.url('blank_template.xlsx')
         wb = load_workbook(filename=file)
         ws = wb["RFI"]
 
@@ -1093,13 +1089,13 @@ class DownloadRfiExcelFile(APIView):
             if current_scoring_round == 3:
                 for col in ['U', 'V', 'W', 'X', 'Y']:
                     ws.column_dimensions[col].hidden = False
-        wb.save(filename='result.xlsx')
+        wb.save(filename='result_rfi_file.xlsx')
         # if platform.system() == 'Linux':
         #     to_rar = default_storage.url("result.xlsx")
         #     print(to_rar)
         #     os.system(f'rar a result.rar {to_rar}')
 
-        to_download = default_storage.url("result.xlsx")
+        to_download = default_storage.url("result_rfi_file.xlsx")
         # patoolib.create_archive('test.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
         #
         # response = HttpResponse(content_type='application/vnd.rar')
