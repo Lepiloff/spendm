@@ -552,7 +552,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
     def create(self, validated_data):
-        print('Create')
         # Get data from url context
         rfiid = self.context.get('rfiid')
         vendor_id = self.context.get('vendor')
@@ -665,12 +664,16 @@ class DownloadExcelSerializer(serializers.ModelSerializer):
         if RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid):
             max_score = RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid).aggregate(Max('last_vendor_response'),
                                                                                                Max('last_analyst_response'))
-            if max_score.get('last_vendor_response__max') != 0 and max_score.get('last_analyst_response__max') != 0:
+            # if max_score.get('last_vendor_response__max') != 0 and max_score.get('last_analyst_response__max') != 0:
+            #     r = (max_score.get('last_analyst_response__max')) + 1
+            # elif max_score.get('last_vendor_response__max') != 0 or max_score.get('last_analyst_response__max') != 0:
+            #     r = max(max_score.get('last_vendor_response__max'), max_score.get('last_analyst_response__max'))
+            # elif max_score.get('last_vendor_response__max') == 0 or max_score.get('last_analyst_response__max') == 0:
+            #     r = 1
+            if max_score.get('last_vendor_response__max') == max_score.get('last_analyst_response__max'):
                 r = (max_score.get('last_analyst_response__max')) + 1
-            elif max_score.get('last_vendor_response__max') != 0 or max_score.get('last_analyst_response__max') != 0:
-                r = max(max_score.get('last_vendor_response__max'), max_score.get('last_analyst_response__max'))
-            elif max_score.get('last_vendor_response__max') == 0 or max_score.get('last_analyst_response__max') == 0:
-                r = 1
+            else:
+                r = (max_score.get('last_vendor_response__max'))
         return r
 
 

@@ -11,3 +11,4 @@ uwsgi.log
 *.xls
 !sample_vendors_test.csv
 !blank_template.xlsx
+!SM_2020Q1_INITIALIZE-TEMPLATE_20R1_1.xls
