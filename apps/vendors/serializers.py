@@ -606,7 +606,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
                                                                                        'last_vendor_response': current_scoring_round}
                                                                              )
 
-        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
+        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory, initialize=False)
 
         if analyst_id:
             analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,

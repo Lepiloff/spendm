@@ -10,10 +10,16 @@ class ElementsAdmin(admin.ModelAdmin):
     list_filter = ['initialize', ]
 
 
+class VendorsAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'vendor_name',)
+    list_display_links = ['pk', ]
+    list_filter = ['active', ]
+
+
 admin.site.register(Modules)
 admin.site.register(VendorModuleNames)
 admin.site.register(VendorContacts)
-admin.site.register(Vendors)
+admin.site.register(Vendors, VendorsAdmin)
 admin.site.register(Rfis)
 admin.site.register(RfiParticipation)
 admin.site.register(RfiParticipationStatus)
