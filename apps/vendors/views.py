@@ -4,6 +4,7 @@ import re
 import string
 import platform
 import patoolib
+from datetime import date
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Color, colors
@@ -15,6 +16,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.db import transaction
+from django.db.models import Max
 
 from rest_framework.exceptions import ParseError
 from rest_framework import generics
@@ -29,7 +31,7 @@ from service.xml_file_upload_downlod import InvalidFormatException, get_full_exc
     InvalidCharactersException, CIEmptyException
 from .models import Vendors, VendorContacts, Modules, Rfis, RfiParticipation, CompanyGeneralInfoAnswers, \
     CompanyGeneralInfoQuestion, AssignedVendorsAnalysts, Elements, ParentCategories, Categories, Subcategories, \
-    SelfScores, SelfDescriptions, Attachments, ElementsAttachments, AnalystNotes, SmScores
+    SelfScores, SelfDescriptions, Attachments, ElementsAttachments, AnalystNotes, SmScores, RfiParticipationStatus
 from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, VendorsCsvSerializer, ModulesSerializer, \
     VendorsManagementListSerializer, VendorManagementUpdateSerializer, VendorContactSerializer, \
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
@@ -962,14 +964,16 @@ class DownloadRfiExcelFile(APIView):
         ws['T2'].alignment = cell_alignment
         ws['T2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
         ws['T2'].border = thin_border
-        ws['Z2'] = 'Current Self-Score'
-        ws['Z2'].alignment = cell_alignment
-        ws['Z2'].fill = PatternFill(start_color="FFE5EA", fill_type="solid")
-        ws['Z2'].border = thin_border
-        ws['AA2'] = 'Current score'
-        ws['AA2'].alignment = cell_alignment
-        ws['AA2'].fill = PatternFill(start_color="61A144", fill_type="solid")
-        ws['AA2'].border = thin_border
+        ws['AE2'] = 'Current Self-Score'
+        ws['AE2'].alignment = cell_alignment
+        ws['AE2'].fill = PatternFill(start_color="FFE5EA", fill_type="solid")
+        ws['AE2'].border = thin_border
+        ws['AF2'] = 'Current score'
+        ws['AF2'].alignment = cell_alignment
+        ws['AF2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+        ws['AF2'].border = thin_border
+
+        # 2-d scoring_round
 
         ws['U2'] = 'Self-Score (2)'
         ws['U2'].alignment = cell_alignment
@@ -992,6 +996,29 @@ class DownloadRfiExcelFile(APIView):
         ws['Y2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
         ws['Y2'].border = thin_border
 
+        # 3-d scoring_round
+
+        ws['Z2'] = 'Self-Score (3)'
+        ws['Z2'].alignment = cell_alignment
+        ws['Z2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+        ws['Z2'].border = thin_border
+        ws['AA2'] = 'Reasoning'
+        ws['AA2'].alignment = cell_alignment
+        ws['AA2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+        ws['AA2'].border = thin_border
+        ws['AB2'] = 'Attachments/Supporting Docs and Location/Link'
+        ws['AB2'].alignment = cell_alignment
+        ws['AB2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+        ws['AB2'].border = thin_border
+        ws['AC2'] = 'SM score (3)'
+        ws['AC2'].alignment = cell_alignment
+        ws['AC2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+        ws['AC2'].border = thin_border
+        ws['AD2'] = 'Analyst notes (3)'
+        ws['AD2'].alignment = cell_alignment
+        ws['AD2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+        ws['AD2'].border = thin_border
+
         ws.row_dimensions[2].height = 60
 
         for rows in ws.iter_rows(min_row=3, max_row=3, min_col=5, max_col=7):
@@ -999,15 +1026,18 @@ class DownloadRfiExcelFile(APIView):
                 cell.fill = PatternFill(start_color="790099", fill_type="solid")
 
         # Hidden column
-        for col in ['B', 'C', 'D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'U', 'V', 'W', 'X', 'Y']:
+        for col in ['B', 'C', 'D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB',
+                    'AC', 'AD']:
             ws.column_dimensions[col].hidden = True
 
         row_num = 4
 
         if current_scoring_round == 1:
-            self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment)
-        else:
-        # Start excel file create logic
+            if self.catch_zero_round(vendor, rfi):
+                self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment)
+
+        # Start excel RFI sheet create logic
+        if not self.catch_zero_round(vendor, rfi):
             for pc in unique_pc:
                 ws[f'E{row_num}'] = pc
                 ws[f'E{row_num}'].alignment = cell_alignment
@@ -1040,38 +1070,57 @@ class DownloadRfiExcelFile(APIView):
                         elements = Elements.objects.filter(s=subcat).order_by('timestamp')
                         for e in elements:
 
-                            column_to_scoring_round = {'11': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
+                            column_to_scoring_round = {
                                                        '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
-                                                       '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y']}
+                                                       '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
+                                                       '3': ['E', 'F', 'G', 'Z', 'AA', 'AB', 'AC', 'AD']
+                                                        }
 
                             ws.row_dimensions[row_num].height = 150
-
-                            # TODO
-                            if current_scoring_round == 1:
-                                self_score = None
-                                self_description = None
-                                sm_score = None
-                                analyst_notes = None
-                                attachment = None
 
                             # Element common info create
                             element_name = e.element_name
                             description = e.description
                             s_scale = e.scoring_scale
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[0]}{row_num}'] = element_name
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[0]}{row_num}'].alignment = element_alignment
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[1]}{row_num}'] = description
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[1]}{row_num}'].alignment = element_alignment
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[2]}{row_num}'] = s_scale
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round - 1))[2]}{row_num}'].alignment = element_alignment
 
-                            for csr in range(1, current_scoring_round):
-                                self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first().self_score
-                                self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first().self_description
-                                sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first().sm_score
-                                analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first().analyst_notes
-                                attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first().attachment_info
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'] = s_scale
+                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
 
+                            for csr in range(1, current_scoring_round + 1):
+
+                                self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                if self_score:
+                                    self_score = self_score.self_score
+                                else:
+                                    self_score = None
+
+                                self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                if self_description:
+                                    self_description = self_description.self_description
+                                else:
+                                    self_description = None
+
+                                sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                if sm_score:
+                                    sm_score = sm_score.sm_score
+                                else:
+                                    sm_score = None
+
+                                analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                if analyst_notes:
+                                    analyst_notes = analyst_notes.analyst_notes
+                                else:
+                                    analyst_notes = None
+
+                                attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                if attachment:
+                                    attachment = attachment.attachment_info
+                                else:
+                                    attachment = None
                                 ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'] = self_score
                                 ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
                                 ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'] = self_description
@@ -1085,26 +1134,43 @@ class DownloadRfiExcelFile(APIView):
                             row_num += 1
                         row_num += 2  # two empty row after subcategory block
 
-            # Unmerge column
-            if current_scoring_round == 3:
-                for col in ['U', 'V', 'W', 'X', 'Y']:
-                    ws.column_dimensions[col].hidden = False
-        wb.save(filename='result_rfi_file.xlsx')
+            # CI filling
+            ws_ci = wb["Company Information"]
+            start_cell_row_number = 5
+            ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+            for ciq in ciq_queriset:
+                cia = CompanyGeneralInfoAnswers.objects.get(vendor=vendor, question=ciq)
+                ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                start_cell_row_number += 1
+
+        # Unmerge column
+        if current_scoring_round == 2:
+            for col in ['U', 'V', 'W', 'X', 'Y']:
+                ws.column_dimensions[col].hidden = False
+        if current_scoring_round == 3:
+            for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+                ws.column_dimensions[col].hidden = False
+
+        # Generate file name
+        new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
+
+        wb.save(filename=new_file_name)
         # if platform.system() == 'Linux':
         #     to_rar = default_storage.url("result.xlsx")
         #     print(to_rar)
         #     os.system(f'rar a result.rar {to_rar}')
 
-        to_rar = default_storage.url("result_rfi_file.xlsx")
+        archive = self.generate_zip_name(rfi)
+        to_rar = default_storage.url(new_file_name)
 
-        patoolib.create_archive('result_rfi_file.rar', (to_rar,))  # possible use multiple file add, just set file name after comma
-        to_download = default_storage.url("result_rfi_file.rar")
+        patoolib.create_archive(archive, (to_rar,))  # possible use multiple file add, just set file name after comma
+        to_download = default_storage.url(archive)
         if os.path.exists(to_download):
             try:
                 with open(to_download, 'rb') as fh:
                     response = HttpResponse(fh.read(),
                                             content_type="content_type='application/vnd.rar'")
-                    response['Content-Disposition'] = 'attachment; filename=result_rfi_file.rar'
+                    response['Content-Disposition'] = 'attachment; filename= "{}"'.format(archive)
                     return response
             finally:
                 default_storage.delete(to_download)
@@ -1114,8 +1180,51 @@ class DownloadRfiExcelFile(APIView):
             raise ParseError
 
     @staticmethod
+    def catch_zero_round(vendor, rfi):
+        max_score = RfiParticipationStatus.objects.filter(vendor=vendor, rfi=rfi).aggregate(Max('last_vendor_response'),
+                                                                                            Max('last_analyst_response'))
+        if max_score.get('last_vendor_response__max') is None and max_score.get('last_analyst_response__max') is None:
+            return True
+        if max_score.get('last_vendor_response__max') == 0 and max_score.get('last_analyst_response__max') == 0:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def generate_file_name(rfi, vendor, current_scoring_round):
+        RFI_Round = rfi.rfiid
+        Vendor_Name = vendor.vendor_name
+        version = current_scoring_round
+
+        year_ = str(date.today().year)
+        month_ = str(date.today().month)
+        q_ = {'Q1': ['1', '2', '3'], 'Q2': ['4', '5', '6'], 'Q3': ['7', '8', '9'], 'Q4': ['10', '11', '12']}
+        q = 0
+        for k, v in q_.items():
+            if month_ in v:
+                q = k
+
+        return f'SM_{year_}{q}_{Vendor_Name}_{RFI_Round}_{version}.xlsx'
+
+    @staticmethod
+    def generate_zip_name(rfi):
+        RFI_Round = rfi.rfiid
+
+        year_ = str(date.today().year)
+        month_ = str(date.today().month)
+        q_ = {'Q1': ['1', '2', '3'], 'Q2': ['4', '5', '6'], 'Q3': ['7', '8', '9'], 'Q4': ['10', '11', '12']}
+        q = 0
+        for k, v in q_.items():
+            if month_ in v:
+                q = k
+
+        return f'SM_{year_}{q}_{RFI_Round}.rar'
+
+
+    @staticmethod
     def initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
         # filling empty template
+        print("filling empty template")
         for pc in unique_pc:
             ws[f'E{row_num}'] = pc
             ws[f'E{row_num}'].alignment = cell_alignment

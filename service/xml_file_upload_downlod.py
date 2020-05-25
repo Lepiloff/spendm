@@ -259,35 +259,54 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
 
                         # If current scoring round exist in db and data consist new information return False
                         # that mean possibility to update old data in DB then change switcher status
+                        # s_r_e = scoring_round_exist(pc, vendor, _round)
+                        # if s_r_e:
+                        #     if all(from_vendor) or all(from_analytic):
+                        #         pc_status[pc] = True
+                        #         return pc_status
+
+                        # For first scoring round
+                        if scoring_round == 1 and not analyst:
+                            if all(from_vendor):
+                                pc_status[pc] = False
+                                return pc_status
+                            else:
+                                pc_status[pc] = "No data"
+                                return pc_status
+
+                        if scoring_round == 1 and analyst:
+                            if all(from_analytic) and not all(from_vendor):
+                                pc_status[pc] = "-"
+                                return pc_status
+                            if not all(from_analytic):
+                                pc_status[pc] = 'No data'
+                                return pc_status
+
                         s_r_e = scoring_round_exist(pc, vendor, _round)
                         if s_r_e:
-                            if all(from_vendor) or all(from_analytic):
-                                pc_status[pc] = True
-                                return pc_status
-                        # For first scoring round and if upload from vendor status  should be Active (True)
-                        if scoring_round == 1 and not analyst:
-                            pc_status[pc] = False
-                            return pc_status
-                        # If mailer is vendor and element not empty
-                        elif not analyst and all(from_vendor):
-                            pc_status[pc] = False
-                            return pc_status
-                        # If mailer is analyst and element not empty
-                        elif analyst and all(from_analytic):
-                            pc_status[pc] = False
-                            return pc_status
-
-                        elif all(from_vendor) and all(from_analytic):
                             pc_status[pc] = True
                             return pc_status
 
-                        elif (all(from_vendor) and not all(from_analytic)) \
-                                or (all(from_analytic) and not all(from_vendor)):
-                            pc_status[pc] = "-"
-                            return pc_status
-                        else:
-                            pc_status[pc] = "No data"
-                            return pc_status
+                        # # If mailer is vendor and element not empty
+                        # if not analyst and all(from_vendor):
+                        #     pc_status[pc] = False
+                        #     return pc_status
+                        # # If mailer is analyst and element not empty
+                        # elif analyst and all(from_analytic):
+                        #     pc_status[pc] = False
+                        #     return pc_status
+                        #
+                        # elif all(from_vendor) and all(from_analytic):
+                        #     pc_status[pc] = True
+                        #     return pc_status
+                        #
+                        # elif (all(from_vendor) and not all(from_analytic)) \
+                        #         or (all(from_analytic) and not all(from_vendor)):
+                        #     pc_status[pc] = "-"
+                        #     return pc_status
+                        # else:
+                        #     pc_status[pc] = "No data"
+                        #     return pc_status
 
     return pc_status
 
