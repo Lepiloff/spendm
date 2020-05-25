@@ -17,6 +17,11 @@ class VendorsAdmin(admin.ModelAdmin):
     list_filter = ['active', ]
 
 
+class SubcategoriesAdmin(admin.ModelAdmin):
+    list_display = ('sid', 'subcategory_name',)
+    list_display_links = ['sid', ]
+    search_fields = ('c__category_name',)
+
 admin.site.register(Modules)
 admin.site.register(VendorModuleNames)
 admin.site.register(VendorContacts)
@@ -26,7 +31,7 @@ admin.site.register(RfiParticipation)
 admin.site.register(RfiParticipationStatus)
 admin.site.register(ParentCategories)
 admin.site.register(Elements, ElementsAdmin)
-admin.site.register(Subcategories)
+admin.site.register(Subcategories, SubcategoriesAdmin)
 admin.site.register(Categories)
 admin.site.register(AnalystNotes)
 admin.site.register(SmScores)
