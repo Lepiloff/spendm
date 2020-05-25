@@ -31,8 +31,3 @@ admin.site.register(CompanyGeneralInfoAnswers)
 admin.site.register(SelfScores)
 admin.site.register(SelfDescriptions)
 
-
-class ElementsAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'element_name', 'initialize',)
-    list_display_links = ['pk', ]
-    list_filter = ['initialize', ]
