@@ -883,9 +883,7 @@ class DownloadRfiExcelFile(APIView):
         # list{	"rfiid": "20R1", 'vendorid': 122, 'vendor_name': 'Actual2', 'scoring_status': 3}
         for request in request.data:
             r = request
-        # rfi = Rfis.objects.get(rfiid=request.data.get('rfiid'))
-        # vendor = Vendors.objects.get(vendorid=request.data.get('vendorid'))
-        # current_scoring_round = request.data.get('scoring_status')
+
         rfi = Rfis.objects.get(rfiid=r.get('rfiid'))
         vendor = Vendors.objects.get(vendorid=r.get('vendorid'))
         current_scoring_round = r.get('scoring_status')
@@ -895,10 +893,19 @@ class DownloadRfiExcelFile(APIView):
             r = {"general_errors": ["The vendor doesn't have active module in current round."]}
             return Response(r, status=status)
 
+        if not RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True):
+            status = 406
+            r = {"general_errors": ["The vendor doesn't have active module in current round."]}
+            return Response(r, status=status)
+
         # Get vendor active module and calculate participate PC
         participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True)
         participate_module_list = [element.m.module_name for element in participate_module]
         unique_pc = list(get_excel_file_current_pc_for_parsing(pml=participate_module_list))  # Get unique PC for future processing
+        if not unique_pc:
+            status = 406
+            r = {"general_errors": ["The vendor doesn't have parent category in current round."]}
+            return Response(r, status=status)
         file = default_storage.url('blank_template.xlsx')
         wb = load_workbook(filename=file)
         ws = wb["RFI"]
@@ -1225,7 +1232,6 @@ class DownloadRfiExcelFile(APIView):
     @staticmethod
     def initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
         # filling empty template
-        print("filling empty template")
         for pc in unique_pc:
             ws[f'E{row_num}'] = pc
             ws[f'E{row_num}'].alignment = cell_alignment
@@ -1340,8 +1346,6 @@ class ElementInitializeFromExcelFile(APIView):
                                 for subcat, element_list in subcats.items():  # Get subcategory name
                                     for num, element in enumerate(element_list, 1):  # Get element info
                                         element_name = element.get('Element Name')
-                                        if not element_name:
-                                            continue
                                         e_order = num
                                         category = category
                                         pc = parent_category
