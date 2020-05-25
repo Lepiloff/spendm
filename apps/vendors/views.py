@@ -1139,7 +1139,7 @@ class DownloadRfiExcelFile(APIView):
             start_cell_row_number = 5
             ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
             for ciq in ciq_queriset:
-                cia = CompanyGeneralInfoAnswers.objects.get(vendor=vendor, question=ciq)
+                cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
                 ws_ci[f'C{start_cell_row_number}'] = cia.answer
                 start_cell_row_number += 1
 
@@ -1193,7 +1193,8 @@ class DownloadRfiExcelFile(APIView):
     @staticmethod
     def generate_file_name(rfi, vendor, current_scoring_round):
         RFI_Round = rfi.rfiid
-        Vendor_Name = vendor.vendor_name
+        v_name = vendor.vendor_name
+        vendor_name = ''.join(v_name.split())
         version = current_scoring_round
 
         year_ = str(date.today().year)
@@ -1204,7 +1205,7 @@ class DownloadRfiExcelFile(APIView):
             if month_ in v:
                 q = k
 
-        return f'SM_{year_}{q}_{Vendor_Name}_{RFI_Round}_{version}.xlsx'
+        return f'SM_{year_}{q}_{vendor_name}_{RFI_Round}_{version}.xlsx'
 
     @staticmethod
     def generate_zip_name(rfi):
