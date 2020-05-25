@@ -8,6 +8,7 @@ class ElementsAdmin(admin.ModelAdmin):
     list_display = ('pk', 'element_name', 'initialize',)
     list_display_links = ['pk', ]
     list_filter = ['initialize', ]
+    search_fields = ('element_name', 's__subcategory_name',)
 
 
 class VendorsAdmin(admin.ModelAdmin):
