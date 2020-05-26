@@ -191,13 +191,15 @@ def get_full_excel_file_response(file, context):
                 status_info.update(_status_info)
     response.append({'Status_info': status_info})
     # s - current round
+    pc_status.append({"Company info": True})
     s = {"status": pc_status, 'scoring_round': scoring_round}
-    s.update({"Company info": True})
+
     #  old_pc_st - previous round (s-1)
     old_pc_st = {}
     if scoring_round != 1:
         old_pc_st = past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc)
-        old_pc_st.update({"Company info": True})
+        # print(old_pc_st)
+        # old_pc_st.update({"Company info": True})
     # Check if last round isn't exist in db skip old_pc_st in response
     if len(old_pc_st) == 0:
         response.append({'Scoring_round_info': [s]})
@@ -268,7 +270,7 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
                         # For first scoring round
                         if scoring_round == 1 and not analyst:
                             if all(from_vendor):
-                                pc_status[pc] = False
+                                pc_status[pc] = True
                                 return pc_status
                             else:
                                 pc_status[pc] = "No data"
@@ -280,6 +282,9 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
                                 return pc_status
                             if not all(from_analytic):
                                 pc_status[pc] = 'No data'
+                                return pc_status
+                            if all(from_analytic) and all(from_vendor):
+                                pc_status[pc] = True
                                 return pc_status
 
                         s_r_e = scoring_round_exist(pc, vendor, _round)
@@ -331,7 +336,7 @@ def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
     :param data:
     :return:
     """
-    # TODO check difference between previous round and current data
+
     scoring_round_info = {}
     previews_scoring_status = []
     for pc in unique_pc:
@@ -344,6 +349,7 @@ def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
                     previews_scoring_status.append({pc: True})
             else:
                 previews_scoring_status.append({pc: False})
+    previews_scoring_status.append({"Company info": True})
     scoring_round_info.update({'status': previews_scoring_status})
     scoring_round_info.update({'scoring_round': s_r_n})
     return scoring_round_info
