@@ -25,7 +25,7 @@ pc_to_modules_assign = {
                             "Contract Management": ['COMMON S2P ', 'SERVICES ', 'CLM '],
                             "e-Procurement": ['COMMON S2P ', 'SERVICES ', 'eProcurement '],
                             "Invoice-to-Pay": ['COMMON S2P ', 'SERVICES ', 'I2P '],
-                            "AP Automation": ['COMMON S2P ', 'SERVICES ', 'I2P ', 'AP '],
+                            "AP Automation": ['COMMON S2P ', 'SERVICES ', 'I2P '],
                             "Strategic Procurement Technologies": ['COMMON S2P ', 'COMMON SOURCING – SXM ', 'SERVICES ',
                                                                    'SOURCING ', 'SXM ', 'Spend Analytics ', 'CLM '],
                             "Procure-to-Pay": ['COMMON S2P ', 'SERVICES ', 'eProcurement ', 'I2P '],
