@@ -7,9 +7,10 @@ def update_rfi_status():
 
     try:
         current_time = datetime.datetime.now()
-        opened_rfies = Rfis.objects.filter(open_datetime__lt=current_time, issue_datetime__gt=current_time).exclude(
+        opened_rfies = Rfis.objects.filter(active=True, open_datetime__lt=current_time,
+                                           issue_datetime__gt=current_time).exclude(
             rfi_status="Opened")
-        issued_rfies = Rfis.objects.filter(issue_datetime__lte=current_time).exclude(rfi_status="Issued")
+        issued_rfies = Rfis.objects.filter(active=True, issue_datetime__lte=current_time).exclude(rfi_status="Issued")
 
         opened_rfies.update(rfi_status="Opened")
         issued_rfies.update(rfi_status="Issued")
