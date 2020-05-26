@@ -1172,12 +1172,11 @@ class DownloadRfiExcelFile(APIView):
                 pathlib.Path(f'{path_to_temp_folder}/files').mkdir(parents=True, exist_ok=True)
             wb.save(f'{path_to_temp_folder}/files/{new_file_name}')
 
-        to_rar = default_storage.url(f'/files/{new_file_name}')
         archive = self.generate_zip_name(rfi)
-        # to_rar = f'{path_to_temp_folder}/temp_folder'
+        to_rar = f'{path_to_temp_folder}/files'
         to_download = f'{path_to_temp_folder}/{archive}'
-        patoolib.create_archive(to_download, (to_rar,))
-
+        # patoolib.create_archive(to_download, (to_rar,))
+        os.system("rar a {} {}".format(to_download, to_rar))
         if os.path.exists(to_download):
             try:
                 with open(to_download, 'rb') as fh:
