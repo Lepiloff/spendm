@@ -22,3 +22,4 @@ texttable==1.6.2
 xlrd==1.2.0
 xlwt==1.3.0
 patool==1.12
+django-crontab==0.7.1
