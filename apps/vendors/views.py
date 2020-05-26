@@ -5,12 +5,15 @@ import string
 import platform
 import patoolib
 from datetime import date
+import pathlib
+import shutil
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Color, colors
 
 from service.xml_file_upload_downlod import  get_excel_file_current_pc_for_parsing
 
+from solution_project.settings.base import BASE_DIR
 from django.core.files.storage import default_storage
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
@@ -883,295 +886,298 @@ class DownloadRfiExcelFile(APIView):
         # list{	"rfiid": "20R1", 'vendorid': 122, 'vendor_name': 'Actual2', 'scoring_status': 3}
         for request in request.data:
             r = request
+            if r.get('vendorid') is None:
+                continue
 
-        rfi = Rfis.objects.get(rfiid=r.get('rfiid'))
-        vendor = Vendors.objects.get(vendorid=r.get('vendorid'))
-        current_scoring_round = r.get('scoring_status')
+            rfi = Rfis.objects.get(rfiid=r.get('rfiid'))
+            vendor = Vendors.objects.get(vendorid=r.get('vendorid'))
+            current_scoring_round = r.get('scoring_status')
 
-        if current_scoring_round is None:
-            status = 406
-            r = {"general_errors": ["The vendor doesn't have active module in round."]}
-            return Response(r, status=status)
+            if current_scoring_round is None:
+                status = 406
+                r = {"general_errors": ["The vendor doesn't have active module in round."]}
+                return Response(r, status=status)
 
-        if not RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True):
-            status = 406
-            r = {"general_errors": ["The vendor doesn't have active module in current round."]}
-            return Response(r, status=status)
+            if not RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True):
+                status = 406
+                r = {"general_errors": ["The vendor doesn't have active module in current round."]}
+                return Response(r, status=status)
 
-        # Get vendor active module and calculate participate PC
-        participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True)
-        participate_module_list = [element.m.module_name for element in participate_module]
-        unique_pc = list(get_excel_file_current_pc_for_parsing(pml=participate_module_list))  # Get unique PC for future processing
-        if not unique_pc:
-            status = 406
-            r = {"general_errors": ["The vendor doesn't have parent category in current round."]}
-            return Response(r, status=status)
-        file = default_storage.url('blank_template.xlsx')
-        wb = load_workbook(filename=file)
-        ws = wb["RFI"]
+            # Get vendor active module and calculate participate PC
+            participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True)
+            participate_module_list = [element.m.module_name for element in participate_module]
+            unique_pc = list(get_excel_file_current_pc_for_parsing(pml=participate_module_list))  # Get unique PC for future processing
+            if not unique_pc:
+                status = 406
+                r = {"general_errors": ["The vendor doesn't have parent category in current round."]}
+                return Response(r, status=status)
+            file = default_storage.url('blank_template.xlsx')
+            wb = load_workbook(filename=file)
+            ws = wb["RFI"]
 
-        # Add column size
-        column_dimensions = ws.column_dimensions['E']
-        column_dimensions.width = 40
-        column_dimensions = ws.column_dimensions['F']
-        column_dimensions.width = 50
-        column_dimensions = ws.column_dimensions['G']
-        column_dimensions.width = 70
-        column_dimensions = ws.column_dimensions['Q']
-        column_dimensions.width = 60
-        column_dimensions = ws.column_dimensions['R']
-        column_dimensions.width = 40
-        column_dimensions = ws.column_dimensions['T']
-        column_dimensions.width = 60
-        column_dimensions = ws.column_dimensions['V']
-        column_dimensions.width = 60
-        column_dimensions = ws.column_dimensions['W']
-        column_dimensions.width = 40
-        column_dimensions = ws.column_dimensions['Y']
-        column_dimensions.width = 60
+            # Add column size
+            column_dimensions = ws.column_dimensions['E']
+            column_dimensions.width = 40
+            column_dimensions = ws.column_dimensions['F']
+            column_dimensions.width = 50
+            column_dimensions = ws.column_dimensions['G']
+            column_dimensions.width = 70
+            column_dimensions = ws.column_dimensions['Q']
+            column_dimensions.width = 60
+            column_dimensions = ws.column_dimensions['R']
+            column_dimensions.width = 40
+            column_dimensions = ws.column_dimensions['T']
+            column_dimensions.width = 60
+            column_dimensions = ws.column_dimensions['V']
+            column_dimensions.width = 60
+            column_dimensions = ws.column_dimensions['W']
+            column_dimensions.width = 40
+            column_dimensions = ws.column_dimensions['Y']
+            column_dimensions.width = 60
 
-        # Style variables
-        thin_border = Border(left=Side(style='thin'),
-                             right=Side(style='thin'),
-                             top=Side(style='thin'),
-                             bottom=Side(style='thin'))
-        cell_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        element_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            # Style variables
+            thin_border = Border(left=Side(style='thin'),
+                                 right=Side(style='thin'),
+                                 top=Side(style='thin'),
+                                 bottom=Side(style='thin'))
+            cell_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            element_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-        #Create header
-        ws['E2'] = "Element name"
-        ws['E2'].alignment = cell_alignment
-        ws['E2'].fill = PatternFill(start_color="61A144", fill_type="solid")
-        ws['E2'].border = thin_border
-        ws['F2'] = "Description"
-        ws['F2'].alignment = cell_alignment
-        ws['F2'].fill = PatternFill(start_color="61A144", fill_type="solid")
-        ws['F2'].border = thin_border
-        ws['G2'] = 'Scoring Scale'
-        ws['G2'].alignment = cell_alignment
-        ws['G2'].fill = PatternFill(start_color="61A144", fill_type="solid")
-        ws['G2'].border = thin_border
-        ws['P2'] = 'Self-Score'
-        ws['P2'].alignment = cell_alignment
-        ws['P2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['P2'].border = thin_border
-        ws['Q2'] = 'Self-Description'
-        ws['Q2'].alignment = cell_alignment
-        ws['Q2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['Q2'].border = thin_border
-        ws['R2'] = 'Attachments/Supporting Docs and Location/Link'
-        ws['R2'].alignment = cell_alignment
-        ws['R2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['R2'].border = thin_border
-        ws['S2'] = 'SM score'
-        ws['S2'].alignment = cell_alignment
-        ws['S2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['S2'].border = thin_border
-        ws['T2'] = 'Analyst notes'
-        ws['T2'].alignment = cell_alignment
-        ws['T2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['T2'].border = thin_border
-        ws['AE2'] = 'Current Self-Score'
-        ws['AE2'].alignment = cell_alignment
-        ws['AE2'].fill = PatternFill(start_color="FFE5EA", fill_type="solid")
-        ws['AE2'].border = thin_border
-        ws['AF2'] = 'Current score'
-        ws['AF2'].alignment = cell_alignment
-        ws['AF2'].fill = PatternFill(start_color="61A144", fill_type="solid")
-        ws['AF2'].border = thin_border
+            #Create header
+            ws['E2'] = "Element name"
+            ws['E2'].alignment = cell_alignment
+            ws['E2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['E2'].border = thin_border
+            ws['F2'] = "Description"
+            ws['F2'].alignment = cell_alignment
+            ws['F2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['F2'].border = thin_border
+            ws['G2'] = 'Scoring Scale'
+            ws['G2'].alignment = cell_alignment
+            ws['G2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['G2'].border = thin_border
+            ws['P2'] = 'Self-Score'
+            ws['P2'].alignment = cell_alignment
+            ws['P2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['P2'].border = thin_border
+            ws['Q2'] = 'Self-Description'
+            ws['Q2'].alignment = cell_alignment
+            ws['Q2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['Q2'].border = thin_border
+            ws['R2'] = 'Attachments/Supporting Docs and Location/Link'
+            ws['R2'].alignment = cell_alignment
+            ws['R2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['R2'].border = thin_border
+            ws['S2'] = 'SM score'
+            ws['S2'].alignment = cell_alignment
+            ws['S2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['S2'].border = thin_border
+            ws['T2'] = 'Analyst notes'
+            ws['T2'].alignment = cell_alignment
+            ws['T2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['T2'].border = thin_border
+            ws['AE2'] = 'Current Self-Score'
+            ws['AE2'].alignment = cell_alignment
+            ws['AE2'].fill = PatternFill(start_color="FFE5EA", fill_type="solid")
+            ws['AE2'].border = thin_border
+            ws['AF2'] = 'Current score'
+            ws['AF2'].alignment = cell_alignment
+            ws['AF2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['AF2'].border = thin_border
 
-        # 2-d scoring_round
+            # 2-d scoring_round
 
-        ws['U2'] = 'Self-Score (2)'
-        ws['U2'].alignment = cell_alignment
-        ws['U2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['U2'].border = thin_border
-        ws['V2'] = 'Reasoning'
-        ws['V2'].alignment = cell_alignment
-        ws['V2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['V2'].border = thin_border
-        ws['W2'] = 'Attachments/Supporting Docs and Location/Link'
-        ws['W2'].alignment = cell_alignment
-        ws['W2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['W2'].border = thin_border
-        ws['X2'] = 'SM score (2)'
-        ws['X2'].alignment = cell_alignment
-        ws['X2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['X2'].border = thin_border
-        ws['Y2'] = 'Analyst notes (2)'
-        ws['Y2'].alignment = cell_alignment
-        ws['Y2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['Y2'].border = thin_border
+            ws['U2'] = 'Self-Score (2)'
+            ws['U2'].alignment = cell_alignment
+            ws['U2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['U2'].border = thin_border
+            ws['V2'] = 'Reasoning'
+            ws['V2'].alignment = cell_alignment
+            ws['V2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['V2'].border = thin_border
+            ws['W2'] = 'Attachments/Supporting Docs and Location/Link'
+            ws['W2'].alignment = cell_alignment
+            ws['W2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['W2'].border = thin_border
+            ws['X2'] = 'SM score (2)'
+            ws['X2'].alignment = cell_alignment
+            ws['X2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['X2'].border = thin_border
+            ws['Y2'] = 'Analyst notes (2)'
+            ws['Y2'].alignment = cell_alignment
+            ws['Y2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['Y2'].border = thin_border
 
-        # 3-d scoring_round
+            # 3-d scoring_round
 
-        ws['Z2'] = 'Self-Score (3)'
-        ws['Z2'].alignment = cell_alignment
-        ws['Z2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['Z2'].border = thin_border
-        ws['AA2'] = 'Reasoning'
-        ws['AA2'].alignment = cell_alignment
-        ws['AA2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['AA2'].border = thin_border
-        ws['AB2'] = 'Attachments/Supporting Docs and Location/Link'
-        ws['AB2'].alignment = cell_alignment
-        ws['AB2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
-        ws['AB2'].border = thin_border
-        ws['AC2'] = 'SM score (3)'
-        ws['AC2'].alignment = cell_alignment
-        ws['AC2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['AC2'].border = thin_border
-        ws['AD2'] = 'Analyst notes (3)'
-        ws['AD2'].alignment = cell_alignment
-        ws['AD2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
-        ws['AD2'].border = thin_border
+            ws['Z2'] = 'Self-Score (3)'
+            ws['Z2'].alignment = cell_alignment
+            ws['Z2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['Z2'].border = thin_border
+            ws['AA2'] = 'Reasoning'
+            ws['AA2'].alignment = cell_alignment
+            ws['AA2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['AA2'].border = thin_border
+            ws['AB2'] = 'Attachments/Supporting Docs and Location/Link'
+            ws['AB2'].alignment = cell_alignment
+            ws['AB2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['AB2'].border = thin_border
+            ws['AC2'] = 'SM score (3)'
+            ws['AC2'].alignment = cell_alignment
+            ws['AC2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['AC2'].border = thin_border
+            ws['AD2'] = 'Analyst notes (3)'
+            ws['AD2'].alignment = cell_alignment
+            ws['AD2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['AD2'].border = thin_border
 
-        ws.row_dimensions[2].height = 60
+            ws.row_dimensions[2].height = 60
 
-        for rows in ws.iter_rows(min_row=3, max_row=3, min_col=5, max_col=7):
-            for cell in rows:
-                cell.fill = PatternFill(start_color="790099", fill_type="solid")
+            for rows in ws.iter_rows(min_row=3, max_row=3, min_col=5, max_col=7):
+                for cell in rows:
+                    cell.fill = PatternFill(start_color="790099", fill_type="solid")
 
-        # Hidden column
-        for col in ['B', 'C', 'D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB',
-                    'AC', 'AD']:
-            ws.column_dimensions[col].hidden = True
+            # Hidden column
+            for col in ['B', 'C', 'D', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB',
+                        'AC', 'AD']:
+                ws.column_dimensions[col].hidden = True
 
-        row_num = 4
+            row_num = 4
 
-        if current_scoring_round == 1:
-            if self.catch_zero_round(vendor, rfi):
-                self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment)
+            if current_scoring_round == 1:
+                if self.catch_zero_round(vendor, rfi):
+                    self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment)
 
-        # Start excel RFI sheet create logic
-        if not self.catch_zero_round(vendor, rfi):
-            for pc in unique_pc:
-                ws[f'E{row_num}'] = pc
-                ws[f'E{row_num}'].alignment = cell_alignment
-                ws[f'E{row_num}'].border = thin_border
-                ws.merge_cells(f'E{row_num}:G{row_num}')
-                ws.row_dimensions[row_num].height = 40
-                for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
-                    for cell in rows:
-                        cell.fill = PatternFill(start_color="EDBC00", fill_type="solid")
-                row_num += 1
-                p_c = ParentCategories.objects.get(parent_category_name=pc)
-                categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
-                for category in categories:
-                    # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
-                    ws[f'E{row_num}'] = category.category_name
+            # Start excel RFI sheet create logic
+            if not self.catch_zero_round(vendor, rfi):
+                for pc in unique_pc:
+                    ws[f'E{row_num}'] = pc
                     ws[f'E{row_num}'].alignment = cell_alignment
                     ws[f'E{row_num}'].border = thin_border
+                    ws.merge_cells(f'E{row_num}:G{row_num}')
+                    ws.row_dimensions[row_num].height = 40
                     for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
                         for cell in rows:
-                            cell.fill = PatternFill(start_color="61A144", fill_type="solid")
-                    ws.row_dimensions[row_num].height = 25
+                            cell.fill = PatternFill(start_color="EDBC00", fill_type="solid")
                     row_num += 1
-                    subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
-                    for subcat in subcats:
-                        if not subcat.subcategory_name == 'General':
-                            ws[f'E{row_num}'] = subcat.subcategory_name
-                            ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
-                            ws[f'E{row_num}'].border = thin_border
-                            row_num += 1
-                        elements = Elements.objects.filter(s=subcat).order_by('e_order')
-                        for e in elements:
+                    p_c = ParentCategories.objects.get(parent_category_name=pc)
+                    categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
+                    for category in categories:
+                        # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
+                        ws[f'E{row_num}'] = category.category_name
+                        ws[f'E{row_num}'].alignment = cell_alignment
+                        ws[f'E{row_num}'].border = thin_border
+                        for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
+                            for cell in rows:
+                                cell.fill = PatternFill(start_color="61A144", fill_type="solid")
+                        ws.row_dimensions[row_num].height = 25
+                        row_num += 1
+                        subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
+                        for subcat in subcats:
+                            if not subcat.subcategory_name == 'General':
+                                ws[f'E{row_num}'] = subcat.subcategory_name
+                                ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
+                                ws[f'E{row_num}'].border = thin_border
+                                row_num += 1
+                            elements = Elements.objects.filter(s=subcat).order_by('e_order')
+                            for e in elements:
 
-                            column_to_scoring_round = {
-                                                       '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
-                                                       '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
-                                                       '3': ['E', 'F', 'G', 'Z', 'AA', 'AB', 'AC', 'AD']
-                                                        }
+                                column_to_scoring_round = {
+                                                           '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
+                                                           '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
+                                                           '3': ['E', 'F', 'G', 'Z', 'AA', 'AB', 'AC', 'AD']
+                                                            }
 
-                            ws.row_dimensions[row_num].height = 150
+                                ws.row_dimensions[row_num].height = 150
 
-                            # Element common info create
-                            element_name = e.element_name
-                            description = e.description
-                            s_scale = e.scoring_scale
+                                # Element common info create
+                                element_name = e.element_name
+                                description = e.description
+                                s_scale = e.scoring_scale
 
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'] = s_scale
-                            ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'] = s_scale
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
 
-                            for csr in range(1, current_scoring_round + 1):
+                                for csr in range(1, current_scoring_round + 1):
 
-                                self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
-                                if self_score:
-                                    self_score = self_score.self_score
-                                else:
-                                    self_score = None
+                                    self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    if self_score:
+                                        self_score = self_score.self_score
+                                    else:
+                                        self_score = None
 
-                                self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
-                                if self_description:
-                                    self_description = self_description.self_description
-                                else:
-                                    self_description = None
+                                    self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    if self_description:
+                                        self_description = self_description.self_description
+                                    else:
+                                        self_description = None
 
-                                sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
-                                if sm_score:
-                                    sm_score = sm_score.sm_score
-                                else:
-                                    sm_score = None
+                                    sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                    if sm_score:
+                                        sm_score = sm_score.sm_score
+                                    else:
+                                        sm_score = None
 
-                                analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
-                                if analyst_notes:
-                                    analyst_notes = analyst_notes.analyst_notes
-                                else:
-                                    analyst_notes = None
+                                    analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                    if analyst_notes:
+                                        analyst_notes = analyst_notes.analyst_notes
+                                    else:
+                                        analyst_notes = None
 
-                                attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
-                                if attachment:
-                                    attachment = attachment.attachment_info
-                                else:
-                                    attachment = None
-                                ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'] = self_score
-                                ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
-                                ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'] = self_description
-                                ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
-                                ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'] = attachment
-                                ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
-                                ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'] = sm_score
-                                ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
-                                ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'] = analyst_notes
-                                ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
-                            row_num += 1
-                        row_num += 2  # two empty row after subcategory block
+                                    attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    if attachment:
+                                        attachment = attachment.attachment_info
+                                    else:
+                                        attachment = None
+                                    ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'] = self_score
+                                    ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'] = self_description
+                                    ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'] = attachment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'] = sm_score
+                                    ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'] = analyst_notes
+                                    ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
+                                row_num += 1
+                            row_num += 2  # two empty row after subcategory block
 
-            # CI filling
-            ws_ci = wb["Company Information"]
-            start_cell_row_number = 5
-            ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
-            for ciq in ciq_queriset:
-                cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
-                ws_ci[f'C{start_cell_row_number}'] = cia.answer
-                start_cell_row_number += 1
+                # CI filling
+                ws_ci = wb["Company Information"]
+                start_cell_row_number = 5
+                ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                for ciq in ciq_queriset:
+                    cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
+                    ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                    start_cell_row_number += 1
 
-        # Unmerge column
-        if current_scoring_round == 2:
-            for col in ['U', 'V', 'W', 'X', 'Y']:
-                ws.column_dimensions[col].hidden = False
-        if current_scoring_round == 3:
-            for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
-                ws.column_dimensions[col].hidden = False
+            # Unmerge column
+            if current_scoring_round == 2:
+                for col in ['U', 'V', 'W', 'X', 'Y']:
+                    ws.column_dimensions[col].hidden = False
+            if current_scoring_round == 3:
+                for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+                    ws.column_dimensions[col].hidden = False
 
-        # Generate file name
-        new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
+            # Generate file name
+            new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
 
-        wb.save(filename=new_file_name)
-        # if platform.system() == 'Linux':
-        #     to_rar = default_storage.url("result.xlsx")
-        #     print(to_rar)
-        #     os.system(f'rar a result.rar {to_rar}')
+            # wb.save(filename=new_file_name)
+            path_to_temp_folder = os.path.dirname(BASE_DIR)
+            if not os.path.exists(f'{path_to_temp_folder}/files'):
+                pathlib.Path(f'{path_to_temp_folder}/files').mkdir(parents=True, exist_ok=True)
+            wb.save(f'{path_to_temp_folder}/files/{new_file_name}')
 
+        to_rar = default_storage.url(f'/files/{new_file_name}')
         archive = self.generate_zip_name(rfi)
-        to_rar = default_storage.url(new_file_name)
+        # to_rar = f'{path_to_temp_folder}/temp_folder'
+        to_download = f'{path_to_temp_folder}/{archive}'
+        patoolib.create_archive(to_download, (to_rar,))
 
-        patoolib.create_archive(archive, (to_rar,))  # possible use multiple file add, just set file name after comma
-        to_download = default_storage.url(archive)
         if os.path.exists(to_download):
             try:
                 with open(to_download, 'rb') as fh:
@@ -1180,8 +1186,8 @@ class DownloadRfiExcelFile(APIView):
                     response['Content-Disposition'] = 'attachment; filename= "{}"'.format(archive)
                     return response
             finally:
+                shutil.rmtree(to_rar, ignore_errors=True)
                 default_storage.delete(to_download)
-                default_storage.delete(to_rar)
 
         else:
             raise ParseError
