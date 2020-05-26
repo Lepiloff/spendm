@@ -890,7 +890,7 @@ class DownloadRfiExcelFile(APIView):
 
         if current_scoring_round is None:
             status = 406
-            r = {"general_errors": ["The vendor doesn't have active module in current round."]}
+            r = {"general_errors": ["The vendor doesn't have active module in round."]}
             return Response(r, status=status)
 
         if not RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True):
@@ -1056,7 +1056,7 @@ class DownloadRfiExcelFile(APIView):
                         cell.fill = PatternFill(start_color="EDBC00", fill_type="solid")
                 row_num += 1
                 p_c = ParentCategories.objects.get(parent_category_name=pc)
-                categories = Categories.objects.filter(pc=p_c)
+                categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
                 for category in categories:
                     # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
                     ws[f'E{row_num}'] = category.category_name
@@ -1067,14 +1067,14 @@ class DownloadRfiExcelFile(APIView):
                             cell.fill = PatternFill(start_color="61A144", fill_type="solid")
                     ws.row_dimensions[row_num].height = 25
                     row_num += 1
-                    subcats = Subcategories.objects.filter(c=category)
+                    subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                     for subcat in subcats:
                         if not subcat.subcategory_name == 'General':
                             ws[f'E{row_num}'] = subcat.subcategory_name
                             ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                             ws[f'E{row_num}'].border = thin_border
                             row_num += 1
-                        elements = Elements.objects.filter(s=subcat).order_by('timestamp')
+                        elements = Elements.objects.filter(s=subcat).order_by('e_order')
                         for e in elements:
 
                             column_to_scoring_round = {
@@ -1243,7 +1243,7 @@ class DownloadRfiExcelFile(APIView):
                     cell.fill = PatternFill(start_color="EDBC00", fill_type="solid")
             row_num += 1
             p_c = ParentCategories.objects.get(parent_category_name=pc)
-            categories = Categories.objects.filter(pc=p_c)
+            categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
             for category in categories:
                 # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
                 ws[f'E{row_num}'] = category.category_name
@@ -1254,14 +1254,14 @@ class DownloadRfiExcelFile(APIView):
                         cell.fill = PatternFill(start_color="61A144", fill_type="solid")
                 ws.row_dimensions[row_num].height = 25
                 row_num += 1
-                subcats = Subcategories.objects.filter(c=category)
+                subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                 for subcat in subcats:
                     if not subcat.subcategory_name == 'General':
                         ws[f'E{row_num}'] = subcat.subcategory_name
                         ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                         ws[f'E{row_num}'].border = thin_border
                         row_num += 1
-                    elements = Elements.objects.filter(s=subcat, initialize=True).order_by('timestamp')
+                    elements = Elements.objects.filter(s=subcat, initialize=True).order_by('e_order')
                     for e in elements:
                         ws.row_dimensions[row_num].height = 150
                         element_name = e.element_name
