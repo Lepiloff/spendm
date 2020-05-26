@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'simple_history',
 
     'rest_framework_simplejwt.token_blacklist',
+    'django_crontab',
     
     # Local
     'apps.c_users',
@@ -176,3 +177,7 @@ SIMPLE_JWT = {
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+CRONJOBS = [
+    ('1 0 * * *', 'cron_tasks.update_rfi_status.update_rfi_status')
+]
