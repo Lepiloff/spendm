@@ -91,8 +91,8 @@ class VendorCsvCreateTest(APITestCase):
     def setUp(self):
         password = 'mypassword'
         CustomUser.objects.create_superuser('myemail@test.com', password)
-        Modules.objects.create(module_name='Strategic Sourcing')
-        Modules.objects.create(module_name='Supplier Management')
+        Modules.objects.get_or_create(module_name='Strategic Sourcing')
+        Modules.objects.get_or_create(module_name='Supplier Management')
 
         self.user = CustomUser.objects.create_user('myemaidfdsl@test.com', password)
         self.client.force_authenticate(self.user)
@@ -238,7 +238,7 @@ class VendorProfileModulesListCreateTest(APITestCase):
         password = 'mypassword'
         CustomUser.objects.create_superuser('myemail@test.com', password)
         round = Rfis.objects.create(rfiid="20R1")
-        m = Modules.objects.create(module_name='Sourcing')
+        m, _ = Modules.objects.get_or_create(module_name='Sourcing')
         vendor = Vendors.objects.create(vendor_name="U2", country="Belarus", nda="2020-12-12", active=True)
         _id =vendor.vendorid
         data = {
@@ -337,8 +337,8 @@ class VendorManagementScreenTest(APITestCase):
 
     def test_get_actual_information_api(self):
         vendor = Vendors.objects.create(vendor_name="U4", country="Belarus", nda="2020-12-12", )
-        m1 = Modules.objects.create(module_name='Strategic Sourcing')
-        m2= Modules.objects.create(module_name='Supplier Management')
+        m1, _ = Modules.objects.get_or_create(module_name='Strategic Sourcing')
+        m2, _ = Modules.objects.get_or_create(module_name='Supplier Management')
         round = Rfis.objects.create(rfiid="20R1")
         rfi = RfiParticipation.objects.create(vendor=vendor, rfi=round, m=m1)
         self.assertEqual(RfiParticipation.objects.all().count(), 1)
