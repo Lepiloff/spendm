@@ -411,7 +411,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Analytics', 'common_s2p: Analytics wrong category position'
+    assert category_name == 'Analytics', 'common_s2p: Analytics wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -419,7 +419,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert sub_category == 'Data Schema', 'common_s2p: Data Schema wrong subcategory position'
+    assert sub_category == 'Data Schema', 'common_s2p: Data Schema wrong subcategory position'
 
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 5), sheet=sheet, to_category_info=to_category_info,
@@ -428,7 +428,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 10)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert sub_category == 'Data Management', 'common_s2p: Data Management wrong subcategory position'
+    assert sub_category == 'Data Management', 'common_s2p: Data Management wrong subcategory position'
 
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
@@ -437,7 +437,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 18)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert sub_category == 'Metric Management', 'common_s2p: Metric Management wrong subcategory position'
+    assert sub_category == 'Metric Management', 'common_s2p: Metric Management wrong subcategory position'
 
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
@@ -447,6 +447,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 26)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Reporting', 'common_s2p: Reporting wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 10), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -458,7 +459,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 41)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Configurability', 'common_s2p: Configurability wrong category position'
+    assert category_name == 'Configurability', 'common_s2p: Configurability wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -466,6 +467,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Globalization', 'common_s2p: Globalization wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -474,6 +476,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 11)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Organizational Modeling', 'common_s2p: Organizational Modeling wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 5), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -482,6 +485,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 20)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Personalization', 'common_s2p: Personalization wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -490,6 +494,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 28)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Project Management', 'common_s2p: Project Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -498,6 +503,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 36)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Workflow', 'common_s2p: Workflow wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -509,7 +515,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 87)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Supplier portal', 'common_s2p: Supplier portal wrong category position'
+    assert category_name == 'Supplier Portal', 'common_s2p: Supplier portal wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -518,6 +524,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Account Management', 'common_s2p: Account Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -526,6 +533,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 9)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Document Management', 'common_s2p: Document Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 1), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -534,6 +542,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 14)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Information Management', 'common_s2p: Information Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -545,7 +554,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 107)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Sxm', 'common_s2p: Sxm wrong category position'
+    assert category_name == 'SXM', 'common_s2p: Sxm wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -553,6 +562,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Supplier Information Management', 'common_s2p: Supplier Information Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -560,6 +570,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 11)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Supply Intelligence', 'common_s2p: Supply Intelligence wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -571,7 +582,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 124)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Technology', 'common_s2p: Technology wrong category position'
+    assert category_name == 'Technology', 'common_s2p: Technology wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -579,6 +590,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Automation', 'common_s2p: Automation wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -586,6 +598,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 11)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Core Platform', 'common_s2p: Core Platform wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 16), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -594,6 +607,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 31)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Data Management', 'common_s2p: Data Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 14), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -602,6 +616,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 49)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Document Management', 'common_s2p: Document Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -610,6 +625,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 57)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Emerging Technology', 'common_s2p: Emerging Technology wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 7), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -618,6 +634,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 68)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Standards and Integrations', 'common_s2p: Standards and Integrations wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 12), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -626,6 +643,7 @@ def common_s2p_category_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 84)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'UX Layer', 'common_s2p: UX Layer wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 6), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -651,7 +669,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Contingent workforce', 'common_s2p: Contingent workforce wrong category position'
+    assert category_name == 'Contingent Workforce / Services Procurement', 'common_sourcing_sxm: Contingent workforce wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -659,6 +677,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Contingent Workforce Management', 'common_sourcing_sxm: Contingent Workforce Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -671,7 +690,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 8)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
-    # assert category_name == 'Performance management', 'common_s2p: Contingent workforce wrong category position'
+    assert category_name == 'Performance Management', 'common_sourcing_sxm: Contingent workforce wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -691,6 +710,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 14)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Relationship Management', 'common_sourcing_sxm: Relationship Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -718,6 +738,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 34)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Risk Management', 'common_sourcing_sxm: Relationship Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -777,6 +798,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 83)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Supplier Information Management', 'common_sourcing_sxm: Supplier Information Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -812,6 +834,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 102)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Supplier Portal', 'common_sourcing_sxm: Supplier Portal wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -850,6 +873,7 @@ def common_sourcing_sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 20)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Supplier Portal', 'common_sourcing_sxm: Supplier Portal wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=min_row, sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -876,6 +900,7 @@ def services_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'S2P Services', 'services: S2P Services wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -892,6 +917,7 @@ def services_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 23)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'SPT Services', 'services: SPT Services wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -909,6 +935,7 @@ def services_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 27)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Sourcing - SXM Services', 'services: Sourcing - SXM Services wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -941,6 +968,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Opportunity', 'sourcing: Opportunity wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -948,6 +976,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Category Analysis', 'sourcing: Category Analysis wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 13), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -967,6 +996,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 29)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'RFX / Surveys', 'sourcing: RFX / Surveys wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1007,6 +1037,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 84)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Optimization', 'sourcing: Optimization wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1042,6 +1073,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 116)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Performance Management', 'sourcing: Performance Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1061,6 +1093,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 128)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'CLM Support', 'sourcing: CLM Support wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1068,6 +1101,7 @@ def sourcing_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Core Capabilities', 'sourcing: Core Capabilities wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 5), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1095,6 +1129,7 @@ def sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Extended SIM', 'sxm: Extended SIM wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1112,6 +1147,7 @@ def sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 25)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'SXM', 'sxm: SXM wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1119,6 +1155,7 @@ def sxm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Development & Innovation Management', 'sxm: Development & Innovation Management wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1129,11 +1166,12 @@ def sxm_response_create(workbook, coordinate, scoring_round):
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 4), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
+
     # Subcategory Out-of-the-Box Reporting
-    # Subcategory NPD / NPI
     cl, rn = get_split_coordinate(category_coordinate, 17)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Out-of-the-Box Reporting', 'sxm: Out-of-the-Box Reporting wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 3), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1161,6 +1199,7 @@ def spend_analytics_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Process Support', 'spend_analytics: Process Support wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1177,6 +1216,7 @@ def spend_analytics_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 22)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Function Support', 'spend_analytics: Function Support wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1184,6 +1224,7 @@ def spend_analytics_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Raw Capability', 'spend_analytics: Raw Capability wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 7), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1219,6 +1260,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Contract Information Management', 'clm: Contract Information Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1226,6 +1268,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Core Contract modeling', 'clm: Core Contract modeling wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 8), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1246,6 +1289,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 26)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Contract Process Management', 'clm: Contract Process Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1290,6 +1334,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 55)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Analytics', 'clm: Analytics wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1305,6 +1350,7 @@ def clm_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 6)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Knowledge Management and Expertise', 'clm: Knowledge Management and Expertise wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1332,6 +1378,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Catalog Management', 'eprocurement: Catalog Management wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1339,6 +1386,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Catalog Creation / Onboarding', 'eprocurement: Catalog Creation / Onboarding wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 9), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1414,6 +1462,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 54)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Requisitioning', 'eprocurement: Requisitioning wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1560,6 +1609,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 176)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Ordering', 'eprocurement: Ordering wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1650,6 +1700,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 231)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Receiving', 'eprocurement: Receiving wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1698,6 +1749,7 @@ def eprocurement_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 27)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Receiving Roadmap', 'eprocurement: Receiving Roadmap wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=min_row, sheet=sheet,
                                         to_category_info=to_category_info,
@@ -1727,13 +1779,15 @@ def i2p_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 1)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Invoicing', 'i2p: Invoicing wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
-    # Subcategory Catalog Creation / Onboarding Invoicing Setup
+    # Subcategory Invoicing Setup
     cl, rn = get_split_coordinate(category_coordinate, 1)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Invoicing Setup', 'i2p: Invoicing Setup wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 2), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1818,6 +1872,7 @@ def i2p_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 83)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'Payment & Financing', 'i2p: Payment & Financing wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1877,6 +1932,7 @@ def i2p_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(coordinate, 133)
     category_name = sheet[f"{cl}{rn}"].value
     category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert category_name == 'OPTIONAL For Specialized Personas (Additional coverage in SolutionMap)', 'i2p: OPTIONAL For Specialized Personas (Additional coverage in SolutionMap) wrong category position'
     info_to_subcat_to_cat = {}
     to_category_info = []  # list of all subcat wit element info
 
@@ -1900,6 +1956,7 @@ def i2p_response_create(workbook, coordinate, scoring_round):
     cl, rn = get_split_coordinate(category_coordinate, 20)
     sub_category = sheet[f"{cl}{rn}"].value
     sub_category_coordinate = sheet[f"{cl}{rn}"].coordinate
+    assert sub_category == 'Supply Chain Finance (Specialized)', 'i2p: Supply Chain Finance (Specialized) wrong subcategory position'
     _, min_row = get_split_coordinate(sub_category_coordinate, 1)
     subcategory_element_response_create(scoring_round, min_row=min_row, max_row=(min_row + 9), sheet=sheet, to_category_info=to_category_info,
                                         sub_category=sub_category)
@@ -1909,6 +1966,7 @@ def i2p_response_create(workbook, coordinate, scoring_round):
 
     pc_response.update({"Category": category_list})
     return pc_response
+
 
 
 pc_to_function_name = {
