@@ -1061,7 +1061,7 @@ class DownloadRfiExcelFile(APIView):
                             cell.fill = PatternFill(start_color="EDBC00", fill_type="solid")
                     row_num += 1
                     p_c = ParentCategories.objects.get(parent_category_name=pc)
-                    categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
+                    categories = Categories.objects.filter(pc=p_c)
                     for category in categories:
                         # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
                         ws[f'E{row_num}'] = category.category_name
@@ -1081,7 +1081,6 @@ class DownloadRfiExcelFile(APIView):
                                 row_num += 1
                             elements = Elements.objects.filter(s=subcat).order_by('e_order')
                             for e in elements:
-
                                 column_to_scoring_round = {
                                                            '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
                                                            '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
@@ -1266,7 +1265,7 @@ class DownloadRfiExcelFile(APIView):
                         ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                         ws[f'E{row_num}'].border = thin_border
                         row_num += 1
-                    elements = Elements.objects.filter(s=subcat, initialize=True).order_by('e_order')
+                    elements = Elements.objects.filter(s=subcat).order_by('e_order')
                     for e in elements:
                         ws.row_dimensions[row_num].height = 150
                         element_name = e.element_name

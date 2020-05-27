@@ -551,6 +551,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
+
     def create(self, validated_data):
         # Get data from url context
         rfiid = self.context.get('rfiid')
@@ -567,13 +568,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         # for update rfipartisipatiostatus analyst/vendor response (1 or 0)
         status_info = self.context.get('status_info')
 
-        # save CI
-        # company_information = self.context.get('Company_info')
-        # for ci in company_information:
-        #     ciq, _ = CompanyGeneralInfoQuestion.objects.get_or_create(question=ci.get('question'), rfi=round)
-        #     cia, _ = CompanyGeneralInfoAnswers.objects.update_or_create(vendor=vendor, question=ciq,
-        #                                                                 defaults={'answer': ci.get('answer')})
-
         # Get data from validated data
         sc = validated_data.pop('s')
         cat = validated_data.pop('category')
@@ -583,12 +577,13 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         sm_score = validated_data.pop('sm_score')
         analyst_notes = validated_data.pop('analyst_notes')
         attachment = validated_data.pop('attachment')
+        e_order = validated_data.pop('e_order')
         parent_category = ParentCategories.objects.filter(parent_category_name=pc)
         if parent_category:
-            category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
+            category = Categories.objects.get(category_name=cat, pc=parent_category.first())
         else:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
-        subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
+        subcategory = Subcategories.objects.get(subcategory_name=sc, c=category)
 
         # Deprecated, status changes depending on the scoring number of the round and not on the filling of the file.
         # if status_info:
@@ -606,7 +601,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
                                                                                        'last_vendor_response': current_scoring_round}
                                                                              )
 
-        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory, initialize=False)
+        element = Elements.objects.get(s=subcategory, e_order=e_order)
 
         if analyst_id:
             analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
@@ -644,6 +639,96 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
 
         return self
+
+
+    # def create(self, validated_data):
+    #     # Get data from url context
+    #     rfiid = self.context.get('rfiid')
+    #     vendor_id = self.context.get('vendor')
+    #     analyst_id = self.context.get('analyst')
+    #     vendor = Vendors.objects.get(vendorid=vendor_id)
+    #     round = Rfis.objects.get(rfiid=rfiid)
+    #     current_scoring_round = self.context.get('current_scoring_round')
+    #
+    #     #TODO Get pc status from context for update
+    #     # pc_status_info = self.context.get('pc_status_info')
+    #     # last_s_r_info = pc_status_info[0]
+    #
+    #     # for update rfipartisipatiostatus analyst/vendor response (1 or 0)
+    #     status_info = self.context.get('status_info')
+    #
+    #     # Get data from validated data
+    #     sc = validated_data.pop('s')
+    #     cat = validated_data.pop('category')
+    #     pc = validated_data.pop('pc')
+    #     self_score = validated_data.pop('self_score')
+    #     self_description = validated_data.pop('self_description')
+    #     sm_score = validated_data.pop('sm_score')
+    #     analyst_notes = validated_data.pop('analyst_notes')
+    #     attachment = validated_data.pop('attachment')
+    #     parent_category = ParentCategories.objects.filter(parent_category_name=pc)
+    #     if parent_category:
+    #         category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
+    #     else:
+    #         raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
+    #     subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
+    #
+    #     # Deprecated, status changes depending on the scoring number of the round and not on the filling of the file.
+    #     # if status_info:
+    #     #     lar = status_info.get(pc, {}).get('analyst')
+    #     #     lvr = status_info.get(pc, {}).get('vendor')
+    #     #     rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+    #     #                                                                          pc=parent_category.first(),
+    #     #                                                                          defaults={'last_analyst_response': lar,
+    #     #                                                                                    'last_vendor_response': lvr}
+    #     #                                                                          )
+    #
+    #     rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+    #                                                                          pc=parent_category.first(),
+    #                                                                          defaults={'last_analyst_response': current_scoring_round,
+    #                                                                                    'last_vendor_response': current_scoring_round}
+    #                                                                          )
+    #
+    #     element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory, initialize=False)
+    #     if _:
+    #         print('element create')
+    #
+    #     if analyst_id:
+    #         analyst_notes, _ = AnalystNotes.objects.get_or_create(vendor=vendor, e=element, analyst_notes=analyst_notes,
+    #                                                               rfi=round, analyst_response=current_scoring_round)
+    #
+    #         sm_scores, _ = SmScores.objects.get_or_create(vendor=vendor, e=element, sm_score=sm_score, rfi=round,
+    #                                                       analyst_response=current_scoring_round)
+    #
+    #         rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+    #                                                                              pc=parent_category.first(),
+    #                                                                              defaults={
+    #                                                                                  'last_analyst_response': current_scoring_round}
+    #                                                                              )
+    #
+    #     else:
+    #         self_score, _ = SelfScores.objects.get_or_create(vendor=vendor, e=element, self_score=self_score, rfi=round,
+    #                                                          vendor_response=current_scoring_round)
+    #
+    #         self_description, _ = SelfDescriptions.objects.get_or_create(vendor=vendor, e=element,
+    #                                                                      self_description=self_description, rfi=round,
+    #                                                                      vendor_response=current_scoring_round)
+    #
+    #         # attachment= Attachments.objects.create(vendor=vendor, path=attachment, rfi=round)
+    #
+    #         element_attachment, _ = ElementsAttachments.objects.get_or_create(e=element, attachment_info=attachment,
+    #                                                                           rfi=round, vendor=vendor,
+    #                                                                           vendor_response=current_scoring_round)
+    #
+    #         rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+    #                                                                              pc=parent_category.first(),
+    #                                                                              defaults={
+    #                                                                                  'last_vendor_response': current_scoring_round}
+    #                                                                              )
+    #
+    #     # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
+    #
+    #     return self
 
 
 class DownloadExcelSerializer(serializers.ModelSerializer):
@@ -702,6 +787,6 @@ class ElementInitializeInfoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         subcategory, _ = Subcategories.objects.get_or_create(subcategory_name=sc, c=category)
 
-        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory, initialize=True)
+        element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
 
         return self

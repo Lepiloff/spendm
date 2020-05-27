@@ -147,7 +147,7 @@ class Categories(models.Model):
     pc = models.ForeignKey('ParentCategories', models.DO_NOTHING)
     category_name = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'categories'
@@ -568,7 +568,7 @@ class Subcategories(models.Model):
     c = models.ForeignKey('Categories', models.DO_NOTHING)
     subcategory_name = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
-    timestamp = models.DateTimeField(auto_now=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'subcategories'
