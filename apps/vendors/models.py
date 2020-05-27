@@ -307,6 +307,7 @@ class Modules(models.Model):
     active = models.BooleanField(default=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
+    parent_categories = models.ManyToManyField('ParentCategories', through='ModulesParentCategories', related_name='+')
 
     class Meta:
         db_table = 'modules'
@@ -360,6 +361,7 @@ class ParentCategories(models.Model):
     parent_category_name = models.CharField(max_length=45, choices=PC, unique=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    modules = models.ManyToManyField('Modules', through='ModulesParentCategories')
 
     class Meta:
         db_table = 'parent_categories'
@@ -804,5 +806,13 @@ class CompanyGeneralInfoAnswers(models.Model):
         db_table = 'company_info_answers'
 
 
+class ModulesParentCategories(models.Model):
+    module = models.ForeignKey('Modules', on_delete=models.CASCADE)
+    parent_category = models.ForeignKey('ParentCategories', on_delete=models.CASCADE)
+    primary = models.BooleanField(default=False)
 
+    class Meta:
+        unique_together = (('module', 'parent_category'),)
 
+    def __str__(self):
+        return '{} - {}'.format(self.parent_category.parent_category_name, self.module.module_name)
