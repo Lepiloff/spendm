@@ -626,6 +626,7 @@ class AssociateModulesWithVendorCsv(APIView):
 
 
 class CsvRfiTemplateDownload(APIView):
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request, format=None, **kwargs):
         # Get list of exist round in db
@@ -1167,15 +1168,16 @@ class DownloadRfiExcelFile(APIView):
 
             # wb.save(filename=new_file_name)
             path_to_temp_folder = os.path.dirname(BASE_DIR)
-            if not os.path.exists(f'{path_to_temp_folder}/files'):
-                pathlib.Path(f'{path_to_temp_folder}/files').mkdir(parents=True, exist_ok=True)
-            wb.save(f'{path_to_temp_folder}/files/{new_file_name}')
+            if not os.path.exists(f'{path_to_temp_folder}/rfi'):
+                pathlib.Path(f'{path_to_temp_folder}/rfi').mkdir(parents=True, exist_ok=True)
+            wb.save(f'{path_to_temp_folder}/rfi/{new_file_name}')
 
         archive = self.generate_zip_name(rfi)
-        to_rar = f'{path_to_temp_folder}/files'
+        to_rar = f'{path_to_temp_folder}/rfi'
         to_download = f'{path_to_temp_folder}/{archive}'
         # patoolib.create_archive(to_download, (to_rar,))
-        os.system("rar a {} {}".format(to_download, to_rar))
+        _, to_rar = (os.path.split(to_rar))
+        os.system("rar a {} {}".format(archive, to_rar))
         if os.path.exists(to_download):
             try:
                 with open(to_download, 'rb') as fh:

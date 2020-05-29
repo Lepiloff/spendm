@@ -354,31 +354,38 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
                   'vendor_modules',)
 
     def get_company_information(self, obj):
-        # Calculate last edited rfi participation module and get round information
-        rfi_id = None
-        round = Rfis.objects.filter()
-        if round:
-            vendor_module_round = RfiParticipation.objects.filter(vendor=obj)
-            if vendor_module_round:
-                last_vendor_module_round = vendor_module_round.order_by('-timestamp').first()
-                if last_vendor_module_round:
-                    rfi_id = last_vendor_module_round.rfi.rfiid
-                else:
-                    rfi_id = None
+        cia = CompanyGeneralInfoAnswers.objects.filter(vendor=obj).order_by('-timestamp')
+        if cia:
+            last_ci = cia.first().question.rfi.rfiid
+            rfi_id = last_ci
+        else:
+            rfi_id = None
         return rfi_id
 
     def get_vendor_modules(self, obj):
-        # check round for all participate modules
-        # Using F for rename field relationship name
-        r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').\
-                                     values(module=F('m__module_name'), round=F('rfi'))
-        return r
+        # # check round for all participate modules
+        # # Using F for rename field relationship name
+        # r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').\
+        #                              values(module=F('m__module_name'), round=F('rfi'))
+        # return r
+        vendor_modules = []
+        modules = Modules.objects.all()
+        for m in modules:
+            if RfiParticipation.objects.filter(vendor=obj, m=m):
+                last_round = RfiParticipation.objects.filter(vendor=obj, m=m).order_by('-timestamp').first()
+                vendor_modules.append({'module': m.module_name, 'round': last_round.rfi.rfiid})
+
+            else:
+                vendor_modules.append({'module': m.module_name, 'round': None})
+        return vendor_modules
+
 
 
 class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-    to_vendor = RfiParticipationSerializer(many=True)
+    # to_vendor = RfiParticipationSerializer(many=True)
+    to_vendor = serializers.SerializerMethodField()
     history = serializers.SerializerMethodField()
     current_round_participate = serializers.SerializerMethodField()
     office = serializers.CharField(required=False, allow_null=True)
@@ -399,6 +406,17 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   'current_round_participate',
                   )
         read_only_fields = ('history', 'current_round_participate')
+
+    def get_to_vendor(self, obj):
+        vendor_modules = []
+        modules = Modules.objects.all()
+        for m in modules:
+            if RfiParticipation.objects.filter(vendor=obj, m=m):
+                last_round = RfiParticipation.objects.filter(vendor=obj, m=m).order_by('-timestamp').first()
+                vendor_modules.append({'pk': last_round.pk, 'active': last_round.active, 'rfi': last_round.rfi.rfiid,
+                                       'm': m.pk, 'vendor': obj.pk,
+                                       'timestamp': last_round.timestamp})
+        return vendor_modules
 
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
