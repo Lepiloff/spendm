@@ -477,7 +477,8 @@ class Rfis(models.Model):
     RFI_STATUS = (
                     ("Created", "Created"),
                     ("Opened", "Opened"),
-                    ("Issued", "Issued")
+                    ("Issued", "Issued"),
+                    ("Closed", "Closed")
                  )
     rfi_status = models.CharField(max_length=50, choices=RFI_STATUS, default="Created")
     rfiid = models.CharField(max_length=4, primary_key=True)

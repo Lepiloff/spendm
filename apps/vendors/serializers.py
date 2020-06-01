@@ -230,6 +230,13 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 validated_data['rfi'] = lastr_round
             else:
                 raise serializers.ValidationError({"general_errors": ["Round is not created yet"]})
+        # create Rfipartstatus objects
+        for p_c in ParentCategories.objects.filter(parent_categories=validated_data.get('m', None)):
+            pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                rfi=validated_data.get('rfi', None),
+                vendor=validated_data.get('vendor', None),
+                pc=p_c
+            )
 
         module, created = RfiParticipation.objects.update_or_create(
             rfi=validated_data.get('rfi', None),
@@ -310,15 +317,28 @@ class RfiRoundCloseSerializer(serializers.ModelSerializer):
         read_only_field = ('rfiid', 'active',)
 
     def update(self, instance, validated_data):
-        instance.active = False
-        instance.save()
+        # Check that Status of all modules in the round are in Scored or Declined
+        all_rfi_participate = RfiParticipationStatus.objects.filter(rfi=instance)
+        to_popup = []
+        for rfi_s in all_rfi_participate:
+            if rfi_s.status not in ['Scored', 'Declined']:
+                to_popup.append(f'{rfi_s.vendor} {rfi_s.pc.parent_category_name} is {rfi_s.status}')
+        if len(to_popup):
+            raise serializers.ValidationError({"general_errors": to_popup})
+
+        else:
+            for rfi_s in all_rfi_participate:
+                rfi_s.status = "Closed"
+                rfi_s.save()
+            instance.active = False
+            instance.status = 'Closed'
+            instance.save()
         return instance
 
 
 # RFI MANAGEMENT
 
 class VendorModulesListManagementSerializer(serializers.ModelSerializer):
-    # to_vendor = RfiParticipationSerializer(many=True)
     to_vendor = serializers.SerializerMethodField()
 
     class Meta:
@@ -630,6 +650,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
                                                                                  pc=parent_category.first(),
+                                                                                 status = 'Scored',
                                                                                  defaults={
                                                                                      'last_analyst_response': current_scoring_round}
                                                                                  )
@@ -650,6 +671,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
                                                                                  pc=parent_category.first(),
+                                                                                 status="Received",
                                                                                  defaults={
                                                                                      'last_vendor_response': current_scoring_round}
                                                                                  )
@@ -800,6 +822,7 @@ class ElementInitializeInfoSerializer(serializers.ModelSerializer):
         pc = validated_data.pop('pc')
         parent_category = ParentCategories.objects.filter(parent_category_name=pc)
         if parent_category:
+            parent_category.first().status = "Outstanding"
             category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
         else:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})

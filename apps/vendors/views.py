@@ -378,7 +378,6 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
            }
     """
 
-    # permission_classes = [permissions.AllowAny, ]
     serializer_class = VendorManagementUpdateSerializer
     lookup_field = 'vendorid'
 
@@ -507,6 +506,7 @@ class RfiRoundListView(generics.ListAPIView):
 
 
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
+
     """
     RFI: List of vendors with participated modules and modules status change method
 
@@ -670,7 +670,6 @@ class CsvRfiTemplateDownload(APIView):
 
 
 class UploadElementFromExcelFile(APIView):
-    permission_classes = [permissions.AllowAny]
     serializer_class = ElementCommonInfoSerializer
 
     def post(self, request, *args, **kwargs):
@@ -811,7 +810,6 @@ class InfoToDownloadRfiExcelFile(generics.ListAPIView):
     GET:
        return list of active vendor with last scoring round
     """
-    permission_classes = [permissions.AllowAny]
     serializer_class = DownloadExcelSerializer
     model = serializer_class.Meta.model
 
@@ -1312,7 +1310,6 @@ class ElementInitializeFromExcelFile(APIView):
     Initialization of the zero template creation (only description of elements) for the first vendor upload
     """
 
-    permission_classes = [permissions.AllowAny]
     serializer_class = ElementInitializeInfoSerializer
 
     def post(self, request, *args, **kwargs):
@@ -1384,8 +1381,6 @@ class VendorActivityReportView(generics.RetrieveAPIView):
     ]
     """
 
-    permission_classes = [permissions.AllowAny]
-
     def put(self, request, **kwargs):
         vendor_id = kwargs['vendorid']
         vendor = Vendors.objects.get(vendorid=vendor_id)
@@ -1396,10 +1391,6 @@ class VendorActivityReportView(generics.RetrieveAPIView):
             with transaction.atomic():
                 for m in request.data:
                     module = Modules.objects.get(mid=m.get('module_id'))
-                    # pc_to_module = ParentCategories.objects.filter(parent_categories__mid=module.get('module_id')).values('parent_category_name')
-                    # pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
-
-                # saved_article = get_object_or_404(Article.objects.all(), pk=pk)
                     serializer = VendorActivityReportSerializer(instance=module, data={"module": m.get('module_id')},
                                                                 context=context, partial=True)
                     if serializer.is_valid(raise_exception=True):
