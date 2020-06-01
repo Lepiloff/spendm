@@ -808,3 +808,96 @@ class ElementInitializeInfoSerializer(serializers.ModelSerializer):
         element, _ = Elements.objects.get_or_create(**validated_data, s=subcategory)
 
         return self
+
+
+# Vendor activity report
+
+class VendorActivityReportSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+    module_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RfiParticipation
+        fields = ('module_id', 'm', 'status')
+
+
+    def update(self, instance, validated_data):
+        rfi = self.context.get('rfi')
+        vendor = self.context.get('vendor')
+        pc_to_module = ParentCategories.objects.filter(parent_categories=instance).values('parent_category_name')
+        pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
+        rfi_part_list = []
+        for pcn in pc_name_list:
+            instance = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi,
+                                                                               pc__parent_category_name=pcn)
+            instance.status = "Declined"
+            instance.save()
+        # print(rfi_part_list)
+        # instance.email = validated_data.get('email', instance.email)
+        # instance.content = validated_data.get('content', instance.content)
+        # instance.created = validated_data.get('created', instance.created)
+        # instance.save()
+        return instance
+
+    def to_representation(self, instance):
+        rep = super(VendorActivityReportSerializer, self).to_representation(instance)
+        rep['m'] = instance.m.module_name
+        return rep
+
+    def get_module_id(self, obj):
+        return obj.m.pk
+
+    def get_status(self, obj):
+        status_list = ["Invited", "Declined", "Accepted", "Created", "Outstanding", "Received", "Scored", "Closed"]
+        round = self.context.get('round')
+        vendor = self.context.get('vendor')
+        pc_to_module = ParentCategories.objects.filter(parent_categories__module_name=obj.m.module_name)
+        if not pc_to_module:
+            raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
+        min_status = "Closed"
+        for pc in pc_to_module:
+            pc_status = RfiParticipationStatus.objects.get(rfi=round, vendor=vendor, pc=pc)
+            c_status = pc_status.status
+            if status_list.index(c_status) < status_list.index(min_status):
+                min_status = c_status
+        to_calculate_round = []
+        if min_status not in ["Invited", "Declined", "Accepted", "Created", "Outstanding",]:
+            m_status = "Closed"
+            for pc in pc_to_module:
+                pc_status = RfiParticipationStatus.objects.get(rfi=round, vendor=vendor, pc=pc)
+                if pc_status.status in ["Received", "Scored", "Closed"]:
+                    to_calculate_round.append([pc_status.status, pc_status.last_vendor_response, pc_status.last_analyst_response])
+                for _ in to_calculate_round:
+                    c_status = _[0]
+                    if status_list.index(c_status) < status_list.index(m_status):
+                        m_status = c_status
+
+            if min_status == "Closed":
+                minimum = 100
+                sum_round = [[i[0], sum(i[1:3])] for i in to_calculate_round]
+                for i in sum_round:
+                    if i[1] < minimum:
+                        minimum = i[1]
+                return f'Closed{int(minimum/2)}'
+            else:
+                to_calculate_round = [i for i in to_calculate_round if i[0] != "Closed"]
+                sum_round = [[i[0], sum(i[1:3])] for i in to_calculate_round]
+                final_compare_status = {"Received": 100, "Scored": 100}
+                for _ in sum_round:
+                    if _[0] == "Received":
+                        if _[1] < final_compare_status.get('Received'):
+                            final_compare_status['Received'] = _[1]
+                    if _[0] == 'Scored':
+                        if _[1] < final_compare_status.get('Scored'):
+                            final_compare_status['Scored'] = _[1]
+                if final_compare_status.get("Scored") == final_compare_status.get('Received'):
+                    score = int(final_compare_status.get('Received')/2)
+                    min_status = f'Received{score}'
+                    return min_status
+                else:
+                    min_status = min(final_compare_status, key=final_compare_status.get)
+                    score = int(final_compare_status.get(min_status)/2)
+                    min_status = f'{min_status}{score}'
+        return min_status
+
+
