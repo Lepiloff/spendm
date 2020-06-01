@@ -307,7 +307,8 @@ class Modules(models.Model):
     active = models.BooleanField(default=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now=True)
-    parent_categories = models.ManyToManyField('ParentCategories', through='ModulesParentCategories', related_name='+')
+    parent_categories = models.ManyToManyField('ParentCategories', through='ModulesParentCategories',
+                                               related_name='parent_categories')
 
     class Meta:
         db_table = 'modules'
@@ -361,7 +362,6 @@ class ParentCategories(models.Model):
     parent_category_name = models.CharField(max_length=45, choices=PC, unique=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    modules = models.ManyToManyField('Modules', through='ModulesParentCategories')
 
     class Meta:
         db_table = 'parent_categories'
@@ -452,8 +452,8 @@ class RfiParticipation(models.Model):
 class RfiParticipationStatus(models.Model):
     STATUS_NAME = (
                     ("Invited", "Invited"), ("Accepted", "Accepted"),
-                    ("Declined", "Declined"), ("RFI Created", "RFI Created"),
-                    ("RFI Outstanding", "RFI Outstanding"), ("Received", "Received"),
+                    ("Declined", "Declined"), ("Created", "Created"),
+                    ("Outstanding", "Outstanding"), ("Received", "Received"),
                     ("Scored", "Scored"), ("Closed", "Closed"),)
 
     status = models.CharField(max_length=50, choices=STATUS_NAME, default='Invited')

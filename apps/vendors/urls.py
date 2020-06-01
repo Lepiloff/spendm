@@ -5,7 +5,7 @@ from .views import FileUploadView, RfiCsvUploadView, CsvToDatabase, VendorsCreat
     NewRfiRoundCreateView, RfiRoundClose, RfiRoundView, AssociateModulesWithVendorView, \
     VendorProfileModulesListCreate, RfiRoundListView, VendorProfilePageView, AssociateModulesWithVendorCsv,\
     CsvRfiTemplateDownload, ExcelFileUploadView, UploadElementFromExcelFile, AnalystListView, VendorsActiveToFrontView, \
-    DownloadRfiExcelFile, InfoToDownloadRfiExcelFile, ElementInitializeFromExcelFile
+    DownloadRfiExcelFile, InfoToDownloadRfiExcelFile, ElementInitializeFromExcelFile, VendorActivityReportView
 
 
 urlpatterns = [
@@ -43,5 +43,7 @@ urlpatterns = [
                                                                         name='from_excel_element_upload'),
     path('get_info_for_download_excel/<str:rfiid>/', InfoToDownloadRfiExcelFile.as_view(), name='before_download_excel'),
     path('download_rfi_archive/', DownloadRfiExcelFile.as_view(), name='download_excel'),
-    path('initialize_default_rfi_element/', ElementInitializeFromExcelFile.as_view(), name='default_rfi_element')
+    path('initialize_default_rfi_element/', ElementInitializeFromExcelFile.as_view(), name='default_rfi_element'),
+    # Vendor activity report
+    path('activity_report/<int:vendorid>/', VendorActivityReportView.as_view(), name='vendor_activity_report'),
 ]

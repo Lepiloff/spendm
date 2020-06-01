@@ -40,7 +40,7 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
     ContactUpdateSerializer, ElementCommonInfoSerializer, AnalystSerializer, \
-    VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer
+    VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer, VendorActivityReportSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -1371,3 +1371,58 @@ class ElementInitializeFromExcelFile(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
+
+
+# Vendor activity report
+
+class VendorActivityReportView(generics.RetrieveAPIView):
+    """
+    data = [
+     {'module_id: 1,
+     },
+     {'module_id: 1}
+    ]
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def put(self, request, **kwargs):
+        vendor_id = kwargs['vendorid']
+        vendor = Vendors.objects.get(vendorid=vendor_id)
+        last_rfi = self.check_current_round()
+        _round = Rfis.objects.get(rfiid=last_rfi)
+        context = {'vendor': vendor, "rfi": _round}
+        try:
+            with transaction.atomic():
+                for m in request.data:
+                    module = Modules.objects.get(mid=m.get('module_id'))
+                    # pc_to_module = ParentCategories.objects.filter(parent_categories__mid=module.get('module_id')).values('parent_category_name')
+                    # pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
+
+                # saved_article = get_object_or_404(Article.objects.all(), pk=pk)
+                    serializer = VendorActivityReportSerializer(instance=module, data={"module": m.get('module_id')},
+                                                                context=context, partial=True)
+                    if serializer.is_valid(raise_exception=True):
+                        serializer.save()
+        except ValidationError:
+            return Response({"errors": (serializer.errors,)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_200_OK)
+
+    def get(self, request, format=None, **kwargs):
+        vendor_id = kwargs['vendorid']
+        vendor = Vendors.objects.get(vendorid=vendor_id)
+        last_rfi = self.check_current_round()
+        round = Rfis.objects.get(rfiid=last_rfi)
+        context = {'vendor': vendor, 'round': round}
+        modules = RfiParticipation.objects.filter(vendor=vendor, rfi=round)
+        if not modules:
+            raise ParseError(detail={"general_errors": ["The vendor has no active modules in this round."]})
+        serializer = VendorActivityReportSerializer(modules, context=context, many=True)
+        return Response({"modules": serializer.data})
+
+    @staticmethod
+    def check_current_round():
+        rfi = Rfis.objects.all().first()
+        last_rfi = rfi.rfiid
+        return last_rfi
