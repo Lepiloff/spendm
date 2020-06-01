@@ -230,6 +230,12 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 validated_data['rfi'] = lastr_round
             else:
                 raise serializers.ValidationError({"general_errors": ["Round is not created yet"]})
+        module, created = RfiParticipation.objects.update_or_create(
+            rfi=validated_data.get('rfi', None),
+            vendor=validated_data.get('vendor', None),
+            m=validated_data.get('m', None), user_id=superuser_id,
+            defaults={'active': validated_data.get('active', False)})
+
         # create Rfipartstatus objects
         for p_c in ParentCategories.objects.filter(parent_categories=validated_data.get('m', None)):
             pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
@@ -238,11 +244,6 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 pc=p_c
             )
 
-        module, created = RfiParticipation.objects.update_or_create(
-            rfi=validated_data.get('rfi', None),
-            vendor=validated_data.get('vendor', None),
-            m=validated_data.get('m', None), user_id=superuser_id,
-            defaults={'active': validated_data.get('active', False)})
         return module
 
 
@@ -849,17 +850,11 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
         vendor = self.context.get('vendor')
         pc_to_module = ParentCategories.objects.filter(parent_categories=instance).values('parent_category_name')
         pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
-        rfi_part_list = []
         for pcn in pc_name_list:
             instance = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi,
                                                                                pc__parent_category_name=pcn)
             instance.status = "Declined"
             instance.save()
-        # print(rfi_part_list)
-        # instance.email = validated_data.get('email', instance.email)
-        # instance.content = validated_data.get('content', instance.content)
-        # instance.created = validated_data.get('created', instance.created)
-        # instance.save()
         return instance
 
     def to_representation(self, instance):
