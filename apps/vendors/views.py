@@ -1373,6 +1373,7 @@ class ElementInitializeFromExcelFile(APIView):
 # Vendor activity report
 
 class VendorActivityReportView(generics.RetrieveAPIView):
+
     """
     data = [
      {'module_id: 1,
@@ -1410,7 +1411,7 @@ class VendorActivityReportView(generics.RetrieveAPIView):
         if not modules:
             raise ParseError(detail={"general_errors": ["The vendor has no active modules in this round."]})
         serializer = VendorActivityReportSerializer(modules, context=context, many=True)
-        return Response({"modules": serializer.data})
+        return Response({"modules": serializer.data, 'current_round': last_rfi})
 
     @staticmethod
     def check_current_round():
