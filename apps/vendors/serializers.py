@@ -837,6 +837,30 @@ class ElementInitializeInfoSerializer(serializers.ModelSerializer):
 
 # Vendor activity report
 
+class VendorActivityReportUpdateSerializer(serializers.Serializer):
+    module_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RfiParticipation
+        fields = ('module_id',)
+
+    def update(self, instance, validated_data):
+        # instance - global module
+        rfi = self.context.get('rfi')
+        vendor = self.context.get('vendor')
+        pc_to_module = ParentCategories.objects.filter(parent_categories=instance).values('parent_category_name')
+        pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
+        for pcn in pc_name_list:
+            pc_st = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi, pc__parent_category_name=pcn)
+            pc_st.status = "Declined"
+            pc_st.save()
+        # Change module-to-rfi status active to False
+        rfi_part = RfiParticipation.objects.get(vendor=vendor, rfi=rfi, m=instance)
+        rfi_part.active = False
+        rfi_part.save()
+        return instance
+
+
 class VendorActivityReportSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     module_id = serializers.SerializerMethodField()
@@ -844,17 +868,6 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = RfiParticipation
         fields = ('module_id', 'm', 'status')
-
-    def update(self, instance, validated_data):
-        rfi = self.context.get('rfi')
-        vendor = self.context.get('vendor')
-        pc_to_module = ParentCategories.objects.filter(parent_categories=instance).values('parent_category_name')
-        pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
-        for pcn in pc_name_list:
-            instance = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi, pc__parent_category_name=pcn)
-            instance.status = "Declined"
-            instance.save()
-        return instance
 
     def to_representation(self, instance):
         rep = super(VendorActivityReportSerializer, self).to_representation(instance)
