@@ -40,7 +40,8 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     VendorContactCreateSerializer, RfiRoundSerializer, RfiRoundCloseSerializer, VendorModulesListManagementSerializer, \
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
     ContactUpdateSerializer, ElementCommonInfoSerializer, AnalystSerializer, \
-    VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer, VendorActivityReportSerializer
+    VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer, \
+    VendorActivityReportSerializer, VendorActivityReportUpdateSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -506,6 +507,7 @@ class RfiRoundListView(generics.ListAPIView):
 
 
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
+    permission_classes = [permissions.AllowAny]
 
     """
     RFI: List of vendors with participated modules and modules status change method
@@ -1322,13 +1324,17 @@ class ElementInitializeFromExcelFile(APIView):
 # Vendor activity report
 
 class VendorActivityReportView(generics.RetrieveAPIView):
-
+    permission_classes = [permissions.AllowAny]
     """
     data = [
-     {'module_id: 1,
-     },
-     {'module_id: 1}
-    ]
+    {
+        "module_id": 14
+    },
+        {
+        "module_id": 12
+    }
+      
+]
     """
 
     def put(self, request, **kwargs):
@@ -1341,14 +1347,15 @@ class VendorActivityReportView(generics.RetrieveAPIView):
             with transaction.atomic():
                 for m in request.data:
                     module = Modules.objects.get(mid=m.get('module_id'))
-                    serializer = VendorActivityReportSerializer(instance=module, data=m,
-                                                                context=context, partial=True)
+                    serializer = VendorActivityReportUpdateSerializer(instance=module, data=m,
+                                                                      context=context, partial=True)
                     if serializer.is_valid(raise_exception=True):
                         serializer.save()
         except ValidationError:
             return Response({"errors": (serializer.errors,)},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
+
 
     def get(self, request, format=None, **kwargs):
         vendor_id = kwargs['vendorid']
@@ -1364,6 +1371,8 @@ class VendorActivityReportView(generics.RetrieveAPIView):
 
     @staticmethod
     def check_current_round():
-        rfi = Rfis.objects.all().first()
+        rfi = Rfis.objects.filter(active=True).last()
+        if not rfi:
+            raise ParseError(detail={"general_errors": ["No active RFI round"]})
         last_rfi = rfi.rfiid
         return last_rfi
