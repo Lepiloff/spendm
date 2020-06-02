@@ -10,6 +10,7 @@ import shutil
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Color, colors
+from openpyxl.styles import Protection
 
 from service.xml_file_upload_downlod import  get_excel_file_current_pc_for_parsing
 
@@ -507,7 +508,6 @@ class RfiRoundListView(generics.ListAPIView):
 
 
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
-    permission_classes = [permissions.AllowAny]
 
     """
     RFI: List of vendors with participated modules and modules status change method
@@ -864,6 +864,7 @@ class DownloadRfiExcelFile(APIView):
             file = default_storage.url('blank_template.xlsx')
             wb = load_workbook(filename=file)
             ws = wb["RFI"]
+            ws.protection.sheet = True
 
             # Add column size
             column_dimensions = ws.column_dimensions['E']
@@ -896,67 +897,82 @@ class DownloadRfiExcelFile(APIView):
             #Create header
             ws['E2'] = "Element name"
             ws['E2'].alignment = cell_alignment
-            ws['E2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['E2'].fill = PatternFill(start_color="92D050", fill_type="solid")
             ws['E2'].border = thin_border
+            ws['E2'].font = Font(name='Calibri', bold=True)
             ws['F2'] = "Description"
             ws['F2'].alignment = cell_alignment
-            ws['F2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['F2'].fill = PatternFill(start_color="92D050", fill_type="solid")
             ws['F2'].border = thin_border
+            ws['F2'].font = Font(name='Calibri', bold=True)
             ws['G2'] = 'Scoring Scale'
             ws['G2'].alignment = cell_alignment
-            ws['G2'].fill = PatternFill(start_color="61A144", fill_type="solid")
+            ws['G2'].fill = PatternFill(start_color="92D050", fill_type="solid")
             ws['G2'].border = thin_border
+            ws['G2'].font = Font(name='Calibri', bold=True)
             ws['P2'] = 'Self-Score'
             ws['P2'].alignment = cell_alignment
-            ws['P2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['P2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['P2'].border = thin_border
+            ws['P2'].font = Font(name='Calibri', bold=True)
             ws['Q2'] = 'Self-Description'
             ws['Q2'].alignment = cell_alignment
-            ws['Q2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['Q2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['Q2'].border = thin_border
+            ws['Q2'].font = Font(name='Calibri', bold=True)
             ws['R2'] = 'Attachments/Supporting Docs and Location/Link'
             ws['R2'].alignment = cell_alignment
-            ws['R2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['R2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['R2'].border = thin_border
+            ws['R2'].font = Font(name='Calibri', bold=True)
             ws['S2'] = 'SM score'
             ws['S2'].alignment = cell_alignment
-            ws['S2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['S2'].fill = PatternFill(start_color="FFC000", fill_type="solid")
             ws['S2'].border = thin_border
+            ws['S2'].font = Font(name='Calibri', bold=True)
             ws['T2'] = 'Analyst notes'
             ws['T2'].alignment = cell_alignment
-            ws['T2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['T2'].fill = PatternFill(start_color="FFC000", fill_type="solid")
             ws['T2'].border = thin_border
+            ws['T2'].font = Font(name='Calibri', bold=True)
             ws['AE2'] = 'Current Self-Score'
             ws['AE2'].alignment = cell_alignment
             ws['AE2'].fill = PatternFill(start_color="FFE5EA", fill_type="solid")
             ws['AE2'].border = thin_border
+            ws['AE2'].font = Font(name='Calibri', bold=True)
             ws['AF2'] = 'Current score'
             ws['AF2'].alignment = cell_alignment
             ws['AF2'].fill = PatternFill(start_color="61A144", fill_type="solid")
             ws['AF2'].border = thin_border
+            ws['AF2'].font = Font(name='Calibri', bold=True)
 
             # 2-d scoring_round
 
             ws['U2'] = 'Self-Score (2)'
             ws['U2'].alignment = cell_alignment
-            ws['U2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['U2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['U2'].border = thin_border
+            ws['U2'].font = Font(name='Calibri', bold=True)
             ws['V2'] = 'Reasoning'
             ws['V2'].alignment = cell_alignment
-            ws['V2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['V2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['V2'].border = thin_border
+            ws['V2'].font = Font(name='Calibri', bold=True)
             ws['W2'] = 'Attachments/Supporting Docs and Location/Link'
             ws['W2'].alignment = cell_alignment
-            ws['W2'].fill = PatternFill(start_color="B2F4FF", fill_type="solid")
+            ws['W2'].fill = PatternFill(start_color="DAE3F3", fill_type="solid")
             ws['W2'].border = thin_border
+            ws['W2'].font = Font(name='Calibri', bold=True)
             ws['X2'] = 'SM score (2)'
             ws['X2'].alignment = cell_alignment
-            ws['X2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['X2'].fill = PatternFill(start_color="FFC000", fill_type="solid")
             ws['X2'].border = thin_border
+            ws['X2'].font = Font(name='Calibri', bold=True)
             ws['Y2'] = 'Analyst notes (2)'
             ws['Y2'].alignment = cell_alignment
-            ws['Y2'].fill = PatternFill(start_color="EDBC00", fill_type="solid")
+            ws['Y2'].fill = PatternFill(start_color="FFC000", fill_type="solid")
             ws['Y2'].border = thin_border
+            ws['Y2'].font = Font(name='Calibri', bold=True)
 
             # 3-d scoring_round
 
@@ -1004,6 +1020,7 @@ class DownloadRfiExcelFile(APIView):
                     ws[f'E{row_num}'] = pc
                     ws[f'E{row_num}'].alignment = cell_alignment
                     ws[f'E{row_num}'].border = thin_border
+                    ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
                     ws.merge_cells(f'E{row_num}:G{row_num}')
                     ws.row_dimensions[row_num].height = 40
                     for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
@@ -1014,9 +1031,12 @@ class DownloadRfiExcelFile(APIView):
                     categories = Categories.objects.filter(pc=p_c)
                     for category in categories:
                         # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
+                        ws[f'A{row_num}'] = category.cid
+                        ws[f'A{row_num}'].alignment = cell_alignment
                         ws[f'E{row_num}'] = category.category_name
                         ws[f'E{row_num}'].alignment = cell_alignment
                         ws[f'E{row_num}'].border = thin_border
+                        ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
                         for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
                             for cell in rows:
                                 cell.fill = PatternFill(start_color="61A144", fill_type="solid")
@@ -1025,12 +1045,19 @@ class DownloadRfiExcelFile(APIView):
                         subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                         for subcat in subcats:
                             if not subcat.subcategory_name == 'General':
+                                ws[f'A{row_num}'] = subcat.sid
+                                ws[f'A{row_num}'].alignment = cell_alignment
                                 ws[f'E{row_num}'] = subcat.subcategory_name
                                 ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                                 ws[f'E{row_num}'].border = thin_border
+                                ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
                                 row_num += 1
                             elements = Elements.objects.filter(s=subcat).order_by('e_order')
                             for e in elements:
+
+                                ws[f'A{row_num}'] = e.eid
+                                ws[f'A{row_num}'].alignment = cell_alignment
+
                                 column_to_scoring_round = {
                                                            '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
                                                            '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
@@ -1097,6 +1124,7 @@ class DownloadRfiExcelFile(APIView):
 
                 # CI filling
                 ws_ci = wb["Company Information"]
+                ws_ci.protection.sheet = True
                 start_cell_row_number = 5
                 ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
                 for ciq in ciq_queriset:
@@ -1111,7 +1139,9 @@ class DownloadRfiExcelFile(APIView):
             if current_scoring_round == 3:
                 for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
                     ws.column_dimensions[col].hidden = False
-
+            # Unlock column
+            # for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+            #     ws[col].protection = Protection(locked=False)
             # Generate file name
             new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
 
@@ -1204,6 +1234,7 @@ class DownloadRfiExcelFile(APIView):
                 ws[f'E{row_num}'] = category.category_name
                 ws[f'E{row_num}'].alignment = cell_alignment
                 ws[f'E{row_num}'].border = thin_border
+                ws[f'A{row_num}'] = category.cid
                 for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
                     for cell in rows:
                         cell.fill = PatternFill(start_color="61A144", fill_type="solid")
@@ -1215,9 +1246,12 @@ class DownloadRfiExcelFile(APIView):
                         ws[f'E{row_num}'] = subcat.subcategory_name
                         ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                         ws[f'E{row_num}'].border = thin_border
+                        ws[f'A{row_num}'] = subcat.sid
                         row_num += 1
                     elements = Elements.objects.filter(s=subcat).order_by('e_order')
                     for e in elements:
+                        ws[f'A{row_num}'] = e.eid
+                        ws[f'A{row_num}'].alignment = cell_alignment
                         ws.row_dimensions[row_num].height = 150
                         element_name = e.element_name
                         description = e.description
@@ -1324,7 +1358,6 @@ class ElementInitializeFromExcelFile(APIView):
 # Vendor activity report
 
 class VendorActivityReportView(generics.RetrieveAPIView):
-    permission_classes = [permissions.AllowAny]
     """
     data = [
     {
