@@ -230,6 +230,7 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 validated_data['rfi'] = lastr_round
             else:
                 raise serializers.ValidationError({"general_errors": ["Round is not created yet"]})
+
         module, created = RfiParticipation.objects.update_or_create(
             rfi=validated_data.get('rfi', None),
             vendor=validated_data.get('vendor', None),
@@ -237,12 +238,14 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
             defaults={'active': validated_data.get('active', False)})
 
         # create Rfipartstatus objects
-        for p_c in ParentCategories.objects.filter(parent_categories=validated_data.get('m', None)):
-            pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
-                rfi=validated_data.get('rfi', None),
-                vendor=validated_data.get('vendor', None),
-                pc=p_c
-            )
+        if created:
+            pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
+            for p_c in pcm:
+                pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                    rfi=validated_data.get('rfi', None),
+                    vendor=validated_data.get('vendor', None),
+                    pc=p_c
+                )
 
         return module
 
@@ -401,11 +404,9 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
         return vendor_modules
 
 
-
 class VendorManagementUpdateSerializer(serializers.ModelSerializer):
     contacts = VendorContactSerializer(many=True)
     parent = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
-    # to_vendor = RfiParticipationSerializer(many=True)
     to_vendor = serializers.SerializerMethodField()
     history = serializers.SerializerMethodField()
     current_round_participate = serializers.SerializerMethodField()
@@ -844,15 +845,13 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
         model = RfiParticipation
         fields = ('module_id', 'm', 'status')
 
-
     def update(self, instance, validated_data):
         rfi = self.context.get('rfi')
         vendor = self.context.get('vendor')
         pc_to_module = ParentCategories.objects.filter(parent_categories=instance).values('parent_category_name')
         pc_name_list = [",".join(list(d.values())) for d in pc_to_module]
         for pcn in pc_name_list:
-            instance = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi,
-                                                                               pc__parent_category_name=pcn)
+            instance = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi, pc__parent_category_name=pcn)
             instance.status = "Declined"
             instance.save()
         return instance
