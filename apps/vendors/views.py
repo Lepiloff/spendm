@@ -690,17 +690,6 @@ class UploadElementFromExcelFile(APIView):
                 del data[num]
                 break
 
-        # if not kwargs.get('analyst'):  # Check that file send by vendor
-        #     # Check that CI answer stored in DB yet (at list one)
-        #     ci_db = self.check_ci_exist_in_db(round=kwargs.get('rfiid'),
-        #                                       vendor=Vendors.objects.get(vendorid=kwargs.get('vendor')))
-        #
-        #     # Check company info from excel file
-        #     ci_file = self.get_ci_from_excel_file(company_information)
-        #     if not ci_db and not ci_file:
-        #         r = {"general_errors": ["The company information is blank"]}
-        #         return Response(r, status=406)
-
         for num, _d in enumerate(data):
             if 'Scoring_round_info' in _d:
                 pc_status = _d['Scoring_round_info']
@@ -714,6 +703,7 @@ class UploadElementFromExcelFile(APIView):
                 context['status_info'] = status_info
                 del data[num]
                 break
+
         # For CI creation
         round = Rfis.objects.get(rfiid=kwargs.get('rfiid'))
         vendor = Vendors.objects.get(vendorid=kwargs.get('vendor'))
@@ -762,47 +752,6 @@ class UploadElementFromExcelFile(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(request.data, status=status.HTTP_200_OK)
-
-    # @staticmethod
-    # def check_ci_exist_in_db(round, vendor):
-    #     """Check that CI answer stored in DB yet (at list one)"""
-    #     round = round
-    #     exist_company_question = CompanyGeneralInfoQuestion.objects.filter(rfi=round)
-    #     ci_exist = False
-    #
-    #     if exist_company_question:
-    #         for q in exist_company_question:
-    #             if q.answer_to_question.filter(vendor=vendor):  # check if answer is exist and not None
-    #                 _a = (q.answer_to_question.filter(vendor=vendor).first())
-    #                 if _a.answer:
-    #                     ci_exist = True
-    #     return ci_exist
-    #
-    # @staticmethod
-    # def get_ci_from_excel_file(company_information):
-    #     """"Check company info from excel file"""
-    #     # company_information = next(iter(data))  # company information as a dict
-    #     # information = company_information.get('Company_info')
-    #     ci_exist = False
-    #     for i in company_information:
-    #         if i.get('answer'):
-    #             ci_exist = True
-    #     return ci_exist
-
-    # @staticmethod
-    # def not_all_element_is_null(data):
-    #     """
-    #     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
-    #     That means we can set rfi_part_status to PC as positive digit(1 for first scoring round etc.)
-    #     :param data:
-    #     :return:
-    #     """
-    #     from_vendor = tuple(data.get('self_score'), data.get('self_description'))
-    #     from_analytic = tuple(data.get('sm_score', data.get('analyst_notes')))
-    #     if not all(from_vendor) and not all(from_analytic):
-    #         return True
-    #     else:
-    #         return False
 
 
 class InfoToDownloadRfiExcelFile(generics.ListAPIView):
@@ -1392,7 +1341,7 @@ class VendorActivityReportView(generics.RetrieveAPIView):
             with transaction.atomic():
                 for m in request.data:
                     module = Modules.objects.get(mid=m.get('module_id'))
-                    serializer = VendorActivityReportSerializer(instance=module, data={"module": m.get('module_id')},
+                    serializer = VendorActivityReportSerializer(instance=module, data=m,
                                                                 context=context, partial=True)
                     if serializer.is_valid(raise_exception=True):
                         serializer.save()
