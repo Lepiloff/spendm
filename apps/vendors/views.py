@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Color, colors
 from openpyxl.styles import Protection
 
-from service.xml_file_upload_downlod import  get_excel_file_current_pc_for_parsing
+from service.xml_file_upload_downlod import get_excel_file_current_pc_for_parsing
 
 from solution_project.settings.base import BASE_DIR
 from django.core.files.storage import default_storage
@@ -53,7 +53,6 @@ class AdministratorDashboard(APIView):
 
 
 class AnalystListView(generics.ListAPIView):
-
     queryset = AssignedVendorsAnalysts.objects.all()
     serializer_class = AnalystSerializer
 
@@ -461,7 +460,6 @@ class VendorProfileModulesListCreate(generics.ListCreateAPIView):
 # <--RFI-->
 
 class NewRfiRoundCreateView(generics.ListCreateAPIView):
-
     """New RFI round crete
 
         data = {
@@ -507,7 +505,6 @@ class RfiRoundListView(generics.ListAPIView):
 
 
 class AssociateModulesWithVendorView(generics.ListCreateAPIView):
-
     """
     RFI: List of vendors with participated modules and modules status change method
 
@@ -562,7 +559,6 @@ class RfiCsvUploadView(APIView):
 
 
 class AssociateModulesWithVendorCsv(APIView):
-
     """
     Create or update modules to rfi
 
@@ -666,6 +662,7 @@ class CsvRfiTemplateDownload(APIView):
                              'Procure-to-Pay': res.get('Procure-to-Pay', False),
                              'Source-to-Pay': res.get('Source-to-Pay', False)})
         return response
+
 
 # EXCEL
 
@@ -775,8 +772,10 @@ class InfoToDownloadRfiExcelFile(generics.ListAPIView):
         context.update({"rfiid": self.kwargs['rfiid']})
         return context
 
+
 class DownloadRfiExcelFile(APIView):
     permission_classes = [permissions.AllowAny]
+
     # """
     # Prepare empty template
     # """
@@ -855,7 +854,8 @@ class DownloadRfiExcelFile(APIView):
             # Get vendor active module and calculate participate PC
             participate_module = RfiParticipation.objects.filter(vendor=vendor, rfi=rfi, active=True)
             participate_module_list = [element.m.module_name for element in participate_module]
-            unique_pc = list(get_excel_file_current_pc_for_parsing(pml=participate_module_list))  # Get unique PC for future processing
+            unique_pc = list(get_excel_file_current_pc_for_parsing(
+                pml=participate_module_list))  # Get unique PC for future processing
             if not unique_pc:
                 status = 406
                 r = {"general_errors": ["The vendor doesn't have parent category in current round."]}
@@ -893,7 +893,7 @@ class DownloadRfiExcelFile(APIView):
             cell_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
             element_alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-            #Create header
+            # Create header
             ws['E2'] = "Element name"
             ws['E2'].alignment = cell_alignment
             ws['E2'].fill = PatternFill(start_color="92D050", fill_type="solid")
@@ -1011,7 +1011,8 @@ class DownloadRfiExcelFile(APIView):
 
             if current_scoring_round == 1:
                 if self.catch_zero_round(vendor, rfi):
-                    self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment)
+                    self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border,
+                                                    element_alignment)
 
             # Start excel RFI sheet create logic
             if not self.catch_zero_round(vendor, rfi):
@@ -1058,10 +1059,10 @@ class DownloadRfiExcelFile(APIView):
                                 ws[f'A{row_num}'].alignment = cell_alignment
 
                                 column_to_scoring_round = {
-                                                           '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
-                                                           '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
-                                                           '3': ['E', 'F', 'G', 'Z', 'AA', 'AB', 'AC', 'AD']
-                                                            }
+                                    '1': ['E', 'F', 'G', 'P', 'Q', 'R', 'S', 'T'],
+                                    '2': ['E', 'F', 'G', 'U', 'V', 'W', 'X', 'Y'],
+                                    '3': ['E', 'F', 'G', 'Z', 'AA', 'AB', 'AC', 'AD']
+                                }
 
                                 ws.row_dimensions[row_num].height = 150
 
@@ -1070,61 +1071,76 @@ class DownloadRfiExcelFile(APIView):
                                 description = e.description
                                 s_scale = e.scoring_scale
 
-                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
-                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
-                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
-                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
+                                ws[
+                                    f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
+                                ws[
+                                    f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
+                                ws[
+                                    f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
+                                ws[
+                                    f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
                                 ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'] = s_scale
-                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
+                                ws[
+                                    f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
 
                                 for csr in range(1, current_scoring_round + 1):
 
-                                    self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    self_score = SelfScores.objects.filter(e=e, vendor=vendor, rfi=rfi,
+                                                                           vendor_response=csr).first()
                                     if self_score:
                                         self_score = self_score.self_score
                                     else:
                                         self_score = None
 
-                                    self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    self_description = SelfDescriptions.objects.filter(e=e, vendor=vendor, rfi=rfi,
+                                                                                       vendor_response=csr).first()
                                     if self_description:
                                         self_description = self_description.self_description
                                     else:
                                         self_description = None
 
-                                    sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                    sm_score = SmScores.objects.filter(e=e, vendor=vendor, rfi=rfi,
+                                                                       analyst_response=csr).first()
                                     if sm_score:
                                         sm_score = sm_score.sm_score
                                     else:
                                         sm_score = None
 
-                                    analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi, analyst_response=csr).first()
+                                    analyst_notes = AnalystNotes.objects.filter(e=e, vendor=vendor, rfi=rfi,
+                                                                                analyst_response=csr).first()
                                     if analyst_notes:
                                         analyst_notes = analyst_notes.analyst_notes
                                     else:
                                         analyst_notes = None
 
-                                    attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi, vendor_response=csr).first()
+                                    attachment = ElementsAttachments.objects.filter(e=e, vendor=vendor, rfi=rfi,
+                                                                                    vendor_response=csr).first()
                                     if attachment:
                                         attachment = attachment.attachment_info
                                     else:
                                         attachment = None
                                     ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'] = self_score
-                                    ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
+                                    ws[
+                                        f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'] = self_description
-                                    ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
+                                    ws[
+                                        f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'] = attachment
-                                    ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
+                                    ws[
+                                        f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'] = sm_score
-                                    ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
+                                    ws[
+                                        f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'] = analyst_notes
-                                    ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
+                                    ws[
+                                        f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
                                 row_num += 1
                             row_num += 2  # two empty row after subcategory block
 
             # CI filling
             ws_ci = wb["Company Information"]
             # Lock sheet
-            ws_ci.protection.sheet = True
+            # ws_ci.protection.sheet = True
             start_cell_row_number = 5
             cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
             for ciq in cia_queryset:
@@ -1132,8 +1148,8 @@ class DownloadRfiExcelFile(APIView):
                 ws_ci[f'C{start_cell_row_number}'] = cia.answer
                 start_cell_row_number += 1
             # Unlock column for CI sheet
-            for cell in ws_ci['C']:
-                cell.protection = Protection(locked=False)
+            # for cell in ws_ci['B']:
+            #     cell.protection = Protection(locked=True)
 
             # Unhidden column
             if current_scoring_round == 2:
@@ -1150,7 +1166,6 @@ class DownloadRfiExcelFile(APIView):
             # Generate file name
             new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
 
-            # wb.save(filename=new_file_name)
             path_to_temp_folder = os.path.dirname(BASE_DIR)
             if not os.path.exists(f'{path_to_temp_folder}/rfi'):
                 pathlib.Path(f'{path_to_temp_folder}/rfi').mkdir(parents=True, exist_ok=True)
@@ -1178,7 +1193,8 @@ class DownloadRfiExcelFile(APIView):
     @staticmethod
     def catch_zero_round(vendor, rfi):
         max_score = RfiParticipationStatus.objects.filter(vendor=vendor, rfi=rfi).aggregate(Max('last_vendor_response'),
-                                                                                            Max('last_analyst_response'))
+                                                                                            Max(
+                                                                                                'last_analyst_response'))
         if max_score.get('last_vendor_response__max') is None and max_score.get('last_analyst_response__max') is None:
             return True
         if max_score.get('last_vendor_response__max') == 0 and max_score.get('last_analyst_response__max') == 0:
@@ -1216,7 +1232,6 @@ class DownloadRfiExcelFile(APIView):
                 q = k
 
         return f'SM_{year_}{q}_{RFI_Round}.rar'
-
 
     @staticmethod
     def initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
@@ -1295,7 +1310,6 @@ class DownloadRfiExcelFile(APIView):
 
 
 class ElementInitializeFromExcelFile(APIView):
-
     """
     NOT FOR FE USING !!!
 
@@ -1373,7 +1387,7 @@ class VendorActivityReportView(generics.RetrieveAPIView):
         {
         "module_id": 12
     }
-      
+
 ]
     """
 
@@ -1395,7 +1409,6 @@ class VendorActivityReportView(generics.RetrieveAPIView):
             return Response({"errors": (serializer.errors,)},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
-
 
     def get(self, request, format=None, **kwargs):
         vendor_id = kwargs['vendorid']
