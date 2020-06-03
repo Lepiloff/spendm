@@ -825,7 +825,7 @@ class ElementInitializeInfoSerializer(serializers.ModelSerializer):
         pc = validated_data.pop('pc')
         parent_category = ParentCategories.objects.filter(parent_category_name=pc)
         if parent_category:
-            parent_category.first().status = "Outstanding"
+            # parent_category.first().status = "Outstanding"
             category, _ = Categories.objects.get_or_create(category_name=cat, pc=parent_category.first())
         else:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
