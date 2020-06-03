@@ -15,6 +15,8 @@ from .models import Vendors, VendorContacts, VendorModuleNames, Modules, Rfis, R
     AnalystNotes, SmScores, ModuleElements, Attachments, ElementsAttachments, RfiParticipationStatus , \
     CompanyGeneralInfoQuestion, CompanyGeneralInfoAnswers, AssignedVendorsAnalysts
 
+from drf_yasg.utils import swagger_serializer_method
+
 
 class AnalystSerializer(serializers.ModelSerializer):
     class Meta:
@@ -930,3 +932,51 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
         return min_status
 
 
+class DashboardVendorsModuleSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    rfi = serializers.CharField()
+
+
+class DashboardVendorsSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='vendorid')
+    modules = serializers.SerializerMethodField()
+    last_company_info_update = serializers.SerializerMethodField()
+
+    LAST_RFI_FOR_MODULES_SQL = """
+    SELECT  rfi_participation.id, rfi_participation.vendor_id, rfi_participation.rfi_id, modules.module_name
+    FROM rfi_participation
+    INNER JOIN modules ON rfi_participation.m_id = modules.mid AND modules.active = TRUE
+    LEFT JOIN  rfi_participation as rfi_p
+    ON rfi_participation.m_id = rfi_p.m_id AND
+       rfi_participation.timestamp < rfi_p.timestamp AND rfi_participation.vendor_id = rfi_p.vendor_id
+    WHERE rfi_p.id IS NULL AND rfi_participation.active = TRUE
+    """
+
+    rfi_participation = RfiParticipation.objects.raw(LAST_RFI_FOR_MODULES_SQL)
+
+    class Meta:
+        model = Vendors
+        fields = ('id',
+                  'vendor_name',
+                  'active',
+                  'modules',
+                  'last_company_info_update',
+                  )
+
+    @swagger_serializer_method(DashboardVendorsModuleSerializer(many=True))
+    def get_modules(self, obj):
+        modules = []
+
+        for rfi_p in self.rfi_participation:
+            if rfi_p.vendor_id == obj.vendorid:
+                modules.append({'name': rfi_p.module_name, 'rfi': rfi_p.rfi_id})
+
+        return modules
+
+    def get_last_company_info_update(self, obj):
+        info = CompanyGeneralInfoAnswers.objects.filter(vendor_id=obj.vendorid).order_by('-timestamp').first()
+
+        if info:
+            return info.question.rfi_id
+        else:
+            return None

@@ -42,7 +42,7 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
     ContactUpdateSerializer, ElementCommonInfoSerializer, AnalystSerializer, \
     VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer, \
-    VendorActivityReportSerializer, VendorActivityReportUpdateSerializer
+    VendorActivityReportSerializer, VendorActivityReportUpdateSerializer, DashboardVendorsSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -1429,3 +1429,16 @@ class VendorActivityReportView(generics.RetrieveAPIView):
             raise ParseError(detail={"general_errors": ["No active RFI round"]})
         last_rfi = rfi.rfiid
         return last_rfi
+
+
+class DashboardVendors(generics.ListAPIView):
+    VENDORS_SQL = """
+    SELECT DISTINCT vendors.* FROM rfi_participation
+    INNER JOIN vendors ON vendors.vendorid = rfi_participation.vendor_id
+    INNER JOIN modules ON rfi_participation.m_id = modules.mid AND modules.active = TRUE
+    LEFT JOIN  rfi_participation as rfi_p
+    ON rfi_participation.m_id = rfi_p.m_id AND rfi_participation.timestamp < rfi_p.timestamp AND rfi_participation.vendor_id = rfi_p.vendor_id
+    WHERE rfi_p.id IS NULL AND rfi_participation.active = TRUE;
+    """
+    serializer_class = DashboardVendorsSerializer
+    queryset = Vendors.objects.raw(VENDORS_SQL)
