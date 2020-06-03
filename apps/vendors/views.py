@@ -863,7 +863,7 @@ class DownloadRfiExcelFile(APIView):
             file = default_storage.url('blank_template.xlsx')
             wb = load_workbook(filename=file)
             ws = wb["RFI"]
-            ws.protection.sheet = True
+            # ws.protection.sheet = True
 
             # Add column size
             column_dimensions = ws.column_dimensions['E']
@@ -1159,9 +1159,9 @@ class DownloadRfiExcelFile(APIView):
                 for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
                     ws.column_dimensions[col].hidden = False
             # Unlock column for RFI sheet
-            for col in ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
-                for cell in ws[col]:
-                    cell.protection = Protection(locked=False)
+            # for col in ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+            #     for cell in ws[col]:
+            #         cell.protection = Protection(locked=False)
 
             # Generate file name
             new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
