@@ -830,7 +830,6 @@ class DownloadRfiExcelFile(APIView):
         :return:
         """
 
-        # TODO check that element and self_score, self_description ...  are not empty (exist in DB) ???
         # list{	"rfiid": "20R1", 'vendorid': 122, 'vendor_name': 'Actual2', 'scoring_status': 3}
         for request in request.data:
             r = request
@@ -1013,6 +1012,7 @@ class DownloadRfiExcelFile(APIView):
                 if self.catch_zero_round(vendor, rfi):
                     self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border,
                                                     element_alignment)
+                    self.change_pc_status(unique_pc, vendor, rfi)
 
             # Start excel RFI sheet create logic
             if not self.catch_zero_round(vendor, rfi):
@@ -1201,6 +1201,15 @@ class DownloadRfiExcelFile(APIView):
             return True
         else:
             return False
+
+    @staticmethod
+    def change_pc_status(unique_pc, vendor, rfi):
+        for pc in unique_pc:
+            p_c = ParentCategories.objects.get(parent_category_name=pc)
+            pc = RfiParticipationStatus.objects.get(vendor=vendor, rfi=rfi, pc=p_c)
+            pc.status = "Outstanding"
+            pc.save()
+
 
     @staticmethod
     def generate_file_name(rfi, vendor, current_scoring_round):
