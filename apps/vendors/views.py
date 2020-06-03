@@ -379,7 +379,6 @@ class VendorProfileUpdateView(generics.RetrieveUpdateAPIView):
             "vendor_name":"Forest G"
            }
     """
-
     serializer_class = VendorManagementUpdateSerializer
     lookup_field = 'vendorid'
 
@@ -1122,26 +1121,32 @@ class DownloadRfiExcelFile(APIView):
                                 row_num += 1
                             row_num += 2  # two empty row after subcategory block
 
-                # CI filling
-                ws_ci = wb["Company Information"]
-                ws_ci.protection.sheet = True
-                start_cell_row_number = 5
-                ciq_queriset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
-                for ciq in ciq_queriset:
-                    cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
-                    ws_ci[f'C{start_cell_row_number}'] = cia.answer
-                    start_cell_row_number += 1
+            # CI filling
+            ws_ci = wb["Company Information"]
+            # Lock sheet
+            ws_ci.protection.sheet = True
+            start_cell_row_number = 5
+            cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+            for ciq in cia_queryset:
+                cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
+                ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                start_cell_row_number += 1
+            # Unlock column for CI sheet
+            for cell in ws_ci['C']:
+                cell.protection = Protection(locked=False)
 
-            # Unmerge column
+            # Unhidden column
             if current_scoring_round == 2:
                 for col in ['U', 'V', 'W', 'X', 'Y']:
                     ws.column_dimensions[col].hidden = False
             if current_scoring_round == 3:
                 for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
                     ws.column_dimensions[col].hidden = False
-            # Unlock column
-            # for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
-            #     ws[col].protection = Protection(locked=False)
+            # Unlock column for RFI sheet
+            for col in ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+                for cell in ws[col]:
+                    cell.protection = Protection(locked=False)
+
             # Generate file name
             new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
 
@@ -1154,7 +1159,6 @@ class DownloadRfiExcelFile(APIView):
         archive = self.generate_zip_name(rfi)
         to_rar = f'{path_to_temp_folder}/rfi'
         to_download = f'{path_to_temp_folder}/{archive}'
-        # patoolib.create_archive(to_download, (to_rar,))
         _, to_rar = (os.path.split(to_rar))
         os.system("rar a {} {}".format(archive, to_rar))
         if os.path.exists(to_download):
@@ -1221,6 +1225,7 @@ class DownloadRfiExcelFile(APIView):
             ws[f'E{row_num}'] = pc
             ws[f'E{row_num}'].alignment = cell_alignment
             ws[f'E{row_num}'].border = thin_border
+            ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
             ws.merge_cells(f'E{row_num}:G{row_num}')
             ws.row_dimensions[row_num].height = 40
             for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
@@ -1231,10 +1236,11 @@ class DownloadRfiExcelFile(APIView):
             categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
             for category in categories:
                 # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
+                ws[f'A{row_num}'] = category.cid
                 ws[f'E{row_num}'] = category.category_name
                 ws[f'E{row_num}'].alignment = cell_alignment
                 ws[f'E{row_num}'].border = thin_border
-                ws[f'A{row_num}'] = category.cid
+                ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
                 for rows in ws.iter_rows(min_row=row_num, max_row=row_num, min_col=5, max_col=7):
                     for cell in rows:
                         cell.fill = PatternFill(start_color="61A144", fill_type="solid")
@@ -1243,10 +1249,11 @@ class DownloadRfiExcelFile(APIView):
                 subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                 for subcat in subcats:
                     if not subcat.subcategory_name == 'General':
+                        ws[f'A{row_num}'] = subcat.sid
                         ws[f'E{row_num}'] = subcat.subcategory_name
                         ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                         ws[f'E{row_num}'].border = thin_border
-                        ws[f'A{row_num}'] = subcat.sid
+                        ws[f'E{row_num}'].font = Font(name='Calibri', bold=True)
                         row_num += 1
                     elements = Elements.objects.filter(s=subcat).order_by('e_order')
                     for e in elements:
@@ -1284,8 +1291,8 @@ class DownloadRfiExcelFile(APIView):
             row_num += 2  # two empty row after PC bloc
 
 
-
 # Initialization of the zero template creation (only description of elements) for the first vendor upload
+
 
 class ElementInitializeFromExcelFile(APIView):
 

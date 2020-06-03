@@ -387,11 +387,6 @@ class VendorsManagementListSerializer(serializers.ModelSerializer):
         return rfi_id
 
     def get_vendor_modules(self, obj):
-        # # check round for all participate modules
-        # # Using F for rename field relationship name
-        # r = RfiParticipation.objects.filter(vendor=obj).order_by('rfi').\
-        #                              values(module=F('m__module_name'), round=F('rfi'))
-        # return r
         vendor_modules = []
         modules = Modules.objects.all()
         for m in modules:
@@ -429,16 +424,20 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   )
         read_only_fields = ('history', 'current_round_participate')
 
+    # def get_to_vendor(self, obj):
+    #     vendor_modules = []
+    #     modules = Modules.objects.all()
+    #     for m in modules:
+    #         if RfiParticipation.objects.filter(vendor=obj, m=m):
+    #             last_round = RfiParticipation.objects.filter(vendor=obj, m=m).order_by('-timestamp').first()
+    #             vendor_modules.append({'pk': last_round.pk, 'active': last_round.active, 'rfi': last_round.rfi.rfiid,
+    #                                    'm': m.pk, 'vendor': obj.pk,
+    #                                    'timestamp': last_round.timestamp})
+    #     return vendor_modules
+
     def get_to_vendor(self, obj):
-        vendor_modules = []
-        modules = Modules.objects.all()
-        for m in modules:
-            if RfiParticipation.objects.filter(vendor=obj, m=m):
-                last_round = RfiParticipation.objects.filter(vendor=obj, m=m).order_by('-timestamp').first()
-                vendor_modules.append({'pk': last_round.pk, 'active': last_round.active, 'rfi': last_round.rfi.rfiid,
-                                       'm': m.pk, 'vendor': obj.pk,
-                                       'timestamp': last_round.timestamp})
-        return vendor_modules
+        rp = RfiParticipation.objects.filter(vendor=obj).values('pk', 'active', 'rfi', 'm', 'vendor', 'timestamp')
+        return rp
 
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
