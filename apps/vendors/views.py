@@ -668,6 +668,7 @@ class CsvRfiTemplateDownload(APIView):
 
 
 class UploadElementFromExcelFile(APIView):
+    permission_classes = [permissions.AllowAny]
     serializer_class = ElementCommonInfoSerializer
 
     def post(self, request, *args, **kwargs):
