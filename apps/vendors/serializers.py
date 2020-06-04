@@ -923,11 +923,15 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
                             final_compare_status['Scored'] = _[1]
                 if final_compare_status.get("Scored") == final_compare_status.get('Received'):
                     score = int(final_compare_status.get('Received')/2)
+                    if score == 0:
+                        score = 1
                     min_status = f'Received{score}'
                     return min_status
                 else:
                     min_status = min(final_compare_status, key=final_compare_status.get)
                     score = int(final_compare_status.get(min_status)/2)
+                    if score == 0:
+                        score = 1
                     min_status = f'{min_status}{score}'
         return min_status
 
