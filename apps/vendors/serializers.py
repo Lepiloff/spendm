@@ -653,9 +653,9 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
                                                                                  pc=parent_category.first(),
-                                                                                 status='Scored',
                                                                                  defaults={
-                                                                                     'last_analyst_response': current_scoring_round}
+                                                                                     'last_analyst_response': current_scoring_round,
+                                                                                     'status': 'Scored'}
                                                                                  )
 
         else:
@@ -674,9 +674,9 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
                                                                                  pc=parent_category.first(),
-                                                                                 status="Received",
                                                                                  defaults={
-                                                                                     'last_vendor_response': current_scoring_round}
+                                                                                     'last_vendor_response': current_scoring_round,
+                                                                                     'status': 'Received'}
                                                                                  )
 
         # # module_element, _ = ModuleElements.objects.get_or_create(e=element, rfi=round, )
