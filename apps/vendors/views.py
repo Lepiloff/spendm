@@ -1418,7 +1418,7 @@ class VendorActivityReportView(generics.RetrieveAPIView):
         last_rfi = self.check_current_round()
         round = Rfis.objects.get(rfiid=last_rfi)
         context = {'vendor': vendor, 'round': round}
-        modules = RfiParticipation.objects.filter(vendor=vendor, rfi=round)
+        modules = RfiParticipation.objects.filter(vendor=vendor, rfi=round, active=True)
         if not modules:
             return Response({"modules": [], 'current_round': last_rfi})
         serializer = VendorActivityReportSerializer(modules, context=context, many=True)
