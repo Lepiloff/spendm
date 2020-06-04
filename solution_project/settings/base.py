@@ -181,3 +181,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CRONJOBS = [
     ('1 0 * * *', 'cron_tasks.update_rfi_status.update_rfi_status')
 ]
+
+# Fr max objects count to delete from admin panel
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
