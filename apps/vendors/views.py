@@ -1138,16 +1138,17 @@ class DownloadRfiExcelFile(APIView):
                                 row_num += 1
                             row_num += 2  # two empty row after subcategory block
 
-            # CI filling
-            ws_ci = wb["Company Information"]
-            # Lock sheet
-            # ws_ci.protection.sheet = True
-            start_cell_row_number = 5
-            cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
-            for ciq in cia_queryset:
-                cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
-                ws_ci[f'C{start_cell_row_number}'] = cia.answer
-                start_cell_row_number += 1
+                # CI filling
+                ws_ci = wb["Company Information"]
+                # Lock sheet
+                # ws_ci.protection.sheet = True
+                start_cell_row_number = 5
+                cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                if cia_queryset:
+                    for ciq in cia_queryset:
+                        cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
+                        ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                        start_cell_row_number += 1
             # Unlock column for CI sheet
             # for cell in ws_ci['B']:
             #     cell.protection = Protection(locked=True)
@@ -1389,6 +1390,7 @@ class ElementInitializeFromExcelFile(APIView):
 # Vendor activity report
 
 class VendorActivityReportView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
     """
     data = [
     {
