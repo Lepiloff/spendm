@@ -635,12 +635,12 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         #                                                                          defaults={'last_analyst_response': lar,
         #                                                                                    'last_vendor_response': lvr}
         #                                                                          )
-
-        rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-                                                                             pc=parent_category.first(),
-                                                                             defaults={'last_analyst_response': current_scoring_round,
-                                                                                       'last_vendor_response': current_scoring_round}
-                                                                             )
+        #
+        # rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
+        #                                                                      pc=parent_category.first(),
+        #                                                                      defaults={'last_analyst_response': current_scoring_round,
+        #                                                                                'last_vendor_response': current_scoring_round}
+        #                                                                      )
 
         element = Elements.objects.get(s=subcategory, e_order=e_order)
 
@@ -653,7 +653,7 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
             rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
                                                                                  pc=parent_category.first(),
-                                                                                 status = 'Scored',
+                                                                                 status='Scored',
                                                                                  defaults={
                                                                                      'last_analyst_response': current_scoring_round}
                                                                                  )
