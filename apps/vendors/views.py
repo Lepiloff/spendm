@@ -1420,7 +1420,7 @@ class VendorActivityReportView(generics.RetrieveAPIView):
         context = {'vendor': vendor, 'round': round}
         modules = RfiParticipation.objects.filter(vendor=vendor, rfi=round)
         if not modules:
-            raise ParseError(detail={"general_errors": ["The vendor has no active modules in this round."]})
+            return Response({"modules": [], 'current_round': last_rfi})
         serializer = VendorActivityReportSerializer(modules, context=context, many=True)
         return Response({"modules": serializer.data, 'current_round': last_rfi})
 
