@@ -1072,17 +1072,12 @@ class DownloadRfiExcelFile(APIView):
                                 description = e.description
                                 s_scale = e.scoring_scale
 
-                                ws[
-                                    f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
-                                ws[
-                                    f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
-                                ws[
-                                    f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
-                                ws[
-                                    f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'] = element_name
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[0]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'] = description
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[1]}{row_num}'].alignment = element_alignment
                                 ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'] = s_scale
-                                ws[
-                                    f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
+                                ws[f'{column_to_scoring_round.get(str(current_scoring_round))[2]}{row_num}'].alignment = element_alignment
 
                                 for csr in range(1, current_scoring_round + 1):
 
@@ -1121,20 +1116,15 @@ class DownloadRfiExcelFile(APIView):
                                     else:
                                         attachment = None
                                     ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'] = self_score
-                                    ws[
-                                        f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[3]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'] = self_description
-                                    ws[
-                                        f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[4]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'] = attachment
-                                    ws[
-                                        f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[5]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'] = sm_score
-                                    ws[
-                                        f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[6]}{row_num}'].alignment = element_alignment
                                     ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'] = analyst_notes
-                                    ws[
-                                        f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
+                                    ws[f'{column_to_scoring_round.get(str(csr))[7]}{row_num}'].alignment = element_alignment
                                 row_num += 1
                             row_num += 2  # two empty row after subcategory block
 
