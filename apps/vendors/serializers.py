@@ -197,12 +197,26 @@ class RfiParticipationCsvSerializer(serializers.ModelSerializer):
         return []
 
     def create(self, validated_data):
-        module, created = RfiParticipation.objects.update_or_create(
-            rfi=validated_data.get('rfi', None),
-            vendor=validated_data.get('vendor', None),
-            m=validated_data.get('m', None),
-            defaults={'active': validated_data.get('active', False)})
-        return module
+        if validated_data['active']:
+            module, created = RfiParticipation.objects.update_or_create(
+                rfi=validated_data.get('rfi', None),
+                vendor=validated_data.get('vendor', None),
+                m=validated_data.get('m', None),
+                defaults={'active': validated_data.get('active', True)})
+            if created:
+                pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
+                for p_c in pcm:
+                    pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                        rfi=validated_data.get('rfi', None),
+                        vendor=validated_data.get('vendor', None),
+                        pc=p_c
+                    )
+        if not validated_data['active']:
+            RfiParticipation.objects.filter(rfi=validated_data.get('rfi'),
+                                            vendor=validated_data.get('vendor'),
+                                            m=validated_data.get('m'),).update(active=False)
+
+        return self
 
 
 class RfiParticipationSerializer(serializers.ModelSerializer):
@@ -250,6 +264,38 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
                 )
 
         return module
+
+
+class AssociateModulesToVendorsSerializer(serializers.ModelSerializer):
+    m = serializers.PrimaryKeyRelatedField(queryset=Modules.objects.all(), required=False, allow_null=True)
+    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendors.objects.all(), required=False, allow_null=True)
+    class Meta:
+        model = RfiParticipation
+        fields = ('active', 'm', 'vendor')
+
+    def get_unique_together_validators(self):
+        """Overriding method to disable unique together checks"""
+        return []
+
+    def create(self, validated_data):
+        round_ = Rfis.objects.get(rfiid = self.context['rfiid'])
+        module, created = RfiParticipation.objects.update_or_create(
+            rfi=round_,
+            vendor=validated_data.get('vendor', None),
+            m=validated_data.get('m', None),
+            defaults={'active': validated_data.get('active', False)})
+
+        # create Rfipartstatus objects
+        if created:
+            pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
+            for p_c in pcm:
+                pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                    rfi=round_,
+                    vendor=validated_data.get('vendor', None),
+                    pc=p_c
+                )
+
+        return self
 
 
 class RfiParticipationCsvDownloadSerializer(serializers.ModelSerializer):
