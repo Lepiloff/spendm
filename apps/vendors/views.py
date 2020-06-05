@@ -764,7 +764,7 @@ class InfoToDownloadRfiExcelFile(generics.ListAPIView):
     model = serializer_class.Meta.model
 
     def get_queryset(self):
-        queryset = self.model.objects.filter(active=True, to_vendor__active=True)
+        queryset = self.model.objects.filter(active=True).filter(to_vendor__active=True).distinct()
         return queryset
 
     def get_serializer_context(self):
