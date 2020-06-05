@@ -31,9 +31,27 @@ class VendorToFrontSerializer(serializers.ModelSerializer):
 
 
 class VendorActiveToFrontSerializer(serializers.ModelSerializer):
+    can_upload_rfi = serializers.SerializerMethodField()
+
     class Meta:
         model = Vendors
-        fields = ('pk', 'vendor_name')
+        fields = ('pk', 'vendor_name', 'can_upload_rfi')
+
+    def get_can_upload_rfi(self, obj):
+        rfiid = self.check_current_round()
+        rps = RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid, status='Invited')
+        if rps:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def check_current_round():
+        rfi = Rfis.objects.filter(active=True).last()
+        if not rfi:
+            raise ValueError(detail={"general_errors": ["No active RFI round"]})
+        last_rfi = rfi.rfiid
+        return last_rfi
 
 
 class VendorContactSerializer(serializers.ModelSerializer):
