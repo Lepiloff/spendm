@@ -822,9 +822,19 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
 
 class DownloadExcelSerializer(serializers.ModelSerializer):
     scoring_status = serializers.SerializerMethodField()
+    can_download_rfi = serializers.SerializerMethodField()
+
     class Meta:
         model = Vendors
-        fields = ('vendorid', 'vendor_name', 'scoring_status',)
+        fields = ('vendorid', 'vendor_name', 'scoring_status', 'can_download_rfi')
+
+    def get_can_download_rfi(self, obj):
+        rfiid = self.context.get('rfiid')
+        rps = RfiParticipationStatus.objects.filter(vendor=obj, rfi=rfiid, status='Invited')
+        if rps:
+            return False
+        else:
+            return True
 
     def get_scoring_status(self, obj):
         rfiid = self.context.get('rfiid')
