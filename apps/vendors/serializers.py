@@ -295,7 +295,7 @@ class AssociateModulesToVendorsSerializer(serializers.ModelSerializer):
                     pc=p_c
                 )
 
-        return self
+        return module
 
 
 class RfiParticipationCsvDownloadSerializer(serializers.ModelSerializer):
