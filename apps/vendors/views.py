@@ -42,7 +42,8 @@ from .serializers import VendorsCreateSerializer, VendorToFrontSerializer, Vendo
     RfiParticipationSerializer, RfiParticipationCsvSerializer, RfiParticipationCsvDownloadSerializer, \
     ContactUpdateSerializer, ElementCommonInfoSerializer, AnalystSerializer, \
     VendorActiveToFrontSerializer, DownloadExcelSerializer, ElementInitializeInfoSerializer, \
-    VendorActivityReportSerializer, VendorActivityReportUpdateSerializer, DashboardVendorsSerializer
+    VendorActivityReportSerializer, VendorActivityReportUpdateSerializer, DashboardVendorsSerializer, \
+    AssociateModulesToVendorsSerializer
 
 
 class AdministratorDashboard(APIView):
@@ -522,7 +523,7 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return RfiParticipationSerializer
+            return AssociateModulesToVendorsSerializer
         return VendorModulesListManagementSerializer
 
     def get_serializer_context(self):
@@ -539,6 +540,7 @@ class RfiCsvUploadView(APIView):
     """ Upload rfi csv file"""
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = VendorsCsvSerializer
+    permission_classes = [permissions.AllowAny]
 
     def put(self, request, format=None):
         if 'file' not in request.data:
@@ -668,7 +670,7 @@ class CsvRfiTemplateDownload(APIView):
 
 
 class UploadElementFromExcelFile(APIView):
-    permission_classes = [permissions.AllowAny]
+
     serializer_class = ElementCommonInfoSerializer
 
     def post(self, request, *args, **kwargs):
@@ -775,7 +777,6 @@ class InfoToDownloadRfiExcelFile(generics.ListAPIView):
 
 
 class DownloadRfiExcelFile(APIView):
-    permission_classes = [permissions.AllowAny]
 
     # """
     # Prepare empty template
@@ -1380,7 +1381,7 @@ class ElementInitializeFromExcelFile(APIView):
 # Vendor activity report
 
 class VendorActivityReportView(generics.RetrieveAPIView):
-    permission_classes = [permissions.AllowAny]
+
     """
     data = [
     {
