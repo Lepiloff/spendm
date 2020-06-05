@@ -1033,7 +1033,6 @@ class DownloadRfiExcelFile(APIView):
                     categories = Categories.objects.filter(pc=p_c)
                     for category in categories:
                         # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
-                        ws[f'A{row_num}'] = category.cid
                         ws[f'A{row_num}'].alignment = cell_alignment
                         ws[f'E{row_num}'] = category.category_name
                         ws[f'E{row_num}'].alignment = cell_alignment
@@ -1047,7 +1046,6 @@ class DownloadRfiExcelFile(APIView):
                         subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                         for subcat in subcats:
                             if not subcat.subcategory_name == 'General':
-                                ws[f'A{row_num}'] = subcat.sid
                                 ws[f'A{row_num}'].alignment = cell_alignment
                                 ws[f'E{row_num}'] = subcat.subcategory_name
                                 ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
@@ -1253,7 +1251,6 @@ class DownloadRfiExcelFile(APIView):
             categories = Categories.objects.filter(pc=p_c).order_by('timestamp')
             for category in categories:
                 # ws.merge_cells(f'E{row_num}:G{row_num}') # get  "'MergedCell' object has no attribute 'column_letter'"
-                ws[f'A{row_num}'] = category.cid
                 ws[f'E{row_num}'] = category.category_name
                 ws[f'E{row_num}'].alignment = cell_alignment
                 ws[f'E{row_num}'].border = thin_border
@@ -1266,7 +1263,6 @@ class DownloadRfiExcelFile(APIView):
                 subcats = Subcategories.objects.filter(c=category).order_by('timestamp')
                 for subcat in subcats:
                     if not subcat.subcategory_name == 'General':
-                        ws[f'A{row_num}'] = subcat.sid
                         ws[f'E{row_num}'] = subcat.subcategory_name
                         ws[f'E{row_num}'].fill = PatternFill(start_color="E5FBFF", fill_type="solid")
                         ws[f'E{row_num}'].border = thin_border
