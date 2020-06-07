@@ -1113,6 +1113,8 @@ class DownloadRfiExcelFile(APIView):
                 column_dimensions = ws_ci.column_dimensions['B']
                 column_dimensions.width = 80
                 cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                if not cia_queryset:
+                    cia_queryset = CompanyGeneralInfoQuestion.objects.all().first()
                 if cia_queryset:
                     # Add question and answer
                     for ciq in cia_queryset:
