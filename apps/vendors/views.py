@@ -11,6 +11,7 @@ import shutil
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, Color, colors
 from openpyxl.styles import Protection
+from openpyxl import Workbook
 
 from service.xml_file_upload_downlod import get_excel_file_current_pc_for_parsing
 
@@ -561,6 +562,7 @@ class RfiCsvUploadView(APIView):
 
 
 class AssociateModulesWithVendorCsv(APIView):
+
     """
     Create or update modules to rfi
 
@@ -672,6 +674,7 @@ class CsvRfiTemplateDownload(APIView):
 class UploadElementFromExcelFile(APIView):
 
     serializer_class = ElementCommonInfoSerializer
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         context = {'rfiid': kwargs.get('rfiid'), 'vendor': kwargs.get('vendor'), 'analyst': kwargs.get('analyst')}
@@ -778,46 +781,6 @@ class InfoToDownloadRfiExcelFile(generics.ListAPIView):
 
 class DownloadRfiExcelFile(APIView):
 
-    # """
-    # Prepare empty template
-    # """
-    # def get(self, request, format=None, **kwargs):
-    #     file = default_storage.url('test.xlsx')
-    #     wb = load_workbook(filename=file)
-    #
-    #     response = HttpResponse(content_type='application/vnd.ms-excel')
-    #     response['Content-Disposition'] = 'attachment; filename="test.xlsx"'
-    #     sheet = wb["RFI"]
-    #     wb.remove_sheet(sheet)
-    #     wb.create_sheet('RFI')
-    #     # # Setting initial values for deletion
-    #     # starting_row = 4
-    #     # starting_col = self.col2num('U')
-    #     # last_col = self.col2num('Y')
-    #     # # Deleting rows and columns
-    #     # sheet.delete_rows(starting_row, sheet.max_row - starting_row)
-    #     # sheet.delete_cols(starting_col, last_col - starting_col + 1)
-    #     # merged_cell_coord = []
-    #     # for range_ in sheet.merged_cell_ranges:
-    #     #     # get current coordinate from all merget cell and set it as a string
-    #     #     merged_cell_coord.append(range_.__str__())
-    #     # for i in (merged_cell_coord):
-    #     #     print(i)
-    #     #     print(type(i))
-    #     #     sheet.unmerge_cells(i)
-    #
-    #     wb.save(response)
-    #     return response
-    #
-    # @staticmethod
-    # def col2num(col):
-    #     # Utility function to convert culomn letters to numbers
-    #     num = 0
-    #     for c in col:
-    #         if c in string.ascii_letters:
-    #             num = num * 26 + (ord(c.upper()) - ord('A')) + 1
-    #     return num
-
     def post(self, request, format=None, **kwargs):
 
         """
@@ -861,10 +824,18 @@ class DownloadRfiExcelFile(APIView):
                 status = 406
                 r = {"general_errors": ["The vendor doesn't have parent category in current round."]}
                 return Response(r, status=status)
-            file = default_storage.url('blank_template.xlsx')
-            wb = load_workbook(filename=file)
+
+            # file = default_storage.url('blank_template.xlsx')
+            # wb = load_workbook(filename=file)
+            wb = Workbook()
+            wb.remove(wb.active)
+            wb.create_sheet("RFI")
+            wb.create_sheet('Company Information')
             ws = wb["RFI"]
-            # ws.protection.sheet = True
+            ws_ci = wb['Company Information']
+            ws.protection.sheet = True
+            ws_ci.protection.sheet = True
+
 
             # Add column size
             column_dimensions = ws.column_dimensions['E']
@@ -1012,8 +983,8 @@ class DownloadRfiExcelFile(APIView):
 
             if current_scoring_round == 1:
                 if self.catch_zero_round(vendor, rfi):
-                    self.initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border,
-                                                    element_alignment)
+                    self.initialize_template_create(ws, ws_ci, rfi, vendor, unique_pc, row_num, cell_alignment,
+                                                    thin_border, element_alignment)
                     self.change_pc_status(unique_pc, vendor, rfi)
 
             # Start excel RFI sheet create logic
@@ -1128,19 +1099,39 @@ class DownloadRfiExcelFile(APIView):
                             row_num += 2  # two empty row after subcategory block
 
                 # CI filling
-                ws_ci = wb["Company Information"]
-                # Lock sheet
-                # ws_ci.protection.sheet = True
+                # CI filling
+
                 start_cell_row_number = 5
+                ws_ci['C4'].alignment = cell_alignment
+                ws_ci['C4'] = 'COMPANY GENERAL INFORMATION'
+                ws_ci['C4'].alignment = cell_alignment
+                ws_ci['C4'].border = thin_border
+                ws_ci['C4'].font = Font(name='Calibri', bold=True)
+                ws_ci['C4'].fill = PatternFill(start_color="92D050", fill_type="solid")
+                column_dimensions = ws_ci.column_dimensions['C']
+                column_dimensions.width = 80
+                column_dimensions = ws_ci.column_dimensions['B']
+                column_dimensions.width = 80
                 cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
                 if cia_queryset:
+                    # Add question and answer
                     for ciq in cia_queryset:
+                        ws_ci[f'B{start_cell_row_number}'] = ciq.question
+                        ws_ci[f'B{start_cell_row_number}'].alignment = element_alignment
                         cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
-                        ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                        if cia:
+                            ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                        else:
+                            ws_ci[f'C{start_cell_row_number}'] = None
+                        ws_ci[f'C{start_cell_row_number}'].alignment = element_alignment
                         start_cell_row_number += 1
+                    # for ciq in cia_queryset:
+                    #     cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
+                    #     ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                    #     start_cell_row_number += 1
             # Unlock column for CI sheet
-            # for cell in ws_ci['B']:
-            #     cell.protection = Protection(locked=True)
+            for cell in ws_ci['C']:
+                cell.protection = Protection(locked=False)
 
             # Unhidden column
             if current_scoring_round == 2:
@@ -1150,9 +1141,9 @@ class DownloadRfiExcelFile(APIView):
                 for col in ['U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
                     ws.column_dimensions[col].hidden = False
             # Unlock column for RFI sheet
-            # for col in ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
-            #     for cell in ws[col]:
-            #         cell.protection = Protection(locked=False)
+            for col in ['P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']:
+                for cell in ws[col]:
+                    cell.protection = Protection(locked=False)
 
             # Generate file name
             new_file_name = self.generate_file_name(rfi, vendor, current_scoring_round)
@@ -1234,7 +1225,7 @@ class DownloadRfiExcelFile(APIView):
         return f'SM_{year_}{q}_{RFI_Round}.rar'
 
     @staticmethod
-    def initialize_template_create(ws, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
+    def initialize_template_create(ws, ws_ci, rfi, vendor, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
         # filling empty template
         for pc in unique_pc:
             ws[f'E{row_num}'] = pc
@@ -1302,6 +1293,33 @@ class DownloadRfiExcelFile(APIView):
                         row_num += 1
                     row_num += 2  # two empty row after subcategory block
             row_num += 2  # two empty row after PC bloc
+
+        # CI filling
+
+        start_cell_row_number = 5
+        ws_ci['C4'].alignment = cell_alignment
+        ws_ci['C4'] = 'COMPANY GENERAL INFORMATION'
+        ws_ci['C4'].alignment = cell_alignment
+        ws_ci['C4'].border = thin_border
+        ws_ci['C4'].font = Font(name='Calibri', bold=True)
+        ws_ci['C4'].fill = PatternFill(start_color="92D050", fill_type="solid")
+        column_dimensions = ws_ci.column_dimensions['C']
+        column_dimensions.width = 80
+        column_dimensions = ws_ci.column_dimensions['B']
+        column_dimensions.width = 80
+        cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+        if cia_queryset:
+            # Add question and answer
+            for ciq in cia_queryset:
+                ws_ci[f'B{start_cell_row_number}'] = ciq.question
+                ws_ci[f'B{start_cell_row_number}'].alignment = element_alignment
+                cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
+                if cia:
+                    ws_ci[f'C{start_cell_row_number}'] = cia.answer
+                else:
+                    ws_ci[f'C{start_cell_row_number}'] = None
+                ws_ci[f'C{start_cell_row_number}'].alignment = element_alignment
+                start_cell_row_number += 1
 
 
 # Initialization of the zero template creation (only description of elements) for the first vendor upload
