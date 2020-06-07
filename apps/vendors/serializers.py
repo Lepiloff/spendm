@@ -224,11 +224,16 @@ class RfiParticipationCsvSerializer(serializers.ModelSerializer):
             if created:
                 pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
                 for p_c in pcm:
-                    pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                    pc_to_module, created = RfiParticipationStatus.objects.get_or_create(
                         rfi=validated_data.get('rfi', None),
                         vendor=validated_data.get('vendor', None),
                         pc=p_c
                     )
+                    if created:
+                        r_status = Rfis.objects.get(rfiid=validated_data.get('rfi', None))
+                        if r_status.rfi_status == "Issued":
+                            pc_to_module.status = "Accepted"
+                            pc_to_module.save()
         if not validated_data['active']:
             RfiParticipation.objects.filter(rfi=validated_data.get('rfi'),
                                             vendor=validated_data.get('vendor'),
@@ -275,11 +280,16 @@ class RfiParticipationSerializer(serializers.ModelSerializer):
         if created:
             pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
             for p_c in pcm:
-                pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                pc_to_module, created = RfiParticipationStatus.objects.get_or_create(
                     rfi=validated_data.get('rfi', None),
                     vendor=validated_data.get('vendor', None),
                     pc=p_c
                 )
+                if created:
+                    r_status = Rfis.objects.get(rfiid=validated_data.get('rfi', None))
+                    if r_status.rfi_status == "Issued":
+                        pc_to_module.status = "Accepted"
+                        pc_to_module.save()
 
         return module
 
@@ -296,7 +306,7 @@ class AssociateModulesToVendorsSerializer(serializers.ModelSerializer):
         return []
 
     def create(self, validated_data):
-        round_ = Rfis.objects.get(rfiid = self.context['rfiid'])
+        round_ = Rfis.objects.get(rfiid=self.context['rfiid'])
         module, created = RfiParticipation.objects.update_or_create(
             rfi=round_,
             vendor=validated_data.get('vendor', None),
@@ -307,11 +317,16 @@ class AssociateModulesToVendorsSerializer(serializers.ModelSerializer):
         if created:
             pcm = ParentCategories.objects.filter(parent_categories=validated_data.get('m', None))
             for p_c in pcm:
-                pc_to_module, _ = RfiParticipationStatus.objects.get_or_create(
+                pc_to_module, created = RfiParticipationStatus.objects.get_or_create(
                     rfi=round_,
                     vendor=validated_data.get('vendor', None),
                     pc=p_c
                 )
+                if created:
+                    r_status = Rfis.objects.get(rfiid=validated_data.get('rfi', None))
+                    if r_status.rfi_status == "Issued":
+                        pc_to_module.status = "Accepted"
+                        pc_to_module.save()
 
         return module
 
