@@ -508,20 +508,16 @@ class VendorManagementUpdateSerializer(serializers.ModelSerializer):
                   )
         read_only_fields = ('history', 'current_round_participate')
 
-    # def get_to_vendor(self, obj):
-    #     vendor_modules = []
-    #     modules = Modules.objects.all()
-    #     for m in modules:
-    #         if RfiParticipation.objects.filter(vendor=obj, m=m):
-    #             last_round = RfiParticipation.objects.filter(vendor=obj, m=m).order_by('-timestamp').first()
-    #             vendor_modules.append({'pk': last_round.pk, 'active': last_round.active, 'rfi': last_round.rfi.rfiid,
-    #                                    'm': m.pk, 'vendor': obj.pk,
-    #                                    'timestamp': last_round.timestamp})
-    #     return vendor_modules
-
     def get_to_vendor(self, obj):
-        rp = RfiParticipation.objects.filter(vendor=obj).values('pk', 'active', 'rfi', 'm', 'vendor', 'timestamp')
-        return rp
+        vendor_modules = []
+        modules = Modules.objects.all()
+        for m in modules:
+            if RfiParticipation.objects.filter(vendor=obj, m=m).exists():
+                last_round = RfiParticipation.objects.filter(vendor=obj, m=m).last()
+                vendor_modules.append({'pk': last_round.pk, 'active': last_round.active, 'rfi': last_round.rfi.rfiid,
+                                       'm': m.pk, 'vendor': obj.pk,
+                                       'timestamp': last_round.timestamp})
+        return vendor_modules
 
     def update(self, instance, validated_data):
         # raise_errors_on_nested_writes('update', self, validated_data)
