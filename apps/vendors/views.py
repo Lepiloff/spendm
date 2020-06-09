@@ -202,6 +202,7 @@ class CsvToDatabase(APIView):
     """
 
     serializer_class = VendorsCsvSerializer
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, format=None):
         r_data = request.data

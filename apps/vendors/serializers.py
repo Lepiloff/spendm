@@ -101,7 +101,14 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
         contacts = data.get('contacts', None)
         for i in contacts:
             if not i.get('email', None):
-                raise serializers.ValidationError({"general_errors": ["Email should not be blank"]})
+                raise serializers.ValidationError({"general_errors": ["Email may not be blank"]})
+        return data
+
+    # Implement to rewrite models validation message
+    def to_internal_value(self, data):
+        vendor_name = data.get('vendor_name')
+        if not vendor_name:
+            raise serializers.ValidationError({"general_errors": ["Vendor name may not be blank"]})
         return data
 
     def create(self, validated_data):
