@@ -238,7 +238,6 @@ class Elements(models.Model):
 
 class ElementsAttachments(models.Model):
     e = models.ForeignKey('Elements', models.DO_NOTHING)
-    # attachment = models.ForeignKey('Attachments', models.DO_NOTHING, related_name='attachment')
     attachment_info = models.CharField(max_length=500, blank=True, null=True)
     rfi = models.ForeignKey('Rfis', models.DO_NOTHING)
     timestamp = models.DateTimeField(auto_now=True)

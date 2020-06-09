@@ -154,6 +154,9 @@ class VendorsCreateSerializer(serializers.ModelSerializer):
         email_list = data.get('contacts', None)
         for e in email_list:
             email = e.get('email', None)  # get request email
+            if len(email) > 80:
+                raise serializers.ValidationError({"contacts":
+                                                       [{'email': ['Email is too long']}]})
         if parent:
             p_contact_email_list = []
             parent_contact = VendorContacts.objects.filter(vendor=parent)
