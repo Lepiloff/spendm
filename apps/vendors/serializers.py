@@ -97,6 +97,13 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
                   'contacts',
                   'modules',)
 
+    def validate(self, data):
+        contacts = data.get('contacts', None)
+        for i in contacts:
+            if not i.get('email', None):
+                raise serializers.ValidationError({"general_errors": ["Email may not be blank"]})
+        return data
+
     def create(self, validated_data):
         contact_data = validated_data.pop('contacts', None)
         modules = validated_data.pop('modules', None)
