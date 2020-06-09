@@ -2,7 +2,7 @@ import re
 from openpyxl import load_workbook
 
 from apps.vendors.models import RfiParticipation, Vendors, Rfis, ParentCategories, RfiParticipationStatus, \
-    CompanyGeneralInfoQuestion
+    CompanyGeneralInfoQuestion, SelfScores, SelfDescriptions, Elements, SmScores, AnalystNotes
 
 from rest_framework.response import Response
 
@@ -106,6 +106,7 @@ def get_ci_from_excel_file(company_general_info):
 
 
 def get_excel_file_current_pc_for_parsing(pml=None):
+    # Calculate intersection of PC in modules
     modules_with_pc = (dict((option, pc_to_modules_assign[option]) for option in pml if option in pc_to_modules_assign))
     pc = [value for key, value in modules_with_pc.items()]
     # Get unique pc depending on the active modules in the round for a particular vendor
@@ -264,43 +265,66 @@ def current_score_data(data, vendor, _round, scoring_round, analyst):
                             if any(from_vendor):
                                 pc_status[pc] = True
                                 return pc_status
-                            else:
-                                pc_status[pc] = "No data"
-                                return pc_status
 
                         if scoring_round == 1 and analyst:
-                            if any(from_analytic) and not any(from_vendor):
-                                pc_status[pc] = "-"
-                                return pc_status
-                            if not any(from_analytic):
-                                pc_status[pc] = 'No data'
-                                return pc_status
                             if any(from_analytic) and any(from_vendor):
                                 pc_status[pc] = True
                                 return pc_status
 
-                        s_r_e = scoring_round_exist(pc, vendor, _round)
-                        if s_r_e:
-                            pc_status[pc] = True
-                            return pc_status
+                        # check if current scoring round info are in DB (repeat data sending for update )
+                        s_r_e = scoring_round_exist(pc, vendor, _round, scoring_round)
+                        if not analyst:
+                            if s_r_e['from_vendor']:
+                                pc_status[pc] = False
+                                return pc_status
+                        if analyst:
+                            if s_r_e['from_analyst']:
+                                pc_status[pc] = False
+                                return pc_status
+        # Dash status
+        if not check_dash_status(scoring_round, _round, vendor, analyst, pc):
+            pc_status[pc] = '-'
+            return pc_status
+
+
+        # If other cases are not true return 'No data'
+        pc_status[pc] = 'No data'
 
     return pc_status
 
 
-def scoring_round_exist(pc, vendor, _round):
-    # Check that scoring round yet in DB
+def check_dash_status(scoring_round, _round, vendor, analyst, pc):
     pc_obj = ParentCategories.objects.get(parent_category_name=pc)
-    status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=_round, pc=pc_obj).values(
-        "last_vendor_response", "last_analyst_response"))
-    for s in status:
-        if s.get('last_vendor_response') != 0:
-            if s.get('last_analyst_response') != 0:
-                return True
+    if not analyst:
+        if RfiParticipationStatus.objects.filter(vendor=vendor, rfi=_round, pc=pc_obj,
+                                                 last_vendor_response=int(scoring_round)-1).exists():
+            return True
+        else:
+            return False
+
+    if analyst:
+        if RfiParticipationStatus.objects.filter(vendor=vendor, rfi=_round, pc=pc_obj,
+                                                 last_analyst_response=int(scoring_round) - 1).exists():
+            return True
         else:
             return False
 
 
-def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
+def scoring_round_exist(pc, vendor, _round, scoring_round):
+    # Check that scoring round yet in DB
+    response = {'from_vendor': False, 'from_analyst': False}
+    pc_obj = ParentCategories.objects.get(parent_category_name=pc)
+    status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=_round, pc=pc_obj).values(
+        "last_vendor_response", "last_analyst_response"))
+    for s in status:
+        if s.get('last_vendor_response') == scoring_round:
+            response['from_vendor'] = True
+            if s.get('last_analyst_response') == scoring_round:
+                response['from_analyst'] = True
+    return response
+
+
+def past_score_not_all_element_is_null(vendor, _round, scoring_round, unique_pc):
     """
     For previous scoring round
     Check that at list one element pair (self_score/self_description; sm_score/analyst_notes) are not empty.
@@ -312,14 +336,25 @@ def past_score_not_all_element_is_null(vendor, round, scoring_round, unique_pc):
     previews_scoring_status = []
     for pc in unique_pc:
         s_r_n = scoring_round - 1
-        pc_obj = ParentCategories.objects.get(parent_category_name=pc)
-        status = (RfiParticipationStatus.objects.filter(vendor=vendor, rfi=round, pc=pc_obj).values("last_vendor_response", "last_analyst_response"))
-        for s in status:
-            if s.get('last_vendor_response') != 0:
-                if s.get('last_analyst_response') != 0:
-                    previews_scoring_status.append({pc: True})
-            else:
-                previews_scoring_status.append({pc: False})
+        new_status = None
+
+        # filtering all element to current PC
+        element = Elements.objects.filter(s__c__pc__parent_category_name=pc)
+
+        # find element with full filled fields
+        for e in element:
+            v_score = SelfScores.objects.filter(vendor=vendor, e=e, rfi=_round).exclude(self_score=None).exists()
+            v_description = SelfDescriptions.objects.filter(vendor=vendor, e=e, rfi=_round).exclude(self_description=None).exists()
+            a_score = SmScores.objects.filter(vendor=vendor, e=e, rfi=_round).exclude(sm_score=None).exists()
+            a_note = AnalystNotes.objects.filter(vendor=vendor, e=e, rfi=_round).exclude(analyst_notes=None).exists()
+            if v_score and v_description and a_score and a_note:
+                new_status = True
+                break
+
+        if new_status:
+            previews_scoring_status.append({pc: True})
+        else:
+            previews_scoring_status.append({pc: False})
     previews_scoring_status.append({"Company info": True})
     scoring_round_info.update({'status': previews_scoring_status})
     scoring_round_info.update({'scoring_round': s_r_n})
