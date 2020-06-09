@@ -433,7 +433,7 @@ class ContactsUpdateView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class VendorProfileModulesListCreate(generics.ListCreateAPIView):
-    """View Vendor profile modules activity status and update it
+    """ Update Vendor profile modules activity status
     POST:
         data = {
             "active": false,
@@ -453,6 +453,7 @@ class VendorProfileModulesListCreate(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
+    # cancelled
     def get_queryset(self, **kwargs):
         round = Rfis.objects.all().order_by('-timestamp').first()
         vendor = get_object_or_404(Vendors, vendorid=self.kwargs['vendorid'])
