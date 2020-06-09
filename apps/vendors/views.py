@@ -522,6 +522,7 @@ class AssociateModulesWithVendorView(generics.ListCreateAPIView):
     """
     serializer_class = VendorModulesListManagementSerializer
     queryset = Vendors.objects.all()
+    permission_classes = [permissions.AllowAny]
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -1100,7 +1101,6 @@ class DownloadRfiExcelFile(APIView):
                             row_num += 2  # two empty row after subcategory block
 
                 # CI filling
-                # CI filling
 
                 start_cell_row_number = 5
                 ws_ci['C4'].alignment = cell_alignment
@@ -1113,12 +1113,16 @@ class DownloadRfiExcelFile(APIView):
                 column_dimensions.width = 80
                 column_dimensions = ws_ci.column_dimensions['B']
                 column_dimensions.width = 80
-                cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
-                if not cia_queryset:
-                    cia_queryset = CompanyGeneralInfoQuestion.objects.all().first()
-                if cia_queryset:
+                ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                if not ciq_queryset:
+                    rfi = Rfis.objects.all()[1]
+                    ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                    if not ciq_queryset:
+                        rfi = Rfis.objects.all().first()
+                        ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+                if ciq_queryset:
                     # Add question and answer
-                    for ciq in cia_queryset:
+                    for ciq in ciq_queryset:
                         ws_ci[f'B{start_cell_row_number}'] = ciq.question
                         ws_ci[f'B{start_cell_row_number}'].alignment = element_alignment
                         cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
@@ -1227,6 +1231,11 @@ class DownloadRfiExcelFile(APIView):
 
         return f'SM_{year_}{q}_{RFI_Round}.rar'
 
+    # @staticmethod
+    # def get_last_rfi():
+    #     l_round = Rfis.objects.all().last()
+    #     return l_round
+
     @staticmethod
     def initialize_template_create(ws, ws_ci, rfi, vendor, unique_pc, row_num, cell_alignment, thin_border, element_alignment):
         # filling empty template
@@ -1310,12 +1319,26 @@ class DownloadRfiExcelFile(APIView):
         column_dimensions.width = 80
         column_dimensions = ws_ci.column_dimensions['B']
         column_dimensions.width = 80
-        cia_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
-        if not cia_queryset:
-            cia_queryset = CompanyGeneralInfoQuestion.objects.all().first()
-        if cia_queryset:
+
+        ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+        if not ciq_queryset:
+            rfi_ = Rfis.objects.all()[1]
+            ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi_)
+            if not ciq_queryset:
+                rfi_ = Rfis.objects.all().first()
+                ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi_)
+
+        # Create question obj linked with new round
+
+            for ciq in ciq_queryset:
+                question = CompanyGeneralInfoQuestion(question=ciq.question, rfi=rfi)
+                question.save()
+
+        ciq_queryset = CompanyGeneralInfoQuestion.objects.filter(rfi=rfi)
+
+        if ciq_queryset:
             # Add question and answer
-            for ciq in cia_queryset:
+            for ciq in ciq_queryset:
                 ws_ci[f'B{start_cell_row_number}'] = ciq.question
                 ws_ci[f'B{start_cell_row_number}'].alignment = element_alignment
                 cia = CompanyGeneralInfoAnswers.objects.filter(vendor=vendor, question=ciq).first()
