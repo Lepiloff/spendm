@@ -671,7 +671,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         fields = ('element_name', 'description', 'scoring_scale', 'e_order', 'self_score',
                   'self_description', 'sm_score', 'analyst_notes', 'attachment', 's', 'category', 'pc')
 
-
     def create(self, validated_data):
         # Get data from url context
         rfiid = self.context.get('rfiid')
@@ -704,22 +703,6 @@ class ElementCommonInfoSerializer(serializers.ModelSerializer):
         else:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         subcategory = Subcategories.objects.get(subcategory_name=sc, c=category)
-
-        # Deprecated, status changes depending on the scoring number of the round and not on the filling of the file.
-        # if status_info:
-        #     lar = status_info.get(pc, {}).get('analyst')
-        #     lvr = status_info.get(pc, {}).get('vendor')
-        #     rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-        #                                                                          pc=parent_category.first(),
-        #                                                                          defaults={'last_analyst_response': lar,
-        #                                                                                    'last_vendor_response': lvr}
-        #                                                                          )
-        #
-        # rfi_part_status, _ = RfiParticipationStatus.objects.update_or_create(vendor=vendor, rfi=round,
-        #                                                                      pc=parent_category.first(),
-        #                                                                      defaults={'last_analyst_response': current_scoring_round,
-        #                                                                                'last_vendor_response': current_scoring_round}
-        #                                                                      )
 
         element = Elements.objects.get(s=subcategory, e_order=e_order)
 
@@ -969,14 +952,14 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj):
         status_list = ["Invited", "Declined", "Accepted", "Created", "Outstanding", "Received", "Scored", "Closed"]
-        round = self.context.get('round')
+        _round = self.context.get('round')
         vendor = self.context.get('vendor')
         pc_to_module = ParentCategories.objects.filter(parent_categories__module_name=obj.m.module_name)
         if not pc_to_module:
             raise serializers.ValidationError({"general_errors": ["Parent categories are not exist"]})
         min_status = "Closed"
         for pc in pc_to_module:
-            pc_status = RfiParticipationStatus.objects.get(rfi=round, vendor=vendor, pc=pc)
+            pc_status = RfiParticipationStatus.objects.get(rfi=_round, vendor=vendor, pc=pc)
             c_status = pc_status.status
             if status_list.index(c_status) < status_list.index(min_status):
                 min_status = c_status
@@ -984,7 +967,7 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
         if min_status not in ["Invited", "Declined", "Accepted", "Created", "Outstanding",]:
             m_status = "Closed"
             for pc in pc_to_module:
-                pc_status = RfiParticipationStatus.objects.get(rfi=round, vendor=vendor, pc=pc)
+                pc_status = RfiParticipationStatus.objects.get(rfi=_round, vendor=vendor, pc=pc)
                 if pc_status.status in ["Received", "Scored", "Closed"]:
                     to_calculate_round.append([pc_status.status, pc_status.last_vendor_response, pc_status.last_analyst_response])
                 for _ in to_calculate_round:
@@ -1018,7 +1001,7 @@ class VendorActivityReportSerializer(serializers.ModelSerializer):
                     return min_status
                 else:
                     min_status = min(final_compare_status, key=final_compare_status.get)
-                    score = int(final_compare_status.get(min_status)/2)
+                    score = (int(round(final_compare_status.get(min_status)/2))) # round to max
                     if score == 0:
                         score = 1
                     min_status = f'{min_status}{score}'

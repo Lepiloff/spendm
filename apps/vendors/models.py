@@ -47,7 +47,8 @@ class AssignedPcAnalysts(models.Model):
 
 class AssignedVendorsAnalysts(models.Model):
     name = models.CharField(max_length=50, blank=True, null=True)
-    analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING)
+    analyst = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
+    pc = models.ForeignKey('ParentCategories', models.DO_NOTHING, blank=True, null=True)
     vendor = models.ForeignKey('Vendors', models.DO_NOTHING)
     active = models.IntegerField()
     user_id = models.IntegerField()
@@ -144,7 +145,7 @@ class CalendarVendors(models.Model):
 
 class Categories(models.Model):
     cid = models.AutoField(primary_key=True)
-    pc = models.ForeignKey('ParentCategories', models.DO_NOTHING)
+    pc = models.ForeignKey('ParentCategories', models.DO_NOTHING, related_name='pcat')
     category_name = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -218,7 +219,7 @@ class CheckNormWeights100(models.Model):
 
 class Elements(models.Model):
     eid = models.AutoField(primary_key=True)
-    s = models.ForeignKey('Subcategories', models.DO_NOTHING)
+    s = models.ForeignKey('Subcategories', models.DO_NOTHING, related_name='sub')
     element_name = models.CharField(max_length=200)
     description = models.CharField(max_length=5000, blank=True, null=True)
     scoring_scale = models.CharField(max_length=2000, blank=True, null=True)
@@ -568,7 +569,7 @@ class SmScoresPartic1(models.Model):
 
 class Subcategories(models.Model):
     sid = models.AutoField(primary_key=True)
-    c = models.ForeignKey('Categories', models.DO_NOTHING)
+    c = models.ForeignKey('Categories', models.DO_NOTHING, related_name='cat')
     subcategory_name = models.CharField(max_length=100, blank=True, null=True)
     user = models.ForeignKey('c_users.CustomUser', models.DO_NOTHING, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
