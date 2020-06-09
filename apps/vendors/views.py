@@ -61,6 +61,7 @@ class AnalystListView(generics.ListAPIView):
 
 class FileUploadView(APIView):
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [permissions.AllowAny]
 
     def put(self, request, format=None):
         if 'file' not in request.data:
@@ -202,6 +203,7 @@ class CsvToDatabase(APIView):
     """
 
     serializer_class = VendorsCsvSerializer
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, format=None):
         r_data = request.data
