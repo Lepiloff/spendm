@@ -94,6 +94,10 @@ def csv_file_parser(file):
                                     'Check the Modules field value. Accepted value are: {}'.format(modules_list))
 
                 if key == "Vendor":
+                    if not value:
+                        vendor_error.append('Error in row {}: '
+                                            'Vendor may not be blank.'.format(count))
+
                     vendor = Vendors.objects.filter(vendor_name=value).first()
                     if vendor:
                         vendor_error.append('Error in row {}: '
@@ -115,6 +119,11 @@ def csv_file_parser(file):
                             email_error.append('Error in row {}: '
                                                 'Email {} already exist. '
                                                 'Please correct the error and try again'.format(count, value))
+                if key == "Primary Contact Email":
+                    if not value:
+                        email_error.append('Error in row {}: '
+                                           'Email may not be blank.'.format(count))
+
                 if key == "Country":
                     if value not in COUNTRIES_LIST:
                         country_error.append('Error in row {}: '
@@ -137,7 +146,9 @@ def csv_file_parser(file):
             result_dict.append(rows)
         if len(vendor_error) or len(email_error) or len(country_error) or len(date_error):
             error_pre_formatted_list = [vendor_error, email_error, country_error, date_error]
-            error_formatted_list = [", ".join(x) for x in error_pre_formatted_list]
+            print(error_pre_formatted_list)
+            error_formatted_list = [", ".join(x) for x in error_pre_formatted_list if x]
+
             raise ParseError(detail={'general_errors': error_formatted_list})
 
         if len(result_vendor_name_error) or len(result_vendor_email_error):
