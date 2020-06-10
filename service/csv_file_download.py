@@ -85,7 +85,6 @@ def csv_file_parser(file):
                         pass
                     else:
                         missing_value.append('Missing value in file! Check the {} line field {}'.format(count, key))
-                        # raise ParseError('Missing value in file! Check the {} line field {}'.format(count, key))
                 if key == 'Modules':
                     if value != '':
                         for v in value.split(','):
@@ -93,10 +92,17 @@ def csv_file_parser(file):
                                 raise ParseError(
                                     'Check the Modules field value. Accepted value are: {}'.format(modules_list))
 
+                if key == "Primary Contact Name" or key == 'Secondary Contact Name':
+                    if len(value) > 45:
+                        vendor_error.append('Error in row {}: Contact name is too long'.format(count))
+
+                if key == "Primary Contact Name":
+                    if not value:
+                        vendor_error.append('Error in row {}: Primary contact name may not be blank'.format(count))
+
                 if key == "Vendor":
                     if not value:
-                        vendor_error.append('Error in row {}: '
-                                            'Vendor may not be blank.'.format(count))
+                        vendor_error.append('Error in row {}: Vendor may not be blank.'.format(count))
 
                     vendor = Vendors.objects.filter(vendor_name=value).first()
                     if vendor:
@@ -121,8 +127,7 @@ def csv_file_parser(file):
                                                 'Please correct the error and try again'.format(count, value))
                 if key == "Primary Contact Email":
                     if not value:
-                        email_error.append('Error in row {}: '
-                                           'Email may not be blank.'.format(count))
+                        email_error.append('Error in row {}: Email may not be blank.'.format(count))
 
                 if key == "Country":
                     if value not in COUNTRIES_LIST:
@@ -146,7 +151,6 @@ def csv_file_parser(file):
             result_dict.append(rows)
         if len(vendor_error) or len(email_error) or len(country_error) or len(date_error):
             error_pre_formatted_list = [vendor_error, email_error, country_error, date_error]
-            print(error_pre_formatted_list)
             error_formatted_list = [", ".join(x) for x in error_pre_formatted_list if x]
 
             raise ParseError(detail={'general_errors': error_formatted_list})
@@ -248,7 +252,7 @@ def rfi_csv_file_parser(file):
         if len(vendor_error) or len(status_error) or len(round_error):
             error_pre_formatted_list = [vendor_error, status_error, round_error]
             error_formatted_list = [", ".join(x) for x in error_pre_formatted_list]
-            # remove empty string fro error response
+            # remove empty string for error response
             filter_error = filter(lambda x: x != "", error_formatted_list)
             raise ParseError(detail={'general_errors': list(filter_error)})
         return response
