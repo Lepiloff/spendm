@@ -110,7 +110,11 @@ class VendorsCsvSerializer(serializers.ModelSerializer):
         vendor = Vendors.objects.create(**validated_data, user_id=superuser_id)
         for data in contact_data:
             try:
-                VendorContacts.objects.create(vendor=vendor, **data)
+                # avoid create empty vendor_contact table
+                if not data.get('email') and not data.get('contact_name'):
+                    continue
+                else:
+                    VendorContacts.objects.create(vendor=vendor, **data)
             except DataError as e:
                 raise serializers.ValidationError({"general_errors":
                                                   ["Some data are incorrect (possibly too long email value)"]})
